@@ -237,12 +237,15 @@ body.touch .srow .mv button{width:38px;height:38px}
 .dict-link:hover{background:rgba(154,127,78,.2)}
 
 /* 지도 */
-.mapwrap{overflow:auto}
-.mapgrid{display:grid;grid-template-columns:repeat(6,minmax(92px,1fr));gap:7px;min-width:600px}
+.mapwrap{overflow:visible;width:100%}
+.mapgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;width:100%;min-width:0}
 .mc.blank{background:#c9743f;opacity:.55}
-.mc{min-height:54px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:#d4703a;color:#fff;
-  font-size:10px;font-weight:800;line-height:1.25;display:grid;place-items:center;text-align:center;padding:5px;position:relative}
+.mc{min-width:0;min-height:44px;border-radius:7px;border:1px solid rgba(255,255,255,.12);background:#d4703a;color:#fff;
+  font-size:clamp(8px,1.05vw,10px);font-weight:800;line-height:1.15;display:grid;place-items:center;text-align:center;
+  padding:4px 2px;position:relative;overflow-wrap:anywhere;word-break:break-word}
 .mc.void{visibility:hidden}
+.maproutes{margin:10px 0 0;padding-left:19px;font-size:11.5px;line-height:1.45}
+.maproutes li+li{margin-top:3px}
 /* 액자 방향 종이 */
 .sgrid{display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;
   background:#e8dcc0;padding:26px 20px;border-radius:3px;box-shadow:inset 0 0 0 1px #cbbb96}
@@ -279,6 +282,20 @@ body.touch .srow .mv button{width:38px;height:38px}
 .stack.locked .srow:last-child .bar .band{border-bottom:1px solid rgba(255,232,190,.22)}
 .stack.locked .srow .mv{display:none}
 .stack.locked .srow{grid-template-columns:1fr}
+#modal.assembly-modal{width:min(1040px,92vw)}
+body.touch #modal.assembly-modal{width:min(980px,94vw)}
+.assembly-layout{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(360px,1.1fr);gap:18px;align-items:start}
+.assembly-diary .paper{padding:18px 20px;font-size:13px;line-height:1.7;max-height:calc(100dvh - 150px);overflow:auto}
+.assembly-diary .paper p{margin-bottom:11px}
+.assembly-stackview{perspective:1000px;padding:6px 4px 12px;overflow:hidden}
+.assembly-stackview .stack{padding-left:10px;transform:rotateX(5deg);transform-origin:50% 0}
+.assembly-stackview .bar .face{transform:skewX(-18deg)}
+.assembly-stackview .bar .face > *{transform:skewX(18deg)}
+@media(max-width:760px){
+  #modal.assembly-modal,body.touch #modal.assembly-modal{width:min(620px,96vw)}
+  .assembly-layout{grid-template-columns:1fr;gap:12px}
+  .assembly-diary .paper{max-height:34dvh}
+}
 video{display:block;width:100%;border-radius:10px;background:#000;max-height:52vh;max-height:46dvh}
 
 /* 인트로 / 엔딩 */
@@ -542,18 +559,18 @@ var SCI = [
 
 var SPORTS=[
  {id:"soccer",name:"축구",en:"soccer, 蹴球",players:11,
-  weight:"체중에 관한 규정이 없다.",roles:["골키퍼","센터백","스위퍼","풀백","윙백","중앙 미드필더","수비형 미드필더","공격형 미드필더","윙어","중앙 공격수","세컨드 스트라이커"],
+  weight:"체중에 관한 규정이 없다.",roles:["골키퍼(goalkeeper)","센터백(centre-back)","스위퍼(sweeper)","풀백(full-back)","윙백(wing-back)","중앙 미드필더(central midfielder)","수비형 미드필더(defensive midfielder)","공격형 미드필더(attacking midfielder)","윙어(winger)","중앙 공격수(centre forward)","세컨드 스트라이커(second striker)"],
   note:"11명의 경기자로 구성된 두 팀이 발과 머리로 공을 쳐서 상대편 골대에 넣어 득점을 겨룬다.",
   fix:"원본 인쇄물에는 부제가 ‘baseball, 野球’로 잘못 적혀 있어 바로잡았습니다."},
  {id:"basketball",name:"농구",en:"basketball, 籠球",players:5,
-  weight:"체중 규정은 없고, 오히려 신장이 큰 선수가 유리하다.",roles:["포인트 가드","슈팅 가드","스몰 포워드","파워 포워드","센터"],
+  weight:"체중 규정은 없고, 오히려 신장이 큰 선수가 유리하다.",roles:["포인트 가드(point guard)","슈팅 가드(shooting guard)","스몰 포워드(small forward)","파워 포워드(power forward)","센터(center)"],
   note:"5명씩으로 이루어진 두 팀이 볼을 패스하거나 드리블하여 상대방의 바스켓에 던져 넣어 득점을 겨룬다."},
  {id:"baseball",name:"야구",en:"baseball, 野球",players:9,
-  weight:"체중에 관한 규정이 없다.",roles:["투수","포수","1루수","2루수","3루수","유격수","좌익수","중견수","우익수"],
+  weight:"체중에 관한 규정이 없다.",roles:["투수(pitcher)","포수(catcher)","1루수(first baseman)","2루수(second baseman)","3루수(third baseman)","유격수(shortstop)","좌익수(left fielder)","중견수(center fielder)","우익수(right fielder)"],
   note:"9명으로 편을 이룬 두 팀이 9회에 걸쳐 공격과 수비를 번갈아 하며 득점으로 승패를 겨룬다."},
  {id:"rowing",name:"조정경기",en:"Rowing, 漕艇競技",players:9,
   weight:"타수는 체중이 가벼워야 바람직하다. 대한조정협회 규칙에는 ‘타수의 체중은 50kg 이상으로 하고, 미달하는 자는 좌석 밑에 최대 10kg의 중량물을 놓아둘 수 있다’고 되어 있다.",
-  roles:["조수(bow)","2번","3번","4번","5번","6번","7번","정조(스트로크)","타수(coxswain)"],
+  roles:["조수(bow)","2번(two seat)","3번(three seat)","4번(four seat)","5번(five seat)","6번(six seat)","7번(seven seat)","정조(stroke)","타수(coxswain)"],
   note:"노를 저어 배의 속도를 겨루는 수상경기. 에이트는 조수 8명과 타수 1명, 모두 9명이 한 배를 탄다. 정식 코스 2km를 전력으로 저으면 한 레이스에 체중이 약 1.5kg 줄어들 만큼 힘든 스포츠다."}
 ];
 
@@ -2148,6 +2165,7 @@ function openModal(title,sub,build,afterClose,closeText){
 function closeModal(){
   $$("#m-body video").forEach(function(v){v.pause();});
   $("#modal").classList.add("hidden");
+  $("#modal").classList.remove("assembly-modal");
   $("#modal [data-x]").textContent="닫기";
   var done=modalAfterClose;modalAfterClose=null;
   if(done)setTimeout(done,0);
@@ -2187,8 +2205,7 @@ function showRefs(kind){
       SPORTS.forEach(function(s){
         add(s.name+' <span style="color:var(--dim);font-weight:400">'+s.en+'</span>',
           '<dl><dt>한 팀 인원</dt><dd>'+s.players+'명</dd><dt>체중 규정</dt><dd>'+s.weight+'</dd>'+
-          '<dt>포지션</dt><dd>'+s.roles.join(", ")+'</dd></dl><p style="margin:10px 0 0">'+s.note+'</p>'+
-          (s.fix?'<p style="margin:8px 0 0;color:var(--danger);font-size:11px">※ '+s.fix+'</p>':''));
+          '<dt>포지션</dt><dd>'+s.roles.join(", ")+'</dd></dl>');
       });
     }else if(p==="map"){
       var mw=el("div","mapwrap"),mg=el("div","mapgrid");
@@ -2198,12 +2215,9 @@ function showRefs(kind){
         mg.appendChild(el("div","mc"+(nm?"":" blank"),nm||""));
       }
       mw.appendChild(mg);b.appendChild(mw);
-      var ol=el("ol");ol.style.cssText="margin:16px 0 0;padding-left:20px;font-size:13px;line-height:1.9";
+      var ol=el("ol","maproutes");
       ol.innerHTML=MAP_ROUTES.map(function(x){return '<li>'+x.t+'</li>';}).join("");
       b.appendChild(ol);
-      add("신부가 건넨 지도",
-        '<ol style="margin:6px 0 0;padding-left:18px">'+MAP_ROUTES.map(function(r){return '<li>'+r.t+'</li>';}).join("")+
-        '</ol><p style="margin:10px 0 0">일곱 장소를 순서대로 모두 확인해야 한다.</p>');
     }else if(p==="video"){
       var d=el("details","item");d.open=true;
       d.innerHTML='<summary>의문의 영상</summary>';
@@ -2288,9 +2302,15 @@ function buildStack(order,opt){
 
 function showAssembly(){
   if(!S.stack)S.stack=[1,2,3,4,5,6,7,8];
-  openModal("기억을 쌓다","마지막 조각",function(b){
-    var host=el("div");b.appendChild(host);
-    var term=el("div");b.appendChild(term);
+  $("#modal").classList.add("assembly-modal");
+  openModal("기억을 쌓다","마지막 일기를 보며 기억 조각을 맞추세요",function(b){
+    var layout=el("div","assembly-layout");
+    var diaryCol=el("div","assembly-diary");
+    diaryCol.appendChild(el("article","paper",DIARY_HTML.diary9));
+    var work=el("div","assembly-stackview");
+    var host=el("div");work.appendChild(host);
+    var term=el("div");work.appendChild(term);
+    layout.appendChild(diaryCol);layout.appendChild(work);b.appendChild(layout);
     var wasLocked=false;
 
     function paint(){
