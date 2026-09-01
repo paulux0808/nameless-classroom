@@ -595,7 +595,7 @@ function symbolSheetHTML(){
   }).join("")+'</div>';
 }
 function showSheet(){
-  openModal("종이 한 장","액자의 방향을 가리키는 기호",function(b){ b.innerHTML=symbolSheetHTML(); });
+  openModal("종이 한 장","기호가 그려진 종이",function(b){ b.innerHTML=symbolSheetHTML(); });
 }
 
 var FRAME_SIG={apple:[1,1,1,0],compass:[1,1,0,0],sqrt:[1,1,0,0],sun:[1,0,0,0],pi:[1,0,1,0]};
@@ -624,10 +624,10 @@ var CH=[
  {n:3,title:"대학의 스포츠팀",diary:"diary3",puzzle:"position",h:["1b0xosa","es1u4x"],
   cue:U([46436,47189,98,45281,50972,73,51174,49595,47308,189,49554,49270,51072,241,48330,46999,48140,51093,60],40),spot:"sop6b1",
   piece:"병에 걸린 사실을 알아낸 날"},
- {n:4,title:"별의 붕괴를 거꾸로",diary:"diary4",puzzle:"cones",h:["8rbjcr"],
+ {n:4,title:"한 점에 대한 연구",diary:"diary4",puzzle:"cones",h:["8rbjcr"],
   cue:U([49805,49807,50951,112,48034,44170,87,46112,47597,190,46491,47564,51029,252],41),spot:"1ljmtw0",
   piece:"우주의 시작에 대한 비밀을 알아낸 날"},
- {n:5,title:"로마 안쪽의 작은 장소",diary:"diary5",puzzle:"map",h:["1qsqw43"],
+ {n:5,title:"낯선 지도",diary:"diary5",puzzle:"map",h:["1qsqw43"],
   cue:U([54599,49398,100,51029,54662,50619,88,45957,48854,54727,47056,151],42),spot:"sberz",
   piece:"교황청에 방문한 날"},
  {n:6,title:"새로운 책의 제목",diary:"diary6",puzzle:"cipher",h:["2xzdvc","1cvuz06"],
@@ -709,7 +709,7 @@ DIARY_HTML.diary5=
  '<p>알고 있는 것은 이곳이 로마 안쪽의 아주 작은 장소라는 것 뿐이었다.<br>막연한 상황에서 신부로 보이는 한 사람에게 길을 물었다.<br>그 신부는 이상한 지도를 하나 건네주고는 사라져버렸다.</p>'+
  '<p class="em">어느 장소에서 시작해야 하는지,<br>목적지가 어디인지 알기 위해서는 지도에 나와있는 일곱 장소를 순서대로 모두 들러야 한다고 되어 있었다.</p>'+
  '<p>이게 대체 무슨 뜻인지 이해하기 어려웠다.<br>과연 어떤 목적지가 나를 기다리고 있는 걸까?</p>'+
- '<p class="sign">[ 정답 : 영어 7글자 ]</p>';
+ '';
 DIARY_HTML.diary6=
  '<p class="date">1988년 9월 15일</p>'+
  '<p>갈릴레오 갈릴레이, 아이작 뉴턴, 알베르트 아인슈타인.<br>모두 저 하늘을 바라보며 호기심을 가졌던 사람들이다.</p>'+
@@ -2151,7 +2151,7 @@ function showRefs(kind){
       b.appendChild(ol);
       add("신부가 건넨 지도",
         '<ol style="margin:6px 0 0;padding-left:18px">'+MAP_ROUTES.map(function(r){return '<li>'+r.t+'</li>';}).join("")+
-        '</ol><p style="margin:10px 0 0">일곱 장소의 이름은 서로 다르다. 도착한 칸의 알파벳을 순서대로 모으면 목적지가 된다.</p>');
+        '</ol><p style="margin:10px 0 0">일곱 장소를 순서대로 모두 확인해야 한다.</p>');
     }else if(p==="video"){
       var d=el("details","item");d.open=true;
       d.innerHTML='<summary>의문의 영상</summary>';
@@ -2236,7 +2236,7 @@ function buildStack(order,opt){
 
 function showAssembly(){
   if(!S.stack)S.stack=[1,2,3,4,5,6,7,8];
-  openModal("기억을 쌓다","2018 · 마지막 조각",function(b){
+  openModal("기억을 쌓다","마지막 조각",function(b){
     var host=el("div");b.appendChild(host);
     var term=el("div");b.appendChild(term);
     var wasLocked=false;
