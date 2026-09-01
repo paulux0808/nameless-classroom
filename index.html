@@ -150,8 +150,8 @@ button{cursor:pointer;touch-action:manipulation}
 #modal{inset:auto 0 0 auto;top:0;width:min(470px,46vw);padding:12px;background:none;
   backdrop-filter:none;display:block;pointer-events:none}
 #terminal-companion{position:fixed;z-index:59;left:calc(var(--sa-l) + 10px);right:calc(min(470px,46vw) + var(--sa-r) + 10px);top:calc(var(--sa-t) + 10px);bottom:calc(var(--sa-b) + 10px);overflow:hidden;border-radius:4px;pointer-events:auto}
-.terminal-aid-grid{height:100%;display:grid;grid-template-columns:minmax(0,var(--aid-diary,46%)) minmax(0,1fr);gap:9px;align-items:stretch}
-.terminal-aid-grid.single{grid-template-columns:minmax(0,1fr);max-width:720px}
+.terminal-aid-grid{height:100%;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,var(--aid-diary,46%)) minmax(0,1fr);gap:9px;align-items:stretch}
+.terminal-aid-grid.single{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);max-width:720px}
 .terminal-aid-pane{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(214,186,136,.23);border-radius:4px;background:rgba(25,18,10,.94);box-shadow:0 16px 42px rgba(0,0,0,.44)}
 .terminal-aid-head{flex:none;padding:8px 12px;background:#21180e;color:#d8bd88;border-bottom:1px solid rgba(214,186,136,.22);font-size:10.5px;font-weight:800;letter-spacing:.11em}
 .terminal-aid-scroll{min-height:0;overflow:auto;overscroll-behavior:contain}
