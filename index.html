@@ -2202,8 +2202,8 @@ function loop(t){
 /* ======================= [8] 자료·입력 UI ======================= */
 var modalAfterClose=null;
 var TERMINAL_AID={
-  1:{kind:"sci",title:"과학자·수학자 자료",diary:43},
-  2:{kind:"frames",title:"기호 종이 · 과학자 자료",diary:40},
+  1:{kind:null,title:"",diary:100},
+  2:{kind:"frames",title:"기호 종이",diary:40},
   3:{kind:"sport",title:"운동경기 자료",diary:36},
   4:{kind:null,title:"",diary:100},
   5:{kind:"map",title:"신부가 건넨 지도",diary:38},
@@ -2239,15 +2239,8 @@ function terminalAidResource(spec){
   var x=terminalAidPane(spec.title,"terminal-aid-material");
   var b=el("div","terminal-aid-ref");x.scroll.appendChild(b);
   var list=el("div","list");
-  if(spec.kind==="sci"){
-    SCI.forEach(function(s){terminalAidDetails(list,s.name+' <span style="color:var(--dim);font-weight:400">'+s.en+'</span>',
-      '<dl><dt>생몰</dt><dd>'+s.born+' ~ '+s.died+'</dd><dt>핵심</dt><dd>'+s.key+'</dd></dl><p style="margin:8px 0 0">'+s.body+'</p>');});
-    b.appendChild(list);
-  }else if(spec.kind==="frames"){
+  if(spec.kind==="frames"){
     var sheet=el("div","symbol-sheet",symbolSheetHTML());b.appendChild(sheet);
-    SCI.forEach(function(s){terminalAidDetails(list,s.name+' <span style="color:var(--dim);font-weight:400">'+s.en+'</span>',
-      '<dl><dt>생몰</dt><dd>'+s.born+' ~ '+s.died+'</dd><dt>핵심</dt><dd>'+s.key+'</dd></dl>');});
-    b.appendChild(list);
   }else if(spec.kind==="sport"){
     SPORTS.forEach(function(s){terminalAidDetails(list,s.name+' <span style="color:var(--dim);font-weight:400">'+s.en+'</span>',
       '<dl><dt>한 팀 인원</dt><dd>'+s.players+'명</dd><dt>주요 규칙</dt><dd>'+s.rule+'</dd><dt>포지션</dt><dd>'+s.roles.join(", ")+'</dd></dl>');});
