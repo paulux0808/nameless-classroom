@@ -608,6 +608,21 @@ var SPORTS=[
   roles:["스트로크(stroke)","7번(seven)","6번(six)","5번(five)","4번(four)","3번(three)","2번(two)","바우(bow)","타수(coxswain)"]}
 ];
 
+/* 5장 — A~Z 6열 격자 */
+/* 신부의 지도 — 원본대로 여섯 칸만 적혀 있다. 나머지는 스스로 알아내야 한다 */
+var MAP_ROWS=5, MAP_COLS=6;
+var MAP_PRINTED={"1,1":"APPLE","2,2":"H&M","2,6":"LOUIS VUITTON",
+                 "3,2":"NIKE","3,5":"QUIZNOS","4,4":"VERSACE"};
+var MAP_ROUTES=[
+ {t:"유니클로(UNIQLO)에서 오른쪽으로 한 블록 가면 나오는 곳.",s:"U",mv:[[0,1]]},
+ {t:"이니스프리(INNISFREE)에서 왼쪽으로 두 블록, 위로 한 블록 가면 나오는 곳.",s:"I",mv:[[0,-1],[0,-1],[-1,0]]},
+ {t:"H&M에서 밑으로 두 블록 아래로 가면 나오는 곳.",s:"H",mv:[[1,0],[1,0]]},
+ {t:"던킨도넛(DUNKIN DONUTS)에서 아래로 한 블록, 왼쪽으로 한 블록 가면 나오는 곳.",s:"D",mv:[[1,0],[0,-1]]},
+ {t:"페이스북(FACEBOOK) 본사에서 왼쪽으로 세 블록 가면 나오는 곳.",s:"F",mv:[[0,-1],[0,-1],[0,-1]]},
+ {t:"예일대(YALE UNIV.)에서 위로 네 블록 가면 나오는 곳.",s:"Y",mv:[[-1,0],[-1,0],[-1,0],[-1,0]]},
+ {t:"스쿨푸드(SCHOOL FOOD)에서 위로 한 블록, 오른쪽으로 한 블록 가면 나오는 곳.",s:"S",mv:[[-1,0],[0,1]]}
+];
+
 var CIPHER="BHCISKTAOCRUYOPFBTIAMCEP";
 
 var SYMBOL_SVG={
@@ -1154,10 +1169,7 @@ function buildRoom(){
       g.fillStyle="#3d6d78";g.font="500 24px monospace";g.fillText("scholarship terminal",56,300);
     },640,384)});
   var screen=plane(0.86,0.52,screenMat,0,1.24,-3.015);
-  scene.add(screen);
-  /* 필수 진행 오브젝트: 화면 자체보다 넓은 투명 판정 영역을 둔다. */
-  var computerHit=plane(1.58,1.02,new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}),0,1.24,-3.005);
-  scene.add(hot(computerHit,"computer","컴퓨터"));
+  scene.add(hot(screen,"computer","컴퓨터"));
   screenGlow=new THREE.PointLight(0x63c3b2,0.55,3.4);screenGlow.position.set(0,1.3,-2.7);scene.add(screenGlow);
 
   /* 탁상달력 */
@@ -2089,15 +2101,11 @@ function castAt(x,y){
   return hits[0].object;
 }
 var lastHover=null, lastDist=0, REACH=3.0, hoverFar=false;
-function reachFor(o){
-  /* 컴퓨터는 각 장 진행에 필수이므로 조준만 되면 조사 가능하게 한다. */
-  return o&&o.userData&&o.userData.hot&&o.userData.hot.id==="computer"?Infinity:REACH;
-}
 function hover(x,y){
   var o=castAt(x,y);
   var r=$("#reticle"),lb=$("#label");
   if(o&&o.userData.hot){
-    hoverFar=lastDist>reachFor(o);
+    hoverFar=lastDist>REACH;
     r.classList.toggle("hot",!hoverFar);
     r.classList.toggle("far",hoverFar);
     lb.innerHTML=o.userData.hot.name+(hoverFar?'<i>더 가까이 가세요</i>':'');
@@ -2109,7 +2117,7 @@ function hover(x,y){
 function pick(x,y){
   var o=castAt(x,y);
   if(!o||!o.userData.hot)return;
-  if(lastDist>reachFor(o)){toast("더 가까이 가세요.");return;}
+  if(lastDist>REACH){toast("더 가까이 가세요.");return;}
   focusOn(o);interact(o.userData.hot.id);
 }
 function toggleFS(){
