@@ -1,0 +1,72 @@
+name: Fix frame thickness quiz
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-frame-thickness-quiz.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch frame geometry
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          # Remove the full-size visible backing. It made every side look at least equally thick.
+          old='''    var frameBase=plane(0.66,0.76,portraitFrameMat(),0,0,0.006);\n    frameBase.renderOrder=6;spin.add(frameBase);\n'''
+          if s.count(old)!=1:
+              raise SystemExit(f'frame backing count={s.count(old)}')
+          s=s.replace(old,'',1)
+
+          # Replace the old outer-box bars with bars grown outward from the portrait edge.
+          # Thick = Einstein reference thickness; thin = FRAME_SIG false side.
+          start=s.index('  var W=0.66,H=0.76,TK=0.105,TN=0.074;', s.index('function drawFrameBars(id){'))
+          tail=s[start:]
+          m=re.search(r'  bar\(sig\[3\]\?TK:TN,\s*H,.*?sig\[3\]\);\n', tail, re.S)
+          if not m:
+              raise SystemExit('could not locate old four frame bars')
+          end=start+m.end()
+          new='''  var PW=0.52,PH=0.62,TK=0.070,TN=0.028;\n  var tt=sig[0]?TK:TN, tr=sig[1]?TK:TN, tb=sig[2]?TK:TN, tl=sig[3]?TK:TN;\n  function bar(w,h,x,y,thick){\n    var mat=portraitFrameMat();\n    var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,thick?0.042:0.030),mat);\n    m.position.set(x,y,thick?0.024:0.018);\n    m.renderOrder=8;\n    bars.add(m);\n  }\n  /* The portrait edge is the inner edge of every bar.\n     This keeps the quiz thickness visible without exposing wall color. */\n  bar(PW+tl+tr,tt,(tr-tl)/2, PH/2+tt/2,sig[0]);\n  bar(tr,PH, PW/2+tr/2,0,sig[1]);\n  bar(PW+tl+tr,tb,(tr-tl)/2,-PH/2-tb/2,sig[2]);\n  bar(tl,PH,-PW/2-tl/2,0,sig[3]);\n'''
+          s=s[:start]+new+s[end:]
+          p.write_text(s,encoding='utf-8')
+
+          out=p.read_text(encoding='utf-8')
+          checks=[
+            'var PW=0.52,PH=0.62,TK=0.070,TN=0.028;',
+            'var tt=sig[0]?TK:TN, tr=sig[1]?TK:TN, tb=sig[2]?TK:TN, tl=sig[3]?TK:TN;',
+            'bar(PW+tl+tr,tt,(tr-tl)/2, PH/2+tt/2,sig[0]);',
+            'bar(tl,PH,-PW/2-tl/2,0,sig[3]);',
+            'function portraitFrameMat(){'
+          ]
+          for q in checks:
+              if q not in out: raise SystemExit('missing '+q)
+          if 'var frameBase=plane(0.66,0.76' in out:
+              raise SystemExit('uniform visible backing still present')
+          print('frame quiz thickness validation ok')
+          PY
+      - name: Check JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re,pathlib,subprocess
+          s=pathlib.Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          pathlib.Path('/tmp/game.js').write_text('\n'.join(blocks),encoding='utf-8')
+          subprocess.run(['node','--check','/tmp/game.js'],check=True)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Match portrait frame thickness to puzzle"
+          git push
