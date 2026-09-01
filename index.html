@@ -2552,15 +2552,14 @@ function showStageClear(){
     var r=el("div","row");
     var replay=el("button","btn","영상 다시보기");
     replay.onclick=function(){closeModal();setTimeout(showEnding,80);};
-    var next=el("button","btn btn-p","다음 스테이지 · 아인슈타인");
+    var next=el("button","btn btn-p","다음 스테이지");
     next.onclick=function(){location.href="einstein.html";};
     r.appendChild(replay);r.appendChild(next);b.appendChild(r);
-    b.appendChild(el("p","mini","아인슈타인 스테이지는 현재 준비중입니다."));
+    b.appendChild(el("p","mini","다음 스테이지는 현재 준비중입니다."));
   },null,"교실에 남기");
 }
 function showExitDoor(){
   if(S.done){showStageClear();return;}
-  if(!S.exitReady){toast("아직 나갈 수 없다.");return;}
   openModal("뒷문","코드를 입력하시면 나갈 수 있습니다.",function(b){
     b.appendChild(el("p","mini","코드를 입력하시면 나갈 수 있습니다."));
     var pad=makeAnswerPad("number");b.appendChild(pad.el);
