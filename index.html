@@ -2337,9 +2337,9 @@ function interact(id){
   }
   if(id.indexOf("frame:")===0){
     var sci=id.split(":")[1], sym=SYM_OF[sci];
-    if(!sym){toast("이 액자는 네 변이 모두 같은 두께입니다.");return;}
+    if(!sym){toast("액자를 살펴보았다.");return;}
     S.rot[sym]=((S.rot[sym]||0)+1)%4;save();drawFrameBars(sci);
-    toast(SYM_KO[sym]+" 액자 — "+(S.rot[sym]*90)+"°");
+    toast("액자 — "+(S.rot[sym]*90)+"°");
     return;
   }
   /* 챕터별 탐색 지점 */
