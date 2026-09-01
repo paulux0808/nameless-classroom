@@ -1,0 +1,43 @@
+name: Cleanup gameplay spoilers
+
+on:
+  push:
+    paths:
+      - .github/workflows/cleanup-gameplay-spoilers.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply gameplay spoiler cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          repl = [
+              ('openModal("종이 한 장","액자의 방향을 가리키는 기호",function(b)', 'openModal("종이 한 장","기호가 그려진 종이",function(b)'),
+              ('일곱 장소의 이름은 서로 다르다. 도착한 칸의 알파벳을 순서대로 모으면 목적지가 된다.', '일곱 장소를 순서대로 모두 확인해야 한다.'),
+              ('<p class="sign">[ 정답 : 영어 7글자 ]</p>', ''),
+              ('title:"별의 붕괴를 거꾸로"', 'title:"한 점에 대한 연구"'),
+              ('title:"로마 안쪽의 작은 장소"', 'title:"낯선 지도"'),
+              ('openModal("기억을 쌓다","2018 · 마지막 조각",function(b)', 'openModal("기억을 쌓다","마지막 조각",function(b)'),
+          ]
+          for old, new in repl:
+              n = s.count(old)
+              if n != 1:
+                  raise SystemExit(f'expected exactly 1 match, got {n}: {old}')
+              s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Reduce gameplay spoiler hints"
+          git push
