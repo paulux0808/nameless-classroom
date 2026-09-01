@@ -1388,17 +1388,6 @@ function buildRoom(){
     })(sci,zz);
     drawFrameBars(id);
   }
-  /* 액자 두께 규칙은 유지하고, 색은 아인슈타인 액자의 진한 갈색 톤으로 통일 */
-  Object.keys(frameObjs).forEach(function(fid){
-    var bars=frameObjs[fid]&&frameObjs[fid].userData.bars;
-    if(!bars)return;
-    bars.traverse(function(o){
-      if(!o.isMesh||!o.material||!o.material.color)return;
-      o.material.color.setHex(0x986b43);
-      if('roughness' in o.material)o.material.roughness=0.58;
-    });
-  });
-
   /* 벽시계 */
   var clockG=new THREE.Group();clockG.position.set(0,3.02,-3.91);clockGroup=clockG;
   var CR=0.215;
@@ -1938,9 +1927,9 @@ function drawFrameBars(id){
   var sig=sym?FRAME_SIG[sym]:[1,1,1,1];
   g3.userData.tz=-(S.rot[rotKey]||0)*Math.PI/2;
   var W=0.66,H=0.76,TK=0.105,TN=0.022;
-  var einsteinCol=0x8a6134, thinCol=0x70451f;
+  var frameCol=0x8a6134;
   function bar(w,h,x,y,thick){
-    var m=box(w,h,thick?0.042:0.03,thick?einsteinCol:thinCol,x,y,thick?0.024:0.018);
+    var m=box(w,h,thick?0.042:0.03,frameCol,x,y,thick?0.024:0.018);
     m.material.roughness=0.62;bars.add(m);}
   bar(W,sig[0]?TK:TN, 0, H/2-(sig[0]?TK:TN)/2, sig[0]);
   bar(sig[1]?TK:TN,H, W/2-(sig[1]?TK:TN)/2, 0, sig[1]);
