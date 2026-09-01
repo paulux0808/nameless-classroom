@@ -1,0 +1,50 @@
+name: Fix thermometer and Einstein frame
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-thermo-einstein-frame.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply layout and frame fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+
+          old='plaque(0.24,0.34,4.92,1.72,2.40,-Math.PI/2,"thermo","온습도계",function(g,w,h){'
+          new='plaque(0.24,0.34,4.92,1.72,3.35,-Math.PI/2,"thermo","온습도계",function(g,w,h){'
+          assert s.count(old)==1, s.count(old)
+          s=s.replace(old,new)
+
+          old='''  var sym=SYM_OF[id];\n  var sig=sym?FRAME_SIG[sym]:[1,1,1,1];\n  g3.userData.tz=sym?-(S.rot[sym]||0)*Math.PI/2:0;\n  var W=0.66,H=0.76,TK=0.105,TN=0.022;\n  var col=0x8a6134;\n  function bar(w,h,x,y,thick){\n    var m=box(w,h,thick?0.042:0.03,col,x,y,thick?0.024:0.018);\n    m.material.roughness=0.62;bars.add(m);}'''
+          new='''  var sym=SYM_OF[id], rotKey=sym||id;\n  var sig=sym?FRAME_SIG[sym]:[1,1,1,1];\n  g3.userData.tz=-(S.rot[rotKey]||0)*Math.PI/2;\n  var W=0.66,H=0.76,TK=0.105,TN=0.022;\n  var einsteinCol=0x8a6134, thinCol=0x70451f;\n  function bar(w,h,x,y,thick){\n    var m=box(w,h,thick?0.042:0.03,thick?einsteinCol:thinCol,x,y,thick?0.024:0.018);\n    m.material.roughness=0.62;bars.add(m);}'''
+          assert s.count(old)==1, s.count(old)
+          s=s.replace(old,new)
+
+          old='''  if(id.indexOf("frame:")===0){\n    var sci=id.split(":")[1], sym=SYM_OF[sci];\n    if(!sym){toast("액자를 살펴보았다.");return;}\n    S.rot[sym]=((S.rot[sym]||0)+1)%4;save();drawFrameBars(sci);\n    toast("액자 — "+(S.rot[sym]*90)+"°");\n    return;\n  }'''
+          new='''  if(id.indexOf("frame:")===0){\n    var sci=id.split(":")[1], sym=SYM_OF[sci], rotKey=sym||sci;\n    S.rot[rotKey]=((S.rot[rotKey]||0)+1)%4;save();drawFrameBars(sci);\n    toast("액자 — "+(S.rot[rotKey]*90)+"°");\n    return;\n  }'''
+          assert s.count(old)==1, s.count(old)
+          s=s.replace(old,new)
+
+          p.write_text(s)
+          PY
+          grep -q '1.72,3.35,-Math.PI/2,"thermo"' index.html
+          grep -q 'rotKey=sym||sci' index.html
+          grep -q 'thinCol=0x70451f' index.html
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Fix thermometer overlap and frame rotation"
+          git push
