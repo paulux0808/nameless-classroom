@@ -604,7 +604,7 @@ var SPORTS=[
   rule:"공격과 수비를 번갈아 진행하며, 타자가 베이스를 돌아 홈에 들어오면 득점한다.",
   roles:["투수(pitcher)","포수(catcher)","1루수(first baseman)","2루수(second baseman)","3루수(third baseman)","유격수(shortstop)","좌익수(left fielder)","중견수(center fielder)","우익수(right fielder)","지명타자(designated hitter)"]},
  {id:"rowing",name:"조정",en:"rowing, 漕艇",players:9,
-  rule:"에이트에서는 8명의 조수가 노를 젓고, 타수(coxswain)가 보트의 방향과 선수들의 호흡·리듬을 지시한다.",
+  rule:"에이트에서는 8명의 조수가 노를 젓고, 타수(coxswain)가 보트의 방향과 선수들의 호흡·리듬을 지시한다. 대한조정협회 규칙에는 타수의 체중을 50kg 이상으로 하고, 미달하면 좌석 밑에 최대 10kg의 중량물을 둘 수 있다고 되어 있다.",
   roles:["스트로크(stroke)","7번(seven)","6번(six)","5번(five)","4번(four)","3번(three)","2번(two)","바우(bow)","타수(coxswain)"]}
 ];
 
@@ -734,7 +734,11 @@ DIARY_HTML.diary4=
  '<p>교수님의 연구에 매료되었다. 특이점에 대해 탐구한 것이었다.</p>'+
  '<p>교수님은 그 특이점이 무한한 중력을 지니고 있음을 언급하셨다.<br>그곳에서는 모든 시간과 공간이 소멸한다.<br>그렇기에 그 점은 우주의 끝과도 같은 곳이다.<br>펜로즈 교수님은 별이 붕괴되면 그런 점이 형성된다는 것을 입증하셨다.</p>'+
  '<p>그러나 나는 다른 곳에 더 관심이 있다.</p>'+
- '<div class="cosmo-sketch" aria-label="별의 붕괴와 시간을 거꾸로 돌린 모습을 비교한 메모">'+
+ '<p class="em" style="text-align:center">중요한 것은 시작이다. 끝이 아니라 시작.<br>정말로 큰 질문은, 시작이 있었느냐 없었느냐 하는 것이다.</p>'+
+ '<p>만약.. 만약에…<br>저기서 시간만 거꾸로 돌린 것이 우주의 시작이라면?</p>'+
+ '<p>그렇다면 우주는 한 점에서 출발한다는 말이야…!!!<br>우주의 끝이 별의 붕괴일 때,<br>그 반대인 별의 폭발이 우주의 시작이라는 거야!!</p>'+
+ '<p>바로 <span class="redacted"></span> 말이야!!!<br>어서 펜로즈 교수님을 찾아가야해. 서두르자!</p>'+
+'<div class="cosmo-sketch" aria-label="별의 붕괴와 시간을 거꾸로 돌린 모습을 비교한 메모">'+
  '<svg viewBox="0 0 720 220" role="img" aria-label="별이 한 점으로 붕괴하는 모습과 한 점에서 바깥으로 퍼져 나가는 모습을 나란히 그린 그림">'+
  '<text x="82" y="30">별의 붕괴</text><text x="565" y="30">반대 방향</text>'+
  '<circle class="ink" cx="105" cy="112" r="47"/><path class="ink" d="M48 70l31 25M45 112h38M50 154l29-24M162 70l-31 25M165 112h-38M160 154l-29-24"/>'+
@@ -743,11 +747,7 @@ DIARY_HTML.diary4=
  '<circle class="dot" cx="455" cy="112" r="8"/><path class="ink" d="M485 112h75M544 100l17 12-17 12"/>'+
  '<circle class="ink" cx="626" cy="112" r="47"/><path class="ink" d="M590 81l-25-20M586 112h-38M590 143l-25 20M662 81l25-20M666 112h38M662 143l25 20"/>'+
  '<text class="small" x="533" y="191">한 점에서 바깥으로 퍼져 나간다면?</text>'+
- '</svg></div>'+
- '<p class="em" style="text-align:center">중요한 것은 시작이다. 끝이 아니라 시작.<br>정말로 큰 질문은, 시작이 있었느냐 없었느냐 하는 것이다.</p>'+
- '<p>만약.. 만약에…<br>저기서 시간만 거꾸로 돌린 것이 우주의 시작이라면?</p>'+
- '<p>그렇다면 우주는 한 점에서 출발한다는 말이야…!!!<br>우주의 끝이 별의 붕괴일 때,<br>그 반대인 별의 폭발이 우주의 시작이라는 거야!!</p>'+
- '<p>바로 <span class="redacted"></span> 말이야!!!<br>어서 펜로즈 교수님을 찾아가야해. 서두르자!</p>';
+ '</svg></div>';
 DIARY_HTML.diary5=
  '<p class="date">1981년 2월 1일</p>'+
  '<p>로마 교황의 초대를 받았다.<br>이는 흔히 찾아오지 않는 경험이었고, 정말 특별한 기회였다.</p>'+
@@ -2086,11 +2086,14 @@ function castAt(x,y){
   return hits[0].object;
 }
 var lastHover=null, lastDist=0, REACH=3.0, hoverFar=false;
+function reachFor(o){
+  return o&&o.userData&&o.userData.hot&&o.userData.hot.id==="computer"?4.2:REACH;
+}
 function hover(x,y){
   var o=castAt(x,y);
   var r=$("#reticle"),lb=$("#label");
   if(o&&o.userData.hot){
-    hoverFar=lastDist>REACH;
+    hoverFar=lastDist>reachFor(o);
     r.classList.toggle("hot",!hoverFar);
     r.classList.toggle("far",hoverFar);
     lb.innerHTML=o.userData.hot.name+(hoverFar?'<i>더 가까이 가세요</i>':'');
@@ -2102,7 +2105,7 @@ function hover(x,y){
 function pick(x,y){
   var o=castAt(x,y);
   if(!o||!o.userData.hot)return;
-  if(lastDist>REACH){toast("더 가까이 가세요.");return;}
+  if(lastDist>reachFor(o)){toast("더 가까이 가세요.");return;}
   focusOn(o);interact(o.userData.hot.id);
 }
 function toggleFS(){
