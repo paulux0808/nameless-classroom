@@ -1357,8 +1357,12 @@ function buildRoom(){
     var id=order[f], zz=-2.6+f*1.05;
     var g3=new THREE.Group();g3.position.set(4.9,1.95,zz);g3.rotation.y=-Math.PI/2;
     var spin=new THREE.Group();g3.add(spin);
+    /* Every portrait uses one identical, unlit brown backing.
+       This is the visible thin frame; puzzle bars only add width on thick sides. */
+    var frameBase=plane(0.66,0.76,new THREE.MeshBasicMaterial({color:0x8a6134}),0,0,0.006);
+    frameBase.renderOrder=6;spin.add(frameBase);
     var por=plane(0.52,0.62,new THREE.MeshStandardMaterial({map:imgTex(A["portrait_"+id])}),0,0,0.012);
-    spin.add(por);
+    por.renderOrder=7;spin.add(por);
     var bars=new THREE.Group();spin.add(bars);
     g3.userData.bars=bars;g3.userData.spin=spin;g3.userData.sci=id;g3.userData.tz=0;
     scene.add(g3);frameObjs[id]=g3;
