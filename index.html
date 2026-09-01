@@ -1359,7 +1359,7 @@ function buildRoom(){
     var spin=new THREE.Group();g3.add(spin);
     /* Every portrait uses one identical, unlit brown backing.
        This is the visible thin frame; puzzle bars only add width on thick sides. */
-    var frameBase=plane(0.66,0.76,new THREE.MeshBasicMaterial({color:0x8a6134}),0,0,0.006);
+    var frameBase=plane(0.66,0.76,portraitFrameMat(),0,0,0.006);
     frameBase.renderOrder=6;spin.add(frameBase);
     var por=plane(0.52,0.62,new THREE.MeshStandardMaterial({map:imgTex(A["portrait_"+id])}),0,0,0.012);
     por.renderOrder=7;spin.add(por);
@@ -1927,6 +1927,13 @@ function refreshBoard(){
     if(p)addPaper({id:p.id==="sheet"?"sheet":"refP:"+p.id,t:p.name,s:"",c:"#2f5f8a",label:p.label},x,yPaper,-(((n*29)%7)-3)*0.008);
   }
 }
+function portraitFrameMat(){
+  var m=new THREE.MeshBasicMaterial({color:0x8a6134});
+  m.color.convertSRGBToLinear();
+  m.userData=m.userData||{};
+  m.userData.colorAlreadyLinear=true;
+  return m;
+}
 function drawFrameBars(id){
   var g3=frameObjs[id];if(!g3)return;
   var bars=g3.userData.bars;
@@ -1935,9 +1942,8 @@ function drawFrameBars(id){
   var sig=sym?FRAME_SIG[sym]:[1,1,1,1];
   g3.userData.tz=-(S.rot[rotKey]||0)*Math.PI/2;
   var W=0.66,H=0.76,TK=0.105,TN=0.074;
-  var frameCol=0x8a6134;
   function bar(w,h,x,y,thick){
-    var mat=new THREE.MeshBasicMaterial({color:frameCol});
+    var mat=portraitFrameMat();
     var m=new THREE.Mesh(new THREE.BoxGeometry(w,h,thick?0.042:0.03),mat);
     m.position.set(x,y,thick?0.024:0.018);
     m.renderOrder=8;
@@ -2520,7 +2526,10 @@ function polishScene(){
   var seen=[];
   scene.traverse(function(o){
     var m=o.material;
-    if(m&&!Array.isArray(m)&&m.color&&seen.indexOf(m)<0){seen.push(m);m.color.convertSRGBToLinear();}
+    if(m&&!Array.isArray(m)&&m.color&&seen.indexOf(m)<0){
+      seen.push(m);
+      if(!(m.userData&&m.userData.colorAlreadyLinear))m.color.convertSRGBToLinear();
+    }
   });
   [sunLight,groundLight,fillLight,ambLight,backLamp,screenGlow].forEach(function(L){
     if(L&&L.color)L.color.convertSRGBToLinear();});
