@@ -1,0 +1,39 @@
+name: Open rear exit and hide next identity
+
+on:
+  push:
+    paths:
+      - .github/workflows/open-exit-hide-next.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: python .tmp-open-exit-hide-next.py
+      - name: Check JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re,pathlib,subprocess
+          s=pathlib.Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          pathlib.Path('/tmp/game.js').write_text('\n'.join(blocks),encoding='utf-8')
+          subprocess.run(['node','--check','/tmp/game.js'],check=True)
+          PY
+      - name: Verify placeholder
+        run: |
+          grep -q 'NEXT MEMORY' einstein.html
+          grep -q '준비중' einstein.html
+          ! grep -q 'ALBERT EINSTEIN' einstein.html
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html einstein.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Keep rear exit available and hide next stage identity"
+          git push
