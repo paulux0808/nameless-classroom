@@ -366,6 +366,8 @@ video{display:block;width:100%;border-radius:10px;background:#000;max-height:52v
   transition:opacity 1.15s ease}
 #whiteout.on{opacity:1}
 body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.ending #fs{opacity:0;pointer-events:none}
+#stage-transition{position:fixed;inset:0;z-index:260;background:#000;opacity:0;pointer-events:none;transition:opacity 1.05s ease}
+#stage-transition.on{opacity:1;pointer-events:auto}
 
 #joy,#act,#crouch{display:none;position:fixed;z-index:40;touch-action:none;user-select:none}
 body.touch #joy,body.touch #act,body.touch #crouch{display:block}
@@ -2543,6 +2545,13 @@ function showEnding(){
   document.body.appendChild(x);
   x.querySelector("[data-ending-close]").onclick=closeEndingScene;
 }
+function goToNextStage(){
+  closeModal();closeEndingScene();
+  var old=document.getElementById("stage-transition");if(old)old.remove();
+  var fade=el("div");fade.id="stage-transition";document.body.appendChild(fade);
+  requestAnimationFrame(function(){requestAnimationFrame(function(){fade.classList.add("on");});});
+  setTimeout(function(){location.href="stage2.html";},1250);
+}
 function showStageClear(){
   closeEndingScene();
   openModal("스테이지 완료","STEPHEN HAWKING · CLEAR",function(b){
@@ -2553,7 +2562,7 @@ function showStageClear(){
     var replay=el("button","btn","영상 다시보기");
     replay.onclick=function(){closeModal();setTimeout(showEnding,80);};
     var next=el("button","btn btn-p","다음 스테이지");
-    next.onclick=function(){location.href="einstein.html";};
+    next.onclick=function(){goToNextStage();};
     r.appendChild(replay);r.appendChild(next);b.appendChild(r);
     b.appendChild(el("p","mini","다음 스테이지는 현재 준비중입니다."));
   },null,"교실에 남기");
