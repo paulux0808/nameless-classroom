@@ -20,7 +20,8 @@ jobs:
         shell: bash
         run: |
           cat .tmp-upload/p00 .tmp-upload/p01 .tmp-upload/p02 .tmp-upload/p03 .tmp-upload/p04 .tmp-upload/p05 > /tmp/index.patch.b64
-          base64 -d /tmp/index.patch.b64 > /tmp/index.patch.gz
+          tr -cd 'A-Za-z0-9+/=' < /tmp/index.patch.b64 | base64 -d > /tmp/index.patch.gz
+          gzip -t /tmp/index.patch.gz
           gzip -dc /tmp/index.patch.gz > /tmp/index.patch
           git apply --check /tmp/index.patch
           git apply /tmp/index.patch
