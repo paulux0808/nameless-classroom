@@ -1,0 +1,47 @@
+name: Fix frame backing
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-frame-backing.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add uniform brown frame backing
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='''    var spin=new THREE.Group();g3.add(spin);\n    var por=plane(0.52,0.62,new THREE.MeshStandardMaterial({map:imgTex(A["portrait_"+id])}),0,0,0.012);\n    spin.add(por);\n    var bars=new THREE.Group();spin.add(bars);'''
+          new='''    var spin=new THREE.Group();g3.add(spin);\n    /* Every portrait uses one identical, unlit brown backing.\n       This is the visible thin frame; puzzle bars only add width on thick sides. */\n    var frameBase=plane(0.66,0.76,new THREE.MeshBasicMaterial({color:0x8a6134}),0,0,0.006);\n    frameBase.renderOrder=6;spin.add(frameBase);\n    var por=plane(0.52,0.62,new THREE.MeshStandardMaterial({map:imgTex(A["portrait_"+id])}),0,0,0.012);\n    por.renderOrder=7;spin.add(por);\n    var bars=new THREE.Group();spin.add(bars);'''
+          if s.count(old)!=1:
+              raise SystemExit(f'portrait construction block count={s.count(old)}')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          if 'var frameBase=plane(0.66,0.76,new THREE.MeshBasicMaterial({color:0x8a6134})' not in s:
+              raise SystemExit('frame backing validation failed')
+          PY
+      - name: Check JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re,pathlib,subprocess
+          s=pathlib.Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          pathlib.Path('/tmp/game.js').write_text('\n'.join(blocks),encoding='utf-8')
+          subprocess.run(['node','--check','/tmp/game.js'],check=True)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Use uniform brown portrait frame backing"
+          git push
