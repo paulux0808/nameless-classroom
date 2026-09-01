@@ -1,0 +1,29 @@
+name: Fix computer interaction
+
+on:
+  push:
+    paths:
+      - .github/workflows/fix-computer-hit.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply patch
+        run: python .tmp-fix-computer-hit.py
+      - name: Check JavaScript syntax
+        run: |
+          python -c 'import re,pathlib; s=pathlib.Path("index.html").read_text(encoding="utf-8"); pathlib.Path("/tmp/game.js").write_text("\n".join(re.findall(r"<script(?:\s[^>]*)?>(.*?)</script>",s,re.S)),encoding="utf-8")'
+          node --check /tmp/game.js
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Make classroom computer reliably interactive"
+          git push
