@@ -1572,7 +1572,7 @@ function buildRoom(){
   scene.add(hot(swH,"decoy:switches","조명 스위치"));
 
   /* 4. 온습도계 — 우측 벽 */
-  plaque(0.24,0.34,4.92,1.72,2.40,-Math.PI/2,"thermo","온습도계",function(g,w,h){
+  plaque(0.24,0.34,4.92,1.72,3.35,-Math.PI/2,"thermo","온습도계",function(g,w,h){
     paperBase(g,w,h,"#dfd9c8","#6b6152");
     g.fillStyle="#2f2a20";g.textAlign="center";g.textBaseline="middle";
     g.font="700 22px 'Gothic A1',sans-serif";g.fillText("온·습도",w/2,26);
@@ -1843,13 +1843,13 @@ function drawFrameBars(id){
   var g3=frameObjs[id];if(!g3)return;
   var bars=g3.userData.bars;
   while(bars.children.length)bars.remove(bars.children[0]);
-  var sym=SYM_OF[id];
+  var sym=SYM_OF[id], rotKey=sym||id;
   var sig=sym?FRAME_SIG[sym]:[1,1,1,1];
-  g3.userData.tz=sym?-(S.rot[sym]||0)*Math.PI/2:0;
+  g3.userData.tz=-(S.rot[rotKey]||0)*Math.PI/2;
   var W=0.66,H=0.76,TK=0.105,TN=0.022;
-  var col=0x8a6134;
+  var einsteinCol=0x8a6134, thinCol=0x70451f;
   function bar(w,h,x,y,thick){
-    var m=box(w,h,thick?0.042:0.03,col,x,y,thick?0.024:0.018);
+    var m=box(w,h,thick?0.042:0.03,thick?einsteinCol:thinCol,x,y,thick?0.024:0.018);
     m.material.roughness=0.62;bars.add(m);}
   bar(W,sig[0]?TK:TN, 0, H/2-(sig[0]?TK:TN)/2, sig[0]);
   bar(sig[1]?TK:TN,H, W/2-(sig[1]?TK:TN)/2, 0, sig[1]);
@@ -2336,10 +2336,9 @@ function interact(id){
     return;
   }
   if(id.indexOf("frame:")===0){
-    var sci=id.split(":")[1], sym=SYM_OF[sci];
-    if(!sym){toast("액자를 살펴보았다.");return;}
-    S.rot[sym]=((S.rot[sym]||0)+1)%4;save();drawFrameBars(sci);
-    toast("액자 — "+(S.rot[sym]*90)+"°");
+    var sci=id.split(":")[1], sym=SYM_OF[sci], rotKey=sym||sci;
+    S.rot[rotKey]=((S.rot[rotKey]||0)+1)%4;save();drawFrameBars(sci);
+    toast("액자 — "+(S.rot[rotKey]*90)+"°");
     return;
   }
   /* 챕터별 탐색 지점 */
