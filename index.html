@@ -421,35 +421,46 @@ function showSheet(){
   openModal("종이 한 장","액자의 방향을 가리키는 기호",function(b){ b.innerHTML=symbolSheetHTML(); });
 }
 
-/* 액자 서명 [상,우,하,좌] 1=굵음 */
 var FRAME_SIG={apple:[1,1,1,0],compass:[1,1,0,0],sqrt:[1,1,0,0],sun:[1,0,0,0],pi:[1,0,1,0]};
 var SYM_OF={newton:"apple",gauss:"compass",abel:"sqrt",galilei:"sun",archimedes:"pi"};
 var SYM_KO={apple:"사과",compass:"컴퍼스",sqrt:"제곱근 √",sun:"태양",pi:"파이 π"};
 
+function sealCode(s,k){
+  s=norm(s);
+  var h=(2166136261^Math.imul(k,2654435761))>>>0;
+  for(var i=0;i<s.length;i++){
+    h^=(s.charCodeAt(i)+(k+i)*17)>>>0;
+    h=Math.imul(h,16777619)>>>0;
+    h^=h>>>13;
+  }
+  return (h>>>0).toString(36);
+}
+function U(a,k){var o='';for(var i=0;i<a.length;i++)o+=String.fromCharCode(a[i]^((k+i*13)&255));return o;}
+
 var CH=[
- {n:1,era:"1942",title:"별이 된 지 300년",diary:"diary1",puzzle:"date300",ans:["94218"],
-  cue:"소중한 날을 잘 기억하자.",spot:"calendar",
+ {n:1,title:"별이 된 지 300년",diary:"diary1",puzzle:"date300",h:["1pzyxt4"],
+  cue:U([49578,51490,54556,109,45306,50979,84,50969,174,44715,50461,54765,51026,225],38),spot:"jf22j7",
   piece:"사랑받는 아들로 태어난 날"},
- {n:2,era:"1954",title:"친구들이 붙인 별명",diary:"diary2",puzzle:"frames",ans:["einstein"],
-  cue:"어린아이와 같은 순수함.",spot:"doll",
+ {n:2,title:"친구들이 붙인 별명",diary:"diary2",puzzle:"frames",h:["om8cts"],
+  cue:U([50579,47492,50437,51002,50715,72,44140,51138,175,49792,49841,54750,237],39),spot:"x48pwz",
   piece:"친구들에게 좋은 별명을 얻은 날"},
- {n:3,era:"1962",title:"대학의 스포츠팀",diary:"diary3",puzzle:"position",ans:["coxswain","cox"],
-  cue:"때론 낮은 자세로 세상을 바라보자.",spot:"postit",
+ {n:3,title:"대학의 스포츠팀",diary:"diary3",puzzle:"position",h:["1b0xosa","es1u4x"],
+  cue:U([46436,47189,98,45281,50972,73,51174,49595,47308,189,49554,49270,51072,241,48330,46999,48140,51093,60],40),spot:"sop6b1",
   piece:"병에 걸린 사실을 알아낸 날"},
- {n:4,era:"1967",title:"별의 붕괴를 거꾸로",diary:"diary4",puzzle:"cones",ans:["bigbang"],
-  cue:"스승을 믿고 뒤를 따르자.",spot:"teacher",
+ {n:4,title:"별의 붕괴를 거꾸로",diary:"diary4",puzzle:"cones",h:["8rbjcr"],
+  cue:U([49805,49807,50951,112,48034,44170,87,46112,47597,190,46491,47564,51029,252],41),spot:"1ljmtw0",
   piece:"우주의 시작에 대한 비밀을 알아낸 날"},
- {n:5,era:"1981",title:"로마 안쪽의 작은 장소",diary:"diary5",puzzle:"map",ans:["vatican"],
-  cue:"항상 위험에 대비하라.",spot:"extinguisher",
+ {n:5,title:"로마 안쪽의 작은 장소",diary:"diary5",puzzle:"map",h:["1qsqw43"],
+  cue:U([54599,49398,100,51029,54662,50619,88,45957,48854,54727,47056,151],42),spot:"sberz",
   piece:"교황청에 방문한 날"},
- {n:6,era:"1988",title:"새로운 책의 제목",diary:"diary6",puzzle:"cipher",ans:["historyoftime","abriefhistoryoftime"],
-  cue:"시간을 잘 지키자.",spot:"clock",
+ {n:6,title:"새로운 책의 제목",diary:"diary6",puzzle:"cipher",h:["2xzdvc","1cvuz06"],
+  cue:U([49911,44092,50945,114,51143,76,51641,53282,50947,142],43),spot:"1tavec2",
   piece:"모두가 볼 수 있는 책을 펴낸 날"},
- {n:7,era:"1990",title:"더 넓은 세계로",diary:"diary7",puzzle:"dict",ans:["republicofkorea"],
-  cue:"Mathematics.",spot:"mathbook",
+ {n:7,title:"더 넓은 세계로",diary:"diary7",puzzle:"dict",h:["1wzv278"],
+  cue:U([97,88,50,59,5,0,27,243,253,194,221,149],44),spot:"1wldqkb",
   piece:"한국이라는 나라에 방문한 날"},
- {n:8,era:"2014",title:"미소로 그리는 대화",diary:"diary8",puzzle:"typing",ans:["163"],
-  cue:"어둠 속에서도 견뎌내기를.",spot:"curtain",
+ {n:8,title:"미소로 그리는 대화",diary:"diary8",puzzle:"typing",h:["vkp2jm"],
+  cue:U([50585,46170,103,49625,50609,49522,46015,168,44089,45870,45083,44684,47541,248],45),spot:"5v1dhi",
   piece:"죽을 고비를 맞아 의사에게 연락한 날"}
 ];
 var BOARD_PAPERS={
@@ -459,10 +470,10 @@ var BOARD_PAPERS={
   6:{id:"video",name:"의문의 영상",label:"자료"},
   8:{id:"keyb",name:"키보드 사용법",label:"인쇄물"}
 };
-var STACK_ORDER=[2,4,3,1,6,8,5,7];
-var FINAL_NAME="STEPHEN WILLIAM HAWKING";
-/* 이름을 한 판에 새긴 뒤 가로로 여덟 줄로 잘라 조각 옆면에 나눠 넣는다.
-   조각 하나만 보면 의미 없는 획이고, 순서대로 쌓아야 획이 이어진다. */
+var _SO=[89,132,166,203,233,28,60,89];
+function stackOrder(){return _SO.map(function(v,i){return v^((91+i*37)&255);});}
+var _FN=[254,158,162,84,105,123,21,88,194,251,131,160,64,103,14,64,53,219,224,159,184,64,108];
+function finalName(){var o="";for(var i=0;i<_FN.length;i++)o+=String.fromCharCode(_FN[i]^((173+i*29)&255));return o;}
 var BANDS=8, BAND_H=18, ENGRAVE_W=1600, _engrave=null;
 function engraveURL(){
   if(_engrave)return _engrave;
@@ -471,18 +482,18 @@ function engraveURL(){
   var g=cv.getContext("2d");
   g.textAlign="center";g.textBaseline="middle";
   g.font="900 200px 'Gothic A1',Arial,sans-serif";
-  var m=g.measureText(FINAL_NAME);
+  var m=g.measureText(finalName());
   var asc=m.actualBoundingBoxAscent||150, desc=m.actualBoundingBoxDescent||10;
   var sy=(H-4)/(asc+desc), sx=(ENGRAVE_W-60)/m.width;
   g.save();
   g.translate(ENGRAVE_W/2, 2+asc*sy);
   g.scale(sx,sy);
-  g.fillStyle="rgba(255,236,200,.32)";g.fillText(FINAL_NAME,0,-3/sy);
-  g.fillStyle="rgba(24,13,4,.92)";g.fillText(FINAL_NAME,0,0);
+  g.fillStyle="rgba(255,236,200,.32)";g.fillText(finalName(),0,-3/sy);
+  g.fillStyle="rgba(24,13,4,.92)";g.fillText(finalName(),0,0);
   g.restore();
   _engrave=cv.toDataURL("image/png");return _engrave;
 }
-function bandOf(n){return STACK_ORDER.indexOf(n);}
+function bandOf(n){return stackOrder().indexOf(n);}
 
 var DIARY_HTML={};
 DIARY_HTML.diary1=
@@ -1042,7 +1053,7 @@ function buildRoom(){
   doorPivot.add(box(0.05,0.05,0.05,0xd8c088,-0.825,1.05,-0.06));
   scene.add(doorPivot);
   CH.forEach(function(c){
-    clueHotObjs[c.n]=hotspots.filter(function(o){return o.userData.hot&&o.userData.hot.id===c.spot;});
+    clueHotObjs[c.n]=hotspots.filter(function(o){return o.userData.hot&&sealCode(o.userData.hot.id,c.n+20)===c.spot;});
   });
   buildRewardLetters();
 
@@ -1434,7 +1445,7 @@ function closeModal(){
 function showDiary(n,afterClose,closeText){
   var key = n===9?"diary9":("diary"+n);
   var c = n===9?{era:"2018",title:"마지막 일기"}:CH[n-1];
-  openModal(c.title,c.era+" · 일기",function(b){
+  openModal(c.title,"기록 · 일기",function(b){
     var article=el("article","paper",DIARY_HTML[key]);
     if(n===7){
       var link=el("a","dict-link","네이버 영어사전에서 단어 찾기 ↗");
@@ -1523,7 +1534,7 @@ function showComputer(){
     function go(){
       var v=answerCode(inp.value);
       if(!v){toast("숫자 또는 영어만, 띄어쓰기 없이 입력하세요.","bad");inp.focus();inp.select();return;}
-      if(c.ans.some(function(a){return norm(a)===v;})){
+      if(c.h.some(function(a){return a===sealCode(v,c.n);})){
         S.phase="search";S.revealed=0;save();
         closeModal();renderHUD();
         toast("암호 해제 — 단서: “"+c.cue+"”","good");
@@ -1572,7 +1583,7 @@ function showAssembly(){
     var wasLocked=false;
 
     function paint(){
-      var ok=S.stack.join(",")===STACK_ORDER.join(",");
+      var ok=S.stack.join(",")===stackOrder().join(",");
       host.innerHTML="";
       var st=buildStack(S.stack,{move:ok?null:sw, spread:!ok});
       if(ok)st.classList.add("locked");
@@ -1587,7 +1598,7 @@ function showAssembly(){
         function go(){
           var v=answerCode(inp.value);
           if(!v){toast("영어만, 띄어쓰기 없이 입력하세요.","bad");inp.focus();inp.select();return;}
-          if(v!==norm(FINAL_NAME)){toast("다시 읽어 보세요.","bad");return;}
+          if(v!==norm(finalName())){toast("다시 읽어 보세요.","bad");return;}
           S.done=true;save();closeModal();renderHUD();setTimeout(beginExitSequence,180);
         }
         sub.onclick=go;
@@ -1602,8 +1613,8 @@ function showAssembly(){
 function showEnding(){
   openModal("가장 기뻤던 순간","ENDING",function(b){
     b.innerHTML='<video controls autoplay playsinline src="'+A.videoFinale+'"></video>'+
-      '<div class="fin"><div class="nm">'+FINAL_NAME+'</div>'+
-      '<p class="sb">1942년 1월 8일 — 갈릴레이가 세상을 떠난 지 정확히 300년 되는 날에 태어나<br>'+
+      '<div class="fin"><div class="nm">'+finalName()+'</div>'+
+      '<p class="sb">'+(1642+300)+'년 1월 8일 — 갈릴레이가 세상을 떠난 지 정확히 300년 되는 날에 태어나<br>'+
       '2018년 3월 14일 — 어릴 적 별명이었던 아인슈타인이 태어난 날에 눈을 감다.</p></div>';
   });
 }
@@ -1649,7 +1660,7 @@ function interact(id){
     return;
   }
   /* 챕터별 탐색 지점 */
-  if(id===c.spot){
+  if(sealCode(id,c.n+20)===c.spot){
     if(S.phase!=="search"){toast("아직 여기를 조사할 이유가 없습니다.","bad");return;}
     revealReward(c.n);return;
   }
@@ -1662,7 +1673,7 @@ function renderHUD(){
   for(var i=1;i<=8;i++){var b=el("i");if(S.pieces.indexOf(i)>=0)b.className="on";pw.appendChild(b);}
   if(S.done){
     $("#hud-ch").textContent="COMPLETE";$("#hud-title").textContent="이름을 되찾다";
-    $("#objective").innerHTML='<b>STEPHEN WILLIAM HAWKING</b>';
+    $("#objective").innerHTML='<b>'+finalName()+'</b>';
     return;
   }
   if(S.ch>8){
@@ -1672,7 +1683,7 @@ function renderHUD(){
   }
   var c=chapter();
   $("#hud-ch").textContent="CHAPTER "+c.n;
-  $("#hud-title").textContent=c.era+" · "+c.title;
+  $("#hud-title").textContent=c.title;
   if(S.revealed===c.n){
     $("#objective").innerHTML='<span class="hint">드러난 편지를 눌러 읽으세요.</span>';
   }else if(S.phase==="search"){
