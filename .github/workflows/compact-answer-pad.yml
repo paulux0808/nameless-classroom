@@ -1,0 +1,69 @@
+name: Compact answer pad
+
+on:
+  push:
+    paths:
+      - .github/workflows/compact-answer-pad.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch answer pad and frame thinness
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          old='''\.answer-ui{margin-top:12px;display:grid;gap:9px}\n.answer-display{min-height:48px;padding:12px 14px;border-radius:3px;border:1px solid rgba(226,178,98,.32);\n  background:#0a0602;color:#f2cf88;font-family:ui-monospace,monospace;font-size:16px;letter-spacing:.16em;\n  display:flex;align-items:center;overflow-wrap:anywhere;word-break:break-all;text-shadow:0 0 8px rgba(232,168,62,.4)}\n.answer-display.empty{color:#785d2f;letter-spacing:.04em;font-size:12px}\n.answer-keys{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}\n.answer-keys.number{grid-template-columns:repeat(5,minmax(0,1fr))}\n.answer-key,.answer-tool{min-height:38px;border:1px solid rgba(226,178,98,.28);border-radius:3px;\n  background:rgba(226,178,98,.08);color:#e8c77f;font-family:ui-monospace,monospace;font-weight:800;font-size:13px}\n.answer-key:active,.answer-tool:active{background:rgba(226,178,98,.22);transform:translateY(1px)}\n.answer-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}\nbody.touch .answer-key,body.touch .answer-tool{min-height:42px}'''.replace('\\.','.')
+          new='''.term:has(.answer-ui){padding:14px 16px}\n.answer-ui{margin-top:7px;display:grid;gap:5px}\n.answer-display{min-height:36px;padding:7px 11px;border-radius:3px;border:1px solid rgba(226,178,98,.32);\n  background:#0a0602;color:#f2cf88;font-family:ui-monospace,monospace;font-size:15px;letter-spacing:.16em;\n  display:flex;align-items:center;overflow-wrap:anywhere;word-break:break-all;text-shadow:0 0 8px rgba(232,168,62,.4)}\n.answer-display.empty{color:#785d2f;letter-spacing:.04em;font-size:11px}\n.answer-keys{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}\n.answer-keys.number{grid-template-columns:repeat(5,minmax(0,1fr))}\n.answer-key,.answer-tool{min-height:30px;border:1px solid rgba(226,178,98,.28);border-radius:3px;\n  background:rgba(226,178,98,.08);color:#e8c77f;font-family:ui-monospace,monospace;font-weight:800;font-size:12px}\n.answer-key:active,.answer-tool:active{background:rgba(226,178,98,.22);transform:translateY(1px)}\n.answer-tools{display:grid;grid-template-columns:1fr 1fr;gap:4px}\nbody.touch .answer-key,body.touch .answer-tool{min-height:32px}'''
+          if s.count(old)!=1:
+              raise SystemExit(f'answer CSS block count={s.count(old)}')
+          s=s.replace(old,new,1)
+
+          old='var PW=0.52,PH=0.62,TK=0.070,TN=0.028;'
+          new='var PW=0.52,PH=0.62,TK=0.070,TN=0.007;'
+          if s.count(old)!=1:
+              raise SystemExit(f'frame thickness line count={s.count(old)}')
+          s=s.replace(old,new,1)
+
+          old='var row=el("div","row");row.style.marginTop="12px";'
+          new='var row=el("div","row");row.style.marginTop="7px";'
+          if s.count(old)!=1:
+              raise SystemExit(f'computer submit row count={s.count(old)}')
+          s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          out=p.read_text(encoding='utf-8')
+          checks=[
+            '.answer-keys{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}',
+            'body.touch .answer-key,body.touch .answer-tool{min-height:32px}',
+            'var PW=0.52,PH=0.62,TK=0.070,TN=0.007;',
+            'row.style.marginTop="7px";'
+          ]
+          for q in checks:
+              if q not in out: raise SystemExit('missing '+q)
+          print('compact answer pad + 1/10 thin frame validation ok')
+          PY
+      - name: Check JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re,pathlib,subprocess
+          s=pathlib.Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S)
+          pathlib.Path('/tmp/game.js').write_text('\n'.join(blocks),encoding='utf-8')
+          subprocess.run(['node','--check','/tmp/game.js'],check=True)
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Fit answer keypad without scrolling"
+          git push
