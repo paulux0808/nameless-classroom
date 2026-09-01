@@ -225,18 +225,19 @@ body.touch .srow .mv button{width:38px;height:38px}
   border:1px solid rgba(226,178,98,.32);color:#f2cf88;letter-spacing:.2em;font-size:16px;outline:none;
   text-shadow:0 0 8px rgba(232,168,62,.4)}
 .term input:focus{border-color:#e8b962;box-shadow:0 0 0 3px rgba(232,168,62,.14)}
-.answer-ui{margin-top:12px;display:grid;gap:9px}
-.answer-display{min-height:48px;padding:12px 14px;border-radius:3px;border:1px solid rgba(226,178,98,.32);
-  background:#0a0602;color:#f2cf88;font-family:ui-monospace,monospace;font-size:16px;letter-spacing:.16em;
+.term:has(.answer-ui){padding:14px 16px}
+.answer-ui{margin-top:7px;display:grid;gap:5px}
+.answer-display{min-height:36px;padding:7px 11px;border-radius:3px;border:1px solid rgba(226,178,98,.32);
+  background:#0a0602;color:#f2cf88;font-family:ui-monospace,monospace;font-size:15px;letter-spacing:.16em;
   display:flex;align-items:center;overflow-wrap:anywhere;word-break:break-all;text-shadow:0 0 8px rgba(232,168,62,.4)}
-.answer-display.empty{color:#785d2f;letter-spacing:.04em;font-size:12px}
-.answer-keys{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.answer-display.empty{color:#785d2f;letter-spacing:.04em;font-size:11px}
+.answer-keys{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .answer-keys.number{grid-template-columns:repeat(5,minmax(0,1fr))}
-.answer-key,.answer-tool{min-height:38px;border:1px solid rgba(226,178,98,.28);border-radius:3px;
-  background:rgba(226,178,98,.08);color:#e8c77f;font-family:ui-monospace,monospace;font-weight:800;font-size:13px}
+.answer-key,.answer-tool{min-height:30px;border:1px solid rgba(226,178,98,.28);border-radius:3px;
+  background:rgba(226,178,98,.08);color:#e8c77f;font-family:ui-monospace,monospace;font-weight:800;font-size:12px}
 .answer-key:active,.answer-tool:active{background:rgba(226,178,98,.22);transform:translateY(1px)}
-.answer-tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-body.touch .answer-key,body.touch .answer-tool{min-height:42px}
+.answer-tools{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+body.touch .answer-key,body.touch .answer-tool{min-height:32px}
 .term .done{font-family:var(--font-ui);color:#e6d2a6;font-size:14px;line-height:1.8}
 .term .cue{margin-top:14px;padding:14px 16px;border-radius:10px;border:1px dashed rgba(210,164,76,.45);
   background:rgba(210,164,76,.08);font-family:var(--font-hand);font-size:19px;color:#f4dfae;text-align:center}
@@ -1939,7 +1940,7 @@ function drawFrameBars(id){
   var sym=SYM_OF[id], rotKey=sym||id;
   var sig=sym?FRAME_SIG[sym]:[1,1,1,1];
   g3.userData.tz=-(S.rot[rotKey]||0)*Math.PI/2;
-  var PW=0.52,PH=0.62,TK=0.070,TN=0.028;
+  var PW=0.52,PH=0.62,TK=0.070,TN=0.007;
   var tt=sig[0]?TK:TN, tr=sig[1]?TK:TN, tb=sig[2]?TK:TN, tl=sig[3]?TK:TN;
   function bar(w,h,x,y,thick){
     var mat=portraitFrameMat();
@@ -2308,7 +2309,7 @@ function showComputer(){
     var pad=makeAnswerPad((c.n===1||c.n===8)?"number":"alpha");
     t.appendChild(pad.el);
     b.appendChild(t);
-    var row=el("div","row");row.style.marginTop="12px";
+    var row=el("div","row");row.style.marginTop="7px";
     var sub=el("button","btn btn-p","확인");
     row.appendChild(sub);b.appendChild(row);
     function go(){
