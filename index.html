@@ -2550,7 +2550,7 @@ function goToNextStage(){
   var old=document.getElementById("stage-transition");if(old)old.remove();
   var fade=el("div");fade.id="stage-transition";document.body.appendChild(fade);
   requestAnimationFrame(function(){requestAnimationFrame(function(){fade.classList.add("on");});});
-  setTimeout(function(){location.href="stage2.html";},1250);
+  setTimeout(function(){location.href="preparing.html";},1250);
 }
 function showStageClear(){
   closeEndingScene();
