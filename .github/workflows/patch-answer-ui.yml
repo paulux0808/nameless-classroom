@@ -1,0 +1,29 @@
+name: Patch answer UI
+
+on:
+  push:
+    paths:
+      - .github/workflows/patch-answer-ui.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply answer UI and frame patch
+        run: python .github/scripts/patch-answer-ui.py
+      - name: Apply chapter 2 sheet row patch
+        run: python .github/scripts/patch-sheet-row.py
+      - name: Check JavaScript syntax
+        run: python -c "import re,pathlib,subprocess;s=pathlib.Path('index.html').read_text(encoding='utf-8');b=re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>',s,re.S);pathlib.Path('/tmp/game.js').write_text('\\n'.join(b),encoding='utf-8');subprocess.run(['node','--check','/tmp/game.js'],check=True)"
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Use in-game answer keypad and align frame styling"
+          git push
