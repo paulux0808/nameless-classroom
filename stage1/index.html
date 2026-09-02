@@ -1317,44 +1317,45 @@ function buildRoom(){
   var fb=cyl(0.010,0.010,0.40,woodCh,0,0.14,0.27,8,0.5);
   fb.rotation.z=Math.PI/2;tG.add(fb);
 
-  /* 인체: 묵직한 네이비 수트 & 자연스러운 착석 자세 */
+  /* 인체: 묵직한 네이비 수트 & 자연스러운 착석 자세 (GLB 로드 시 대체 가능한 그룹) */
+  var tMannequin=new THREE.Group();tG.add(tMannequin);window.tMannequin=tMannequin;
   var coat=0x2c3542, skin=0xdcbb9d, trous=0x222832, shoe=0x18181a, hairCol=0x383028;
-  var pelvis=ball(0.145,trous,0,0.53,0.10);pelvis.scale.set(1.3,0.82,1.0);tG.add(pelvis);
-  var torso=cyl(0.165,0.20,0.44,coat,0,0.79,0.055,20,0.82);torso.rotation.x=-0.09;tG.add(torso);
-  var chest=ball(0.185,coat,0,0.98,0.035);chest.scale.set(1.28,0.86,0.92);tG.add(chest);
-  tG.add(cyl(0.052,0.062,0.10,skin,0,1.09,0.02,14,0.72));
-  var head=ball(0.126,skin,0,1.235,0.022,0.72);head.scale.set(1,1.15,1.04);tG.add(head);
-  var hair=ball(0.133,hairCol,0,1.265,0.006,0.86);hair.scale.set(1.02,1.0,1.04);tG.add(hair);
-  var nape=ball(0.108,hairCol,0,1.20,-0.045,0.86);nape.scale.set(1,0.86,0.8);tG.add(nape);
+  var pelvis=ball(0.145,trous,0,0.53,0.10);pelvis.scale.set(1.3,0.82,1.0);tMannequin.add(pelvis);
+  var torso=cyl(0.165,0.20,0.44,coat,0,0.79,0.055,20,0.82);torso.rotation.x=-0.09;tMannequin.add(torso);
+  var chest=ball(0.185,coat,0,0.98,0.035);chest.scale.set(1.28,0.86,0.92);tMannequin.add(chest);
+  tMannequin.add(cyl(0.052,0.062,0.10,skin,0,1.09,0.02,14,0.72));
+  var head=ball(0.126,skin,0,1.235,0.022,0.72);head.scale.set(1,1.15,1.04);tMannequin.add(head);
+  var hair=ball(0.133,hairCol,0,1.265,0.006,0.86);hair.scale.set(1.02,1.0,1.04);tMannequin.add(hair);
+  var nape=ball(0.108,hairCol,0,1.20,-0.045,0.86);nape.scale.set(1,0.86,0.8);tMannequin.add(nape);
 
   /* 화이트 셔츠 깃 & 와인색 타이 */
-  tG.add(box(0.08,0.20,0.01,0xf5f3ed,0,0.95,0.155));
-  tG.add(box(0.028,0.20,0.015,0x82242a,0,0.93,0.162));
-  tG.add(box(0.034,0.034,0.02,0x82242a,0,1.04,0.164));
+  tMannequin.add(box(0.08,0.20,0.01,0xf5f3ed,0,0.95,0.155));
+  tMannequin.add(box(0.028,0.20,0.015,0x82242a,0,0.93,0.162));
+  tMannequin.add(box(0.034,0.034,0.02,0x82242a,0,1.04,0.164));
   [-1,1].forEach(function(sd){
     var lap=box(0.048,0.20,0.016,coat,sd*0.062,0.94,0.160);
-    lap.rotation.z=sd*0.14;tG.add(lap);
+    lap.rotation.z=sd*0.14;tMannequin.add(lap);
   });
 
   /* 금테 안경 */
   var glassMat=new THREE.MeshStandardMaterial({color:0xd4aa4a,roughness:0.35,metalness:0.75});
   [-1,1].forEach(function(sd){
     var rim=new THREE.Mesh(new THREE.TorusGeometry(0.022,0.0026,8,20),glassMat);
-    rim.position.set(sd*0.044,1.235,0.145);tG.add(rim);
-    tG.add(box(0.003,0.003,0.11,0xd4aa4a,sd*0.068,1.235,0.08));
+    rim.position.set(sd*0.044,1.235,0.145);tMannequin.add(rim);
+    tMannequin.add(box(0.003,0.003,0.11,0xd4aa4a,sd*0.068,1.235,0.08));
   });
-  tG.add(box(0.022,0.003,0.003,0xd4aa4a,0,1.235,0.145));
+  tMannequin.add(box(0.022,0.003,0.003,0xd4aa4a,0,1.235,0.145));
 
   /* 양팔 (어깨 -> 팔꿈치 -> 무릎 위로 자연스럽게 얹은 손) */
   [-1,1].forEach(function(sd){
-    tG.add(put(limb(0.062,0.052,0.29,coat), sd*0.222,0.875,0.015, -0.26));
-    tG.add(put(limb(0.052,0.046,0.27,coat), sd*0.208,0.700,0.215, -1.24));
+    tMannequin.add(put(limb(0.062,0.052,0.29,coat), sd*0.222,0.875,0.015, -0.26));
+    tMannequin.add(put(limb(0.052,0.046,0.27,coat), sd*0.208,0.700,0.215, -1.24));
     var hand=ball(0.052,skin,sd*0.198,0.665,0.345,0.7);
-    hand.scale.set(1,0.8,1.25);tG.add(hand);
-    tG.add(put(limb(0.098,0.086,0.34,trous), sd*0.118,0.525,0.295, Math.PI/2));
-    tG.add(put(limb(0.078,0.062,0.40,trous), sd*0.118,0.265,0.470, 0.06));
-    tG.add(box(0.115,0.075,0.25,shoe,sd*0.118,0.042,0.520));
-    tG.add(ball(0.058,shoe,sd*0.118,0.052,0.615,0.5));
+    hand.scale.set(1,0.8,1.25);tMannequin.add(hand);
+    tMannequin.add(put(limb(0.098,0.086,0.34,trous), sd*0.118,0.525,0.295, Math.PI/2));
+    tMannequin.add(put(limb(0.078,0.062,0.40,trous), sd*0.118,0.265,0.470, 0.06));
+    tMannequin.add(box(0.115,0.075,0.25,shoe,sd*0.118,0.042,0.520));
+    tMannequin.add(ball(0.058,shoe,sd*0.118,0.052,0.615,0.5));
   });
 
   /* "감독교사" 명찰 핀 */
@@ -1365,7 +1366,7 @@ function buildRoom(){
     g.fillStyle="#2b2419";g.textAlign="center";g.textBaseline="middle";
     g.font="900 32px 'Gothic A1',sans-serif";g.fillText("감독교사",w/2,h/2+5);
   },240,90)});
-  var tag=plane(0.12,0.045,tagMat,0.11,0.93,0.175);tG.add(tag);
+  var tag=plane(0.12,0.045,tagMat,0.11,0.93,0.175);tMannequin.add(tag);
   scene.add(tG);
 
   /* 감독교사 인터랙션 히트박스 */
@@ -1714,21 +1715,6 @@ function buildRoom(){
   clockGlass.position.z=0.038;clockG.add(clockGlass);
   scene.add(clockG);
 
-  /* GLTF 3D 모델 비동기 로더 (CORS 환경 지원) */
-  if(window.THREE && THREE.GLTFLoader){
-    try{
-      var gltfLoader=new THREE.GLTFLoader();
-      gltfLoader.load("assets/models/clock.glb",function(gltf){
-        if(gltf && gltf.scene){
-          var cm=gltf.scene;
-          cm.scale.set(0.42,0.42,0.42);
-          cm.position.set(0,0,0.02);
-          clockG.add(cm);
-        }
-      },undefined,function(e){/* offline file:/// mode: keep high-poly PBR procedural clock active */});
-    }catch(e){}
-  }
-
   var cph=plane(0.46,0.46,new THREE.MeshBasicMaterial({transparent:true,opacity:0}),0,2.68,-3.85);
   scene.add(hot(cph,"clock","벽시계"));
 
@@ -1891,46 +1877,49 @@ function buildRoom(){
     metalness:0.0
   });
 
+  /* 절차적 PBR 곰인형 컴포넌트 그룹 (완성품 GLB 로드 시 대체 가능한 그룹) */
+  var dollProcedural=new THREE.Group();doll.add(dollProcedural);window.dollProcedural=dollProcedural;
+
   var db=new THREE.Mesh(new THREE.SphereGeometry(0.12,20,16),furMat);
-  db.position.y=0.12;db.scale.set(1.08,1.20,1.02);doll.add(db);
+  db.position.y=0.12;db.scale.set(1.08,1.20,1.02);dollProcedural.add(db);
   var belly=plane(0.14,0.17,bellyMat,0,0.12,0.122);
-  belly.scale.set(1,1.15,1);doll.add(belly);
+  belly.scale.set(1,1.15,1);dollProcedural.add(belly);
 
   var dh=new THREE.Mesh(new THREE.SphereGeometry(0.105,20,16),furMat);
-  dh.position.set(0,0.31,0.015);dh.scale.set(1.12,1.0,1.05);doll.add(dh);
+  dh.position.set(0,0.31,0.015);dh.scale.set(1.12,1.0,1.05);dollProcedural.add(dh);
   var snout=new THREE.Mesh(new THREE.SphereGeometry(0.052,16,12),bellyMat);
-  snout.position.set(0,0.29,0.105);snout.scale.set(1.1,0.85,0.9);doll.add(snout);
+  snout.position.set(0,0.29,0.105);snout.scale.set(1.1,0.85,0.9);dollProcedural.add(snout);
 
   /* 손바느질 자수 코 & 미소 입선 */
   var noseCol=0x26140b;
-  doll.add(box(0.026,0.018,0.01,noseCol,0,0.316,0.151));
-  doll.add(box(0.005,0.022,0.01,noseCol,0,0.298,0.151));
-  var mouthL=box(0.014,0.004,0.008,noseCol,-0.008,0.288,0.150);mouthL.rotation.z=-0.25;doll.add(mouthL);
-  var mouthR=box(0.014,0.004,0.008,noseCol, 0.008,0.288,0.150);mouthR.rotation.z= 0.25;doll.add(mouthR);
+  dollProcedural.add(box(0.026,0.018,0.01,noseCol,0,0.316,0.151));
+  dollProcedural.add(box(0.005,0.022,0.01,noseCol,0,0.298,0.151));
+  var mouthL=box(0.014,0.004,0.008,noseCol,-0.008,0.288,0.150);mouthL.rotation.z=-0.25;dollProcedural.add(mouthL);
+  var mouthR=box(0.014,0.004,0.008,noseCol, 0.008,0.288,0.150);mouthR.rotation.z= 0.25;dollProcedural.add(mouthR);
 
   /* 호박색 글래스 버튼 눈 (Amber Glass Eyes) */
   [-1,1].forEach(function(sd){
-    var eyeGlass=ball(0.014,0xb46414,sd*0.042,0.335,0.098,0.15);doll.add(eyeGlass);
-    doll.add(ball(0.008,0x111214,sd*0.042,0.335,0.105,0.1)); /* 동공 */
-    doll.add(ball(0.003,0xffffff,sd*0.042+0.003,0.339,0.110,0.05)); /* 반사 하이라이트 */
+    var eyeGlass=ball(0.014,0xb46414,sd*0.042,0.335,0.098,0.15);dollProcedural.add(eyeGlass);
+    dollProcedural.add(ball(0.008,0x111214,sd*0.042,0.335,0.105,0.1)); /* 동공 */
+    dollProcedural.add(ball(0.003,0xffffff,sd*0.042+0.003,0.339,0.110,0.05)); /* 반사 하이라이트 */
   });
 
   /* 둥근 곰 귀 */
   [-1,1].forEach(function(sd){
     var ear=ball(0.038,0x9e6634,sd*0.088,0.395,0.01,0.92);
-    ear.scale.set(0.9,1.1,0.6);doll.add(ear);
+    ear.scale.set(0.9,1.1,0.6);dollProcedural.add(ear);
     var earIn=ball(0.024,0xe2c49b,sd*0.088,0.395,0.025,0.95);
-    earIn.scale.set(0.8,1.0,0.5);doll.add(earIn);
+    earIn.scale.set(0.8,1.0,0.5);dollProcedural.add(earIn);
   });
 
   /* 팔과 다리, 발바닥 스웨이드 패드 */
   [-1,1].forEach(function(sd){
     var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.036,0.030,0.14,14),furMat);
-    arm.position.set(sd*0.115,0.155,0.04);arm.rotation.set(0.4,0,sd*0.45);doll.add(arm);
+    arm.position.set(sd*0.115,0.155,0.04);arm.rotation.set(0.4,0,sd*0.45);dollProcedural.add(arm);
     var leg=new THREE.Mesh(new THREE.CylinderGeometry(0.042,0.036,0.13,14),furMat);
-    leg.position.set(sd*0.075,0.045,0.09);leg.rotation.set(Math.PI/2,0,sd*0.18);doll.add(leg);
+    leg.position.set(sd*0.075,0.045,0.09);leg.rotation.set(Math.PI/2,0,sd*0.18);dollProcedural.add(leg);
     var pad=plane(0.052,0.065,bellyMat,sd*0.075,0.045,0.156);
-    pad.rotation.y=sd*-0.18;doll.add(pad);
+    pad.rotation.y=sd*-0.18;dollProcedural.add(pad);
   });
 
   /* 새틴 와인 레드 리본 나비넥타이 */
@@ -1939,7 +1928,7 @@ function buildRoom(){
   tieG.add(new THREE.Mesh(new THREE.BoxGeometry(0.024,0.024,0.02),tieMat));
   var wingL=new THREE.Mesh(new THREE.BoxGeometry(0.054,0.038,0.012),tieMat);wingL.position.x=-0.032;wingL.rotation.z=0.2;tieG.add(wingL);
   var wingR=new THREE.Mesh(new THREE.BoxGeometry(0.054,0.038,0.012),tieMat);wingR.position.x= 0.032;wingR.rotation.z=-0.2;tieG.add(wingR);
-  doll.add(tieG);
+  dollProcedural.add(tieG);
   scene.add(doll);
   var dHot=new THREE.Mesh(new THREE.SphereGeometry(0.28,12,10),
             new THREE.MeshBasicMaterial({transparent:true,opacity:0}));
@@ -3017,6 +3006,120 @@ function setupPostProcessing(){
   }
 }
 
+/* 외부 완성품 3D GLB 에셋 로더 (공용 assets/models/ 에서 로딩) */
+function loadExternalGLBAssets(){
+  if(!window.THREE || !THREE.GLTFLoader) return;
+  var loader = new THREE.GLTFLoader();
+  var candidates = ["../assets/models/", "assets/models/", "/assets/models/"];
+
+  function tryLoad(fileName, onLoad){
+    var idx = 0;
+    function attempt(){
+      if(idx >= candidates.length) return;
+      var url = candidates[idx++] + fileName;
+      loader.load(url, function(gltf){
+        try{ onLoad(gltf); }catch(err){ console.warn("Error processing GLTF:", err); }
+      }, undefined, function(){
+        attempt();
+      });
+    }
+    attempt();
+  }
+
+  /* 1. 완성품 곰인형 (Teddy Bear GLB) */
+  if(window.dollGroup){
+    tryLoad("teddy_bear.glb", function(gltf){
+      if(gltf && gltf.scene){
+        var bear = gltf.scene;
+        bear.scale.set(1.65, 1.65, 1.65);
+        bear.rotation.y = Math.PI - 0.15; /* 교실 정면을 향해 안착 */
+        bear.position.set(0, 0.02, 0);
+        bear.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if(node.material && node.material.map) node.material.map.encoding = THREE.sRGBEncoding;
+          }
+        });
+        if(window.dollProcedural) window.dollProcedural.visible = false;
+        dollGroup.add(bear);
+      }
+    });
+  }
+
+  /* 2. 완성품 감독교사 인체 캐릭터 (Rigged Human GLB -> 의자 착석 포징) */
+  if(window.teacherGroup){
+    tryLoad("teacher.glb", function(gltf){
+      if(gltf && gltf.scene){
+        var char = gltf.scene;
+        char.scale.set(0.88, 0.88, 0.88);
+        char.position.set(0, 0.03, 0.12);
+        char.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if(node.material && node.material.map) node.material.map.encoding = THREE.sRGBEncoding;
+          }
+          if(node.isBone){
+            var bName = node.name.toLowerCase();
+            /* 골반/허벅지 90도 앞으로 굽히기 */
+            if(bName.includes("upleg") || bName.includes("thigh")){
+              node.rotation.x = -1.52;
+              if(bName.includes("left")) node.rotation.z = 0.08;
+              if(bName.includes("right")) node.rotation.z = -0.08;
+            }
+            /* 무릎 아래(종아리) 90도 아래로 꺾기 */
+            if(bName.includes("leg") && !bName.includes("upleg")){
+              node.rotation.x = 1.54;
+            }
+            /* 발목 수평 */
+            if(bName.includes("foot")){
+              node.rotation.x = -0.15;
+            }
+            /* 척추 단정하게 세우기 */
+            if(bName.includes("spine")){
+              node.rotation.x = 0.05;
+            }
+            /* 양팔을 허벅지 위로 내리기 */
+            if(bName.includes("arm") && !bName.includes("forearm")){
+              node.rotation.x = 0.45;
+              if(bName.includes("left")) node.rotation.z = 0.22;
+              if(bName.includes("right")) node.rotation.z = -0.22;
+            }
+            if(bName.includes("forearm")){
+              node.rotation.x = 0.55;
+            }
+          }
+        });
+        if(window.tMannequin) window.tMannequin.visible = false;
+        teacherGroup.add(char);
+      }
+    });
+  }
+
+  /* 3. 완성품 벽시계 (Clock GLB) */
+  if(window.clockGroup){
+    tryLoad("clock.glb", function(gltf){
+      if(gltf && gltf.scene){
+        var clk = gltf.scene;
+        clk.scale.set(0.0035, 0.0035, 0.0035);
+        clk.position.set(0, 0, 0.02);
+        clk.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            if(node.material && node.material.map) node.material.map.encoding = THREE.sRGBEncoding;
+          }
+        });
+        clockGroup.children.forEach(function(ch){
+          if(ch === window.clockSecondHand) return;
+          if(ch.geometry && ch.geometry.type === "CircleGeometry") ch.visible = false;
+        });
+        clockGroup.add(clk);
+      }
+    });
+  }
+}
+
 /* 부팅 */
 function boot(){
   var cv=$("#scene");
@@ -3027,7 +3130,7 @@ function boot(){
   renderer.shadowMap.enabled=true;
   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   ray=new THREE.Raycaster();
-  buildRoom();polishScene();checkOrient();resize();setupPostProcessing();initControls();bindUI();
+  buildRoom();polishScene();checkOrient();resize();setupPostProcessing();initControls();bindUI();loadExternalGLBAssets();
   /* 저장된 상태 복원 */
   Object.keys(SYM_OF).forEach(function(id){drawFrameBars(id);});
   syncPools();
