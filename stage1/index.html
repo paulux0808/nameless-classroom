@@ -1850,8 +1850,8 @@ function buildRoom(){
   }
   scene.add(lockerUnit);
 
-  /* 클래식 테디베어 인형 (PBR 플러시 펠트 퍼 텍스처 & 앰버 글래스 버튼 눈) */
-  var doll=new THREE.Group();doll.position.set(-2.6,1.05,3.70);dollGroup=doll;
+  /* 클래식 테디베어 인형 (PBR 플러시 펠트 퍼 텍스처 & 앰버 글래스 버튼 눈, 교실 전방을 향해 180도 착석) */
+  var doll=new THREE.Group();doll.position.set(-2.6,1.05,3.70);doll.rotation.y=Math.PI - 0.15;dollGroup=doll;
   doll.add(put(shadowDecal(0.40,0.36,0.48,0,0),0,0.005,0));
 
   var plushPbr=pbrTex(function(g,w,h){
