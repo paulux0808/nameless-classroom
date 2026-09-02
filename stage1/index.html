@@ -2043,8 +2043,9 @@ function buildRoom(){
   boardGroup=new THREE.Group();scene.add(boardGroup);
 
   /* 미끼 오브제 (화분, 쓰레기통, 분필함, 우산꽂이, 라디에이터 등) */
-  scene.add(shadowDecal(0.60,0.60,0.36,-4.3,-1.9));
-  plantG=new THREE.Group();plantG.position.set(-4.3,0,-1.9);window.plantG=plantG;
+  /* 화분: 사물함 상단 우측 안착 (-1.15, 1.045, 3.72) */
+  plantG=new THREE.Group();plantG.position.set(-1.15,1.045,3.72);window.plantG=plantG;
+  plantG.add(put(shadowDecal(0.36,0.36,0.40,0,0),0,0.003,0));
   plantProcedural=new THREE.Group();plantG.add(plantProcedural);window.plantProcedural=plantProcedural;
   var pot=plantG;
   plantProcedural.add(cyl(0.18,0.16,0.035,0x8b4c2c,0,0.018,0,20,0.85));
@@ -2059,7 +2060,7 @@ function buildRoom(){
     lf.scale.set(0.65,2.4,0.18);lf.rotation.set(L[4],0,L[3]);plantProcedural.add(lf);
   });
   scene.add(pot);
-  var potH=box(0.50,0.80,0.50,0xffffff,-4.3,0.4,-1.9);
+  var potH=box(0.40,0.70,0.40,0xffffff,-1.15,1.40,3.72);
   potH.material.transparent=true;potH.material.opacity=0;
   scene.add(hot(potH,"decoy:plant","화분"));
 
@@ -3256,20 +3257,22 @@ function loadClassroom3DAssets(){
     });
   }
 
-  /* 5. 창가 화분 (potted_plant_01.gltf) */
+  /* 5. 사물함 위 화분 (potted_plant_01.gltf) */
   var pGrp = plantG || window.plantG;
   if(pGrp){
     tryLoad("plant/potted_plant_01.gltf", function(gltf){
       if(gltf && gltf.scene){
         var plant = gltf.scene;
         var box = new THREE.Box3().setFromObject(plant);
-        plant.position.y -= box.min.y;
-        plant.scale.set(0.52, 0.52, 0.52);
-        plant.position.y -= 0.10;
+        var center = box.getCenter(new THREE.Vector3());
+        var plantWrap = new THREE.Group();
+        plant.position.set(-center.x, -box.min.y, -center.z);
+        plantWrap.add(plant);
+        plantWrap.scale.set(0.46, 0.46, 0.46);
         plant.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
         var pProc = plantProcedural || window.plantProcedural;
         if(pProc) pProc.visible = false;
-        pGrp.add(plant);
+        pGrp.add(plantWrap);
       }
     });
   }
@@ -3300,20 +3303,20 @@ function loadClassroom3DAssets(){
     });
   }
 
-  /* 7. 창가 선반 위 고서적/백과사전 세트 (book_encyclopedia_set_01.gltf) - 학생 책상 위가 아닌 창가 선반 장식 */
+  /* 7. 사물함 위 양장본 백과사전 세트 (book_encyclopedia_set_01.gltf) - 사물함 상단 좌측, 책등이 교실 정면(-Z)을 향함 */
   tryLoad("books/book_encyclopedia_set_01.gltf", function(gltf){
     if(gltf && gltf.scene){
       var bks = gltf.scene;
       var box = new THREE.Box3().setFromObject(bks);
       var center = box.getCenter(new THREE.Vector3());
-      bks.position.x -= center.x;
-      bks.position.z -= center.z;
-      bks.position.y -= box.min.y;
-      bks.scale.set(0.55, 0.55, 0.55);
-      bks.position.set(-4.25, 0.86, 0.35); // 창가 선반 화분 옆
-      bks.rotation.y = Math.PI / 2;
+      var bksWrap = new THREE.Group();
+      bks.position.set(-center.x, -box.min.y, -center.z);
+      bksWrap.add(bks);
+      bksWrap.scale.set(0.65, 0.65, 0.65);
+      bksWrap.position.set(-3.25, 1.045, 3.72); // 사물함 상단 좌측
+      bksWrap.rotation.y = 0; // 책등(Spine)이 교실 안쪽(-Z, 플레이어 시야)을 정면으로 마주봄
       bks.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-      scene.add(bks);
+      scene.add(bksWrap);
     }
   });
 
