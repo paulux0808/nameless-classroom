@@ -1232,25 +1232,75 @@ function buildRoom(){
   });
   scene.add(podiumG);
 
-  /* 90년대 CRT 컴퓨터 (스위블 받침대 + 브라운관 하우징) */
+  /* 90년대 CRT 컴퓨터 (스위블 받침대 + 브라운관 하우징 + 기계식 키보드) */
   computerG=new THREE.Group();computerG.position.set(0,1.18,-2.96);scene.add(computerG);window.computerG=computerG;
-  compProcedural=new THREE.Group();computerG.add(compProcedural);window.compProcedural=compProcedural;
 
-  compProcedural.add(box(0.38,0.025,0.34,0x282d34,0,0.795-1.18,0.01));
-  compProcedural.add(cyl(0.075,0.085,0.05,0x323842,0,0.83-1.18,0.01,16,0.6));
-  compProcedural.add(box(0.88,0.58,0.10,0x282e37,0,0,0)); /* 전면 베젤 */
-  compProcedural.add(box(0.80,0.50,0.18,0x20242b,0,0,-0.14)); /* 몸체 */
-  compProcedural.add(box(0.64,0.40,0.14,0x191d23,0,0,-0.30)); /* 후면 튜브 */
-  /* 조작부 (플로피 슬롯, 전원 버튼, LED) */
-  compProcedural.add(box(0.16,0.015,0.01,0x101317,-0.26,0.94-1.18,0.055));
-  compProcedural.add(box(0.028,0.020,0.015,0x8b2b24,0.34,0.94-1.18,0.055));
-  compProcedural.add(ball(0.007,0x3de874,0.38,0.94-1.18,0.060,0.2));
+  // Swivel Pedestal Base and Neck
+  computerG.add(box(0.38,0.024,0.34,0x242830,0,0.795-1.18,0.01));
+  computerG.add(cyl(0.075,0.085,0.05,0x2d323b,0,0.83-1.18,0.01,16,0.5));
 
-  /* 키보드 & 마우스 */
-  var kb=box(0.48,0.025,0.16,0x303640,0,0.80-1.18,0.24);kb.rotation.x=-0.08;compProcedural.add(kb);
-  compProcedural.add(box(0.065,0.028,0.09,0x353b45,0.36,0.795-1.18,0.24));
+  // CRT Main Housing & Cathode Funnel
+  computerG.add(box(0.86,0.58,0.22,0x292e38,0,0,-0.11)); /* 모니터 본체 섀시 */
+  computerG.add(box(0.66,0.44,0.22,0x1f232b,0,0,-0.31)); /* 브라운관 후면 튜브 테이퍼 */
+  /* 측면/상단 환기 루버 슬릿 */
+  for(var vi=0;vi<5;vi++){
+    computerG.add(box(0.40,0.006,0.18,0x14161a,0,0.29-0.005,-0.12+vi*0.035));
+  }
 
-  /* 컴퓨터 모니터 화면 (챕터 진행 단말기) */
+  /* 전면 베젤 (0.78 x 0.48 스크린을 감싸는 입체 프레임) */
+  computerG.add(box(0.86,0.055,0.06,0x2e3540,0,0.265,0.01)); /* 상단 베젤 */
+  computerG.add(box(0.86,0.085,0.06,0x2e3540,0,-0.245,0.01)); /* 하단 턱 */
+  computerG.add(box(0.05,0.48,0.06,0x2e3540,-0.405,0.01,0.01)); /* 좌측 베젤 */
+  computerG.add(box(0.05,0.48,0.06,0x2e3540, 0.405,0.01,0.01)); /* 우측 베젤 */
+  computerG.add(box(0.82,0.52,0.02,0x121418,0,0.01,-0.01)); /* 화면 백플레이트 */
+
+  /* 하단 조작부 (플로피 슬롯, 전원 스위치, 조절 다이얼, 전원 LED) */
+  computerG.add(box(0.14,0.008,0.01,0x101216,-0.24,-0.24,0.045)); /* 3.5인치 FDD 슬롯 */
+  computerG.add(box(0.016,0.012,0.01,0x3e4552,-0.15,-0.24,0.045)); /* FDD 사출 버튼 */
+  computerG.add(cyl(0.011,0.011,0.012,0x444b58,0.18,-0.24,0.045,10,0.5)); /* 밝기 다이얼 */
+  computerG.add(cyl(0.011,0.011,0.012,0x444b58,0.23,-0.24,0.045,10,0.5)); /* 대비 다이얼 */
+  computerG.add(box(0.024,0.020,0.014,0x8b2b24,0.32,-0.24,0.045)); /* 적색 전원 로커 스위치 */
+  computerG.add(ball(0.007,0x3de874,0.365,-0.24,0.052,0.2)); /* 녹색 전원 LED */
+
+  /* 정밀 104키 기계식 키보드 & 마우스 */
+  var kbPbr=pbrTex(function(g,w,h){
+    g.fillStyle="#252930";g.fillRect(0,0,w,h);
+    g.strokeStyle="#1a1d22";g.lineWidth=2;g.strokeRect(3,3,w-6,h-6);
+    function k(kx,ky,kw,kh,label,col,tcol){
+      g.fillStyle=col||"#3a414d";g.fillRect(kx,ky,kw,kh);
+      g.strokeStyle="#1c2026";g.lineWidth=1;g.strokeRect(kx,ky,kw,kh);
+      g.fillStyle="rgba(255,255,255,0.14)";g.fillRect(kx+1,ky+1,kw-2,2);
+      if(label){g.fillStyle=tcol||"#c8ced8";g.font="bold 8px sans-serif";g.fillText(label,kx+2.5,ky+kh-3);}
+    }
+    k(6,6,12,9,"Esc","#4a3232");
+    for(var f=0;f<12;f++){k(24+f*13+Math.floor(f/4)*5,6,11,9,"F"+(f+1));}
+    var r1=["`","1","2","3","4","5","6","7","8","9","0","-","=","←"];
+    var rx=6;for(var i=0;i<r1.length;i++){var kw=(i===13)?22:11;k(rx,18,kw,10,r1[i]);rx+=kw+1.5;}
+    var r2=["Tab","Q","W","E","R","T","Y","U","I","O","P","[","]","\\"];
+    rx=6;for(var i=0;i<r2.length;i++){var kw=(i===0||i===13)?16:11;k(rx,30,kw,10,r2[i]);rx+=kw+1.5;}
+    var r3=["Caps","A","S","D","F","G","H","J","K","L",";","'","↵"];
+    rx=6;for(var i=0;i<r3.length;i++){var kw=(i===0)?19:(i===12)?22:11;k(rx,42,kw,10,r3[i],i===12?"#344458":null);rx+=kw+1.5;}
+    var r4=["⇧","Z","X","C","V","B","N","M",",",".","/","⇧"];
+    rx=6;for(var i=0;i<r4.length;i++){var kw=(i===0||i===11)?24:11;k(rx,54,kw,10,r4[i]);rx+=kw+1.5;}
+    k(6,66,16,11,"Ctrl");k(24,66,13,11,"Alt");k(39,66,76,11,"","#2f3540");k(117,66,13,11,"Alt");k(132,66,16,11,"Ctrl");
+    for(var nr=0;nr<4;nr++)for(var nc=0;nc<3;nc++){k(162+nc*11,18+nr*12,9.5,10);}
+    g.fillStyle="#2ecc71";g.fillRect(163,8,3,3);g.fillRect(174,8,3,3);g.fillRect(185,8,3,3);
+  },200,80,1.2,0.45,0.15);
+
+  var kbMat=new THREE.MeshStandardMaterial({map:kbPbr.map,normalMap:kbPbr.normalMap,roughnessMap:kbPbr.roughnessMap,roughness:0.55,metalness:0.1});
+  var kbBody=box(0.50,0.024,0.17,0x22262d,0,0.805-1.18,0.25);
+  kbBody.rotation.x=-0.09;
+  var kbFace=plane(0.48,0.155,kbMat,0,0.013,0);
+  kbFace.rotation.x=-Math.PI/2;
+  kbBody.add(kbFace);
+  computerG.add(kbBody);
+
+  /* 마우스패드 & 투버튼 볼마우스 */
+  var mPad=box(0.20,0.003,0.20,0x191c22,0.36,0.796-1.18,0.24);computerG.add(mPad);
+  var mouse=box(0.065,0.028,0.10,0x353b45,0.36,0.812-1.18,0.24);computerG.add(mouse);
+  computerG.add(box(0.002,0.008,0.045,0x1c1f26,0.36,0.826-1.18,0.265));
+
+  /* 컴퓨터 모니터 화면 (단말기 단일 스크린 - 베젤에 완벽 밀착) */
   var screenMat=new THREE.MeshBasicMaterial({map:tex(function(g,w,h){
       g.fillStyle="#06131a";g.fillRect(0,0,w,h);
       g.strokeStyle="#63c3b2";g.lineWidth=3;g.strokeRect(20,20,w-40,h-40);
@@ -1259,7 +1309,8 @@ function buildRoom(){
       g.fillStyle="#8fe6d6";g.font="600 36px monospace";g.fillText("_ _ _ _ _",72,185);
       g.fillStyle="#3d6d78";g.font="500 22px monospace";g.fillText("scholarship terminal",48,270);
     },640,384)});
-  var screen=plane(0.78,0.48,screenMat,0,1.18,-2.905);
+  var screen=plane(0.78,0.48,screenMat,0,0.01,0.02);
+  computerG.add(screen);
   scene.add(hot(screen,"computer","컴퓨터"));
   screenGlow=new THREE.PointLight(0x63c3b2,0.55,3.4);screenGlow.position.set(0,1.2,-2.6);scene.add(screenGlow);
 
@@ -3266,26 +3317,6 @@ function loadClassroom3DAssets(){
     }
   });
 
-  /* 8. 교탁 위 CRT 모니터 (computer.glb) */
-  var cComp = computerG || window.computerG;
-  if(cComp){
-    tryLoad("computer/computer.glb", function(gltf){
-      if(gltf && gltf.scene){
-        var comp = gltf.scene;
-        var box = new THREE.Box3().setFromObject(comp);
-        var center = box.getCenter(new THREE.Vector3());
-        comp.position.x -= center.x;
-        comp.position.z -= center.z;
-        comp.position.y -= box.min.y;
-        comp.scale.set(0.12, 0.12, 0.12);
-        comp.position.set(0, -0.38, -0.06);
-        comp.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-        var cpProc = compProcedural || window.compProcedural;
-        if(cpProc) cpProc.visible = false;
-        cComp.add(comp);
-      }
-    });
-  }
 }
 
 /* 부팅 */
