@@ -3324,7 +3324,7 @@ function loadClassroom3DAssets(){
       if(gltf && gltf.scene){
         var char = gltf.scene;
         char.scale.set(0.96, 0.96, 0.96);
-        char.position.set(0, 0.045, 0.22);
+        char.position.set(0, 0.05, 0.30);
         char.traverse(function(node){
           if(node.isMesh){
             node.castShadow = true;
@@ -3483,9 +3483,9 @@ function loadClassroom3DAssets(){
       var bksWrap = new THREE.Group();
       bks.position.set(-center.x, -box.min.y, -center.z);
       bksWrap.add(bks);
-      bksWrap.scale.set(0.65, 0.65, 0.65);
-      bksWrap.position.set(-3.25, 1.045, 3.72); // 사물함 상단 좌측
-      bksWrap.rotation.y = 0; // 책등(Spine)이 교실 안쪽(-Z, 플레이어 시야)을 정면으로 마주봄
+      bksWrap.scale.set(1.04, 1.04, 1.04); // 기존의 160% 크기 (0.65 -> 1.04)
+      bksWrap.position.set(-3.25, 1.066, 3.72); // 사물함 상단 좌측
+      bksWrap.rotation.y = Math.PI; // 반대 방향 회전
       bks.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
       scene.add(bksWrap);
     }
