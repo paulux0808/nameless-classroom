@@ -2273,13 +2273,103 @@ function buildRoom(){
     g.globalAlpha=1;
   }
 
-  /* 라디에이터 (창 아래) */
-  var radG=new THREE.Group();radG.position.set(-4.80,0,1.15);
-  radG.add(box(0.10,0.42,1.25,0x9aa2a8,0,0.32,0));
-  for(var fi=0;fi<12;fi++)
-    radG.add(cyl(0.034,0.034,0.40,0xa9b0b5,0.015,0.32,-0.52+fi*0.095,8,0.55));
+  /* --- 정통 클래식 주철 스팀 라디에이터 (창문 아래 -4.82, 0, 0.85) --- */
+  var radG=new THREE.Group();radG.position.set(-4.82,0,0.85);
+
+  // Materials: Aged ivory cast iron enamel & vintage polished brass
+  var radMat=new THREE.MeshStandardMaterial({color:0xd9d3c1,roughness:0.42,metalness:0.22});
+  var radPipeMat=new THREE.MeshStandardMaterial({color:0x9da3a8,roughness:0.35,metalness:0.65});
+  var radBrassMat=new THREE.MeshStandardMaterial({color:0xd4a84e,roughness:0.30,metalness:0.80});
+  var radKnobMat=new THREE.MeshStandardMaterial({color:0x221c18,roughness:0.65,metalness:0.10});
+
+  // Contact shadow under radiator
+  scene.add(shadowDecal(0.26,1.26,0.38,-4.82,0.85));
+
+  // 14 Cast Iron Loop Sections (주철 핀 컬럼 루프)
+  var nSec=14, secPitch=0.076;
+  var halfSpan=(nSec-1)*secPitch*0.5;
+
+  for(var si=0;si<nSec;si++){
+    var sz=-halfSpan+si*secPitch;
+
+    // Front & Rear vertical radiator tubes
+    var tubeF=new THREE.Mesh(new THREE.CylinderGeometry(0.021,0.021,0.50,14),radMat);
+    tubeF.position.set(0.040,0.35,sz);radG.add(tubeF);
+    var tubeB=new THREE.Mesh(new THREE.CylinderGeometry(0.021,0.021,0.50,14),radMat);
+    tubeB.position.set(-0.040,0.35,sz);radG.add(tubeB);
+
+    // Top rounded arch connector
+    var archT=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.042,0.042),radMat);
+    archT.position.set(0,0.61,sz);radG.add(archT);
+    var capT=new THREE.Mesh(new THREE.SphereGeometry(0.022,12,10),radMat);
+    capT.position.set(0.040,0.61,sz);radG.add(capT);
+    var capTB=new THREE.Mesh(new THREE.SphereGeometry(0.022,12,10),radMat);
+    capTB.position.set(-0.040,0.61,sz);radG.add(capTB);
+
+    // Bottom rounded arch connector
+    var archB=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.042,0.042),radMat);
+    archB.position.set(0,0.09,sz);radG.add(archB);
+
+    // Cast iron ornate support feet on first and last sections (바닥 지지 다리)
+    if(si===0 || si===nSec-1){
+      var footF=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.022,0.09,10),radMat);
+      footF.position.set(0.044,0.045,sz);radG.add(footF);
+      var footB=new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.022,0.09,10),radMat);
+      footB.position.set(-0.044,0.045,sz);radG.add(footB);
+    }
+  }
+
+  // Upper and Lower Steam Manifold Pipes (상/하단 증기 순환 연결관)
+  var totalManifoldLen=nSec*secPitch+0.04;
+  var topManifold=new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.016,totalManifoldLen,14),radMat);
+  topManifold.rotation.x=Math.PI/2;topManifold.position.set(0,0.61,0);radG.add(topManifold);
+  var btmManifold=new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.016,totalManifoldLen,14),radMat);
+  btmManifold.rotation.x=Math.PI/2;btmManifold.position.set(0,0.09,0);radG.add(btmManifold);
+
+  // Wall Standoff Mounts (벽체 고정 브래킷 2개)
+  [-0.32, 0.32].forEach(function(bz){
+    var brk=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.024,0.024),radPipeMat);
+    brk.position.set(-0.09,0.61,bz);radG.add(brk);
+    var wallFlange=new THREE.Mesh(new THREE.BoxGeometry(0.012,0.06,0.06),radPipeMat);
+    wallFlange.position.set(-0.16,0.61,bz);radG.add(wallFlange);
+  });
+
+  // Steam Inlet Pipe with Floor Flange, Brass Angle Valve & Fluted Turn Knob (+Z side)
+  var valveZ=halfSpan+0.055;
+  var flange1=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.042,0.010,18),radBrassMat);
+  flange1.position.set(0.040,0.005,valveZ+0.06);radG.add(flange1);
+  var riser=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,0.58,12),radPipeMat);
+  riser.position.set(0.040,0.29,valveZ+0.06);radG.add(riser);
+  var elbow=new THREE.Mesh(new THREE.SphereGeometry(0.020,12,10),radBrassMat);
+  elbow.position.set(0.040,0.61,valveZ+0.06);radG.add(elbow);
+  var hConn=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,0.06,12),radBrassMat);
+  hConn.rotation.x=Math.PI/2;hConn.position.set(0.040,0.61,valveZ+0.03);radG.add(hConn);
+  var vBody=new THREE.Mesh(new THREE.CylinderGeometry(0.020,0.018,0.045,12),radBrassMat);
+  vBody.position.set(0.040,0.645,valveZ+0.06);radG.add(vBody);
+  var vKnob=new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.025,0.022,16),radKnobMat);
+  vKnob.position.set(0.040,0.678,valveZ+0.06);radG.add(vKnob);
+
+  // Steam Condensate Return Pipe & Brass Bleeder Valve (-Z side)
+  var returnZ=-halfSpan-0.055;
+  var flange2=new THREE.Mesh(new THREE.CylinderGeometry(0.034,0.038,0.010,16),radBrassMat);
+  flange2.position.set(0.040,0.005,returnZ-0.04);radG.add(flange2);
+  var retPipe=new THREE.Mesh(new THREE.CylinderGeometry(0.011,0.011,0.09,12),radPipeMat);
+  retPipe.position.set(0.040,0.045,returnZ-0.04);radG.add(retPipe);
+  var retElbow=new THREE.Mesh(new THREE.SphereGeometry(0.016,10,8),radBrassMat);
+  retElbow.position.set(0.040,0.09,returnZ-0.04);radG.add(retElbow);
+  var retConn=new THREE.Mesh(new THREE.CylinderGeometry(0.011,0.011,0.04,10),radPipeMat);
+  retConn.rotation.x=Math.PI/2;retConn.position.set(0.040,0.09,returnZ-0.02);radG.add(retConn);
+
+  // Top Brass Air Bleeder Petcock (-Z top corner)
+  var bleeder=new THREE.Mesh(new THREE.CylinderGeometry(0.007,0.007,0.026,10),radBrassMat);
+  bleeder.rotation.x=Math.PI/2;bleeder.position.set(0,0.61,returnZ-0.02);radG.add(bleeder);
+  var bleedCap=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.008,0.014),radBrassMat);
+  bleedCap.position.set(0,0.61,returnZ-0.035);radG.add(bleedCap);
+
   scene.add(radG);
-  var radH=box(0.28,0.58,1.35,0xffffff,-4.72,0.32,1.15);
+
+  // Clickable interaction hitbox
+  var radH=box(0.24,0.72,1.36,0xffffff,-4.82,0.36,0.85);
   radH.material.transparent=true;radH.material.opacity=0;
   scene.add(hot(radH,"decoy:radiator","라디에이터"));
 
@@ -3114,7 +3204,7 @@ var DECOY={
   mop:"대걸레와 빗자루, 양동이다. 양동이는 말라 있다.",
   notice:"벽에 붙은 안내문이다. 글씨가 바래 읽히지 않는다.",
   outlet:"콘센트다. 아무것도 꽂혀 있지 않다.",
-  radiator:"라디에이터다. 손을 대 보니 차갑다.",
+  radiator:"클래식 주철 스팀 라디에이터다. 밸브를 돌려보아도 차갑게 식어 있다.",
   chairs:"쓰지 않는 의자를 쌓아 두었다. 먼지가 두껍다.",
   trophy:"오래된 트로피다. 이름을 새긴 자리가 긁혀 지워져 있다.",
   books:"누군가 두고 간 책 무더기다. 이름이 적힌 페이지는 찢겨 있다.",
