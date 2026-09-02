@@ -2049,7 +2049,7 @@ function initControls(){
   cv.addEventListener("pointermove",function(e){
     var p=pt(e);
     if(down){var dx=p.x-lx,dy=p.y-ly;lx=p.x;ly=p.y;moved+=Math.abs(dx)+Math.abs(dy);
-      yaw-=dx*0.0034;pitch-=dy*0.0030;
+      yaw+=dx*0.0034;pitch-=dy*0.0030;
       pitch=Math.max(-1.05,Math.min(1.05,pitch));}
     hover(p.x,p.y);
   });
