@@ -4,1198 +4,1163 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="screen-orientation" content="landscape">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>이름 없는 교실 — 기억의 조각</title>
+<meta name="color-scheme" content="dark">
+<title>NAMELESS — Stage 01: The Classroom</title>
 <link rel="preconnect" href="https://cdnjs.cloudflare.com">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 :root{
-  --bg:#070605;
-  --panel:rgba(18,14,10,0.88);
-  --panel-solid:#18130e;
-  --line:rgba(214,186,136,0.22);
-  --line-hi:rgba(235,205,150,0.50);
-  --paper:#f7f1e1;
-  --paper-dark:#e8dcbe;
-  --pen:#9e2c24;
-  --brass:#d8a64e;
-  --brass-glow:rgba(216,166,78,0.4);
-  --text:#f0e6d6;
-  --text-dim:#a89680;
-  --ink:#201912;
-  --font-ui:"Pretendard","Gothic A1","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
-  --font-hand:"Gowun Batang","Batang",Georgia,serif;
-  --shadow:0 24px 60px rgba(0,0,0,0.7),0 2px 0 rgba(0,0,0,0.4);
+  --obsidian:#080a0c;
+  --panel-bg:rgba(12,16,20,0.85);
+  --panel-border:rgba(212,175,55,0.25);
+  --gold:#d4af37;
+  --gold-glow:rgba(212,175,55,0.45);
+  --amber:#f59e0b;
+  --parchment:#f4ebd0;
+  --ink:#1a140e;
+  --crimson:#9e2a2b;
+  --text:#eae6df;
+  --text-muted:#8c887b;
+  --font-display:"Georgia","Times New Roman",serif;
+  --font-ui:"Pretendard","Noto Sans KR",system-ui,-apple-system,sans-serif;
+  --font-mono:ui-monospace,"SF Mono",Consolas,monospace;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);user-select:none;-webkit-user-select:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--obsidian);user-select:none;-webkit-user-select:none;touch-action:none}
 body{font-family:var(--font-ui);color:var(--text);-webkit-font-smoothing:antialiased}
 button,input{font:inherit;color:inherit}
-button{cursor:pointer;touch-action:manipulation}
-.hidden{display:none !important}
+button{cursor:pointer}
 
-#c{position:fixed;inset:0;display:block;touch-action:none;cursor:grab}
-#c.dragging{cursor:grabbing}
+#canvas-3d{position:fixed;inset:0;width:100%;height:100%;display:block}
 
-/* 렌더 비네트 & 따뜻한 필름 톤 */
-#vignette{position:fixed;inset:0;pointer-events:none;z-index:5;
-  background:radial-gradient(circle at 50% 50%,transparent 50%,rgba(10,7,4,0.45) 82%,rgba(4,3,2,0.82) 100%),
-             linear-gradient(180deg,rgba(255,220,160,0.03),rgba(30,15,5,0.06))}
+/* 시네마틱 톤 & 비네트 */
+#cinematic-vignette{position:fixed;inset:0;pointer-events:none;z-index:5;
+  background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(5,7,9,0.5) 80%,rgba(2,3,4,0.88) 100%),
+             linear-gradient(180deg,rgba(240,210,140,0.03),rgba(10,15,20,0.08))}
 
-/* 조준점 (크로스헤어) */
-#reticle{position:fixed;left:50%;top:50%;width:8px;height:8px;transform:translate(-50%,-50%);
-  border:1.5px solid rgba(255,255,255,0.45);border-radius:50%;pointer-events:none;z-index:25;transition:all .2s ease}
-#reticle.active{width:22px;height:22px;border-color:var(--brass);box-shadow:0 0 10px var(--brass-glow);background:rgba(216,166,78,0.18)}
-#target-label{position:fixed;left:50%;top:calc(50% + 18px);transform:translateX(-50%);
-  padding:4px 12px;border-radius:12px;background:rgba(15,12,8,0.85);backdrop-filter:blur(8px);
-  border:1px solid var(--line);font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--brass);
-  pointer-events:none;z-index:25;opacity:0;transition:opacity .2s ease;white-space:nowrap}
-#target-label.on{opacity:1}
+/* 스마트 앰비언트 레티클 */
+#reticle-wrap{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:20;display:flex;flex-direction:column;align-items:center}
+#reticle-ring{width:6px;height:6px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.55);transition:all .22s cubic-bezier(0.2,0.8,0.2,1)}
+#reticle-wrap.target #reticle-ring{width:28px;height:28px;border-color:var(--gold);background:rgba(212,175,55,0.15);box-shadow:0 0 16px var(--gold-glow)}
+#reticle-label{margin-top:14px;padding:4px 14px;border-radius:20px;background:rgba(8,10,12,0.85);backdrop-filter:blur(8px);
+  border:1px solid var(--panel-border);font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--gold);opacity:0;transform:translateY(6px);transition:all .22s ease;white-space:nowrap}
+#reticle-wrap.target #reticle-label{opacity:1;transform:translateY(0)}
 
-/* HUD 상단 & 바텀 */
-#hud{position:fixed;inset:0;pointer-events:none;z-index:30;display:flex;flex-direction:column;justify-content:space-between;padding:16px}
-#hud > *{pointer-events:auto}
-.hud-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+/* 메인 HUD 레이아웃 */
+#hud-overlay{position:fixed;inset:0;pointer-events:none;z-index:30;display:flex;flex-direction:column;justify-content:space-between;padding:clamp(16px,3vw,28px)}
+#hud-overlay > *{pointer-events:auto}
 
-.tag-badge{display:inline-flex;align-items:center;gap:10px;padding:6px 16px 6px 8px;border-radius:24px;
-  background:rgba(18,14,10,0.85);backdrop-filter:blur(10px);border:1px solid var(--line);
-  box-shadow:0 6px 20px rgba(0,0,0,0.5);font-size:13px;font-weight:600;color:#f0e4d0}
-.tag-badge b{padding:3px 9px;border-radius:12px;background:linear-gradient(135deg,#d8a64e,#946b28);
-  color:#120e09;font-weight:900;font-size:10px;letter-spacing:.12em}
+/* 상단 성좌도(Constellation) 기억 트래커 */
+.hud-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.stage-signature{display:inline-flex;align-items:center;gap:12px;padding:8px 18px 8px 10px;border-radius:30px;
+  background:var(--panel-bg);backdrop-filter:blur(12px);border:1px solid var(--panel-border);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.stage-signature .badge{padding:4px 10px;border-radius:14px;background:linear-gradient(135deg,#e6c35c,#99731e);color:#100d07;font:800 10px/1 var(--font-mono);letter-spacing:.16em}
+.stage-signature .title{font-family:var(--font-display);font-size:15px;letter-spacing:.06em;color:#f5eedc}
 
-/* 8개의 기억 조각 슬롯 (보석형 램프) */
-#fragments{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:24px;
-  background:rgba(18,14,10,0.85);backdrop-filter:blur(10px);border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.5)}
-#fragments i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.06);border:1px solid rgba(214,186,136,0.25);transition:all .35s ease}
-#fragments i.on{background:radial-gradient(circle at 35% 35%,#ffeab2,#d8a64e 65%,#8c601f);
-  border-color:#ffebbb;box-shadow:0 0 12px rgba(230,175,70,0.8);transform:scale(1.18)}
+#constellation-tracker{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:30px;
+  background:var(--panel-bg);backdrop-filter:blur(12px);border:1px solid var(--panel-border);box-shadow:0 10px 30px rgba(0,0,0,0.6)}
+.star-node{width:16px;height:16px;border-radius:50%;border:1px solid rgba(212,175,55,0.3);background:rgba(255,255,255,0.05);display:grid;place-items:center;transition:all .35s ease}
+.star-node::after{content:"";width:4px;height:4px;border-radius:50%;background:rgba(212,175,55,0.4);transition:all .35s ease}
+.star-node.lit{border-color:#ffe899;background:radial-gradient(circle at 35% 35%,#fff6db,#d4af37 60%,#7a5510);box-shadow:0 0 14px rgba(212,175,55,0.85);transform:scale(1.2)}
+.star-node.lit::after{background:#fff}
 
-.hud-bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
-#objective{max-width:min(580px,88vw);padding:13px 20px;border-radius:14px;background:rgba(18,14,10,0.88);
-  backdrop-filter:blur(12px);border:1px solid var(--line);color:#eee2cf;font-size:13.5px;line-height:1.65;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
-#objective b{color:#ecc67a}
-#objective .hint{display:block;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);color:#d4ab63;font-size:12.5px}
+/* 하단 브리핑 & 툴바 */
+.hud-footer{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+#mission-briefing{max-width:min(540px,88vw);padding:16px 22px;border-radius:16px;background:var(--panel-bg);
+  backdrop-filter:blur(14px);border:1px solid var(--panel-border);box-shadow:0 15px 40px rgba(0,0,0,0.65);line-height:1.65}
+#mission-briefing .kicker{font:700 11px/1 var(--font-mono);letter-spacing:.18em;color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+#mission-briefing .objective{font-size:14px;color:#f0ece1;margin:0}
+#mission-briefing .sub-hint{font-size:12.5px;color:var(--text-muted);margin-top:6px;border-top:1px solid rgba(212,175,55,0.15);padding-top:6px}
 
-.hud-actions{display:flex;gap:8px;flex-wrap:wrap}
-.hud-btn{display:inline-flex;align-items:center;justify-content:center;padding:0 15px;min-height:38px;
-  border-radius:10px;border:1px solid var(--line);background:rgba(20,15,10,0.85);backdrop-filter:blur(10px);
-  color:#f2e6d2;font-size:13px;font-weight:600;letter-spacing:.02em;box-shadow:0 4px 15px rgba(0,0,0,0.4);transition:all .2s ease}
-.hud-btn:hover{background:rgba(45,34,22,0.95);border-color:var(--line-hi);transform:translateY(-1px)}
-.hud-btn:active{transform:translateY(0)}
+.hud-buttons{display:flex;gap:10px;flex-wrap:wrap}
+.hud-act-btn{display:inline-flex;align-items:center;gap:8px;padding:0 18px;min-height:42px;border-radius:12px;
+  background:var(--panel-bg);backdrop-filter:blur(10px);border:1px solid var(--panel-border);color:#f0ece1;
+  font:600 13px/1 var(--font-ui);letter-spacing:.03em;box-shadow:0 6px 20px rgba(0,0,0,0.5);transition:all .2s ease}
+.hud-act-btn:hover{background:rgba(28,34,42,0.95);border-color:rgba(212,175,55,0.6);transform:translateY(-2px)}
 
-/* 모바일 가상 조이스틱 & 액션 버튼 */
-#joy-zone{position:fixed;left:24px;bottom:24px;width:120px;height:120px;border-radius:50%;
-  background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);pointer-events:auto;z-index:40;display:none;touch-action:none}
-#joy-knob{position:absolute;left:50%;top:50%;width:46px;height:46px;transform:translate(-50%,-50%);
-  border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#c4a265);box-shadow:0 4px 15px rgba(0,0,0,0.5)}
-#mobile-act{position:fixed;right:24px;bottom:24px;width:72px;height:72px;border-radius:50%;
-  background:radial-gradient(circle at 35% 35%,#d8a64e,#8a5c1e);border:2px solid #ffe8b5;box-shadow:0 8px 25px rgba(216,166,78,0.4);
-  color:#1a1208;font-size:16px;font-weight:900;letter-spacing:.05em;pointer-events:auto;z-index:40;display:none}
-#mobile-crouch{position:fixed;right:108px;bottom:30px;width:54px;height:54px;border-radius:50%;
-  background:rgba(25,20,14,0.85);backdrop-filter:blur(8px);border:1.5px solid var(--line);
-  color:#edd9b8;font-size:13px;font-weight:700;pointer-events:auto;z-index:40;display:none}
+/* 모바일 가상 조이스틱 & 전용 액션 버튼 */
+#virtual-stick{position:fixed;left:28px;bottom:28px;width:120px;height:120px;border-radius:50%;
+  background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.1);z-index:40;display:none;touch-action:none}
+#stick-nub{position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%);
+  border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff,#d4af37 80%,#66460e);box-shadow:0 6px 18px rgba(0,0,0,0.6)}
+#touch-action-btn{position:fixed;right:28px;bottom:28px;width:74px;height:74px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#e6c35c,#99731e);border:2px solid #fff2c4;
+  color:#151109;font:900 16px/1 var(--font-ui);box-shadow:0 10px 30px rgba(212,175,55,0.4);z-index:40;display:none}
+#touch-crouch-btn{position:fixed;right:116px;bottom:36px;width:56px;height:56px;border-radius:50%;
+  background:var(--panel-bg);backdrop-filter:blur(8px);border:1.5px solid var(--panel-border);
+  color:#eadfc7;font:700 13px/1 var(--font-ui);z-index:40;display:none}
 
-/* 모달 레이어 */
-.modal-overlay{position:fixed;inset:0;background:rgba(4,3,2,0.78);backdrop-filter:blur(8px);
-  z-index:60;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s ease}
-.modal-overlay.open{opacity:1;pointer-events:auto}
-.modal-card{width:min(640px,94vw);max-height:88vh;display:flex;flex-direction:column;
-  background:var(--panel-solid);border:1px solid var(--line-hi);border-radius:16px;
-  box-shadow:var(--shadow);overflow:hidden;transform:scale(0.96);transition:transform .25s cubic-bezier(0.2,0.8,0.3,1)}
-.modal-overlay.open .modal-card{transform:scale(1)}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--line)}
-.modal-header h2{margin:0;font-size:18px;color:#f4ebd8}
-.modal-header .sub{font-size:12px;color:var(--text-dim);margin-top:2px}
-.modal-close{padding:6px 14px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,0.06);color:#e2d4be;font-size:13px;font-weight:600}
-.modal-body{padding:22px;overflow-y:auto;line-height:1.75;font-size:15px;color:#e8ded0}
+/* 모달 레이어 시스템 */
+.modal-scrim{position:fixed;inset:0;background:rgba(4,6,8,0.82);backdrop-filter:blur(10px);
+  z-index:60;display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s ease}
+.modal-scrim.visible{opacity:1;pointer-events:auto}
+.modal-window{width:min(660px,94vw);max-height:86vh;background:#0d1115;border:1px solid var(--panel-border);
+  border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,0.8);display:flex;flex-direction:column;overflow:hidden;
+  transform:scale(0.96);transition:transform .25s cubic-bezier(0.2,0.8,0.2,1)}
+.modal-scrim.visible .modal-window{transform:scale(1)}
+.modal-top{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid rgba(212,175,55,0.15)}
+.modal-top h3{margin:0;font-family:var(--font-display);font-size:19px;letter-spacing:.04em;color:#f5eedc}
+.modal-dismiss{padding:6px 16px;border-radius:10px;border:1px solid var(--panel-border);background:rgba(255,255,255,0.06);color:#e2d8c3;font:600 13px/1 var(--font-ui)}
+.modal-content{padding:26px;overflow-y:auto}
 
-/* 일기장 특수 뷰어 (앤티크 감성) */
-.diary-sheet{background:var(--paper);color:var(--ink);padding:30px 34px;border-radius:4px;
-  box-shadow:inset 0 0 40px rgba(180,150,100,0.3),0 10px 30px rgba(0,0,0,0.5);font-family:var(--font-hand)}
-.diary-sheet .d-date{font-weight:700;color:#7a6242;border-bottom:1px solid rgba(120,95,60,0.3);padding-bottom:10px;margin-bottom:18px;font-size:16px}
-.diary-sheet p{margin:0 0 16px;line-height:1.85;font-size:16.5px}
-.diary-sheet .em{color:#a43224;font-weight:700}
-.diary-sheet .redacted{display:inline-block;width:80px;height:1.1em;background:#1a1510;vertical-align:middle;margin:0 4px;border-radius:2px}
+/* 고문서 일기장 뷰어 */
+.parchment-folio{background:var(--parchment);color:var(--ink);padding:34px 40px;border-radius:6px;
+  box-shadow:inset 0 0 50px rgba(160,130,80,0.35),0 12px 35px rgba(0,0,0,0.6);font-family:var(--font-display)}
+.parchment-folio .entry-date{font-weight:700;color:#6b5235;border-bottom:1px solid rgba(120,95,55,0.35);padding-bottom:12px;margin-bottom:20px;font-size:17px;letter-spacing:.05em}
+.parchment-folio p{margin:0 0 18px;line-height:1.9;font-size:17px}
+.parchment-folio .emphasis{color:var(--crimson);font-weight:700}
+.parchment-folio .redacted-tape{display:inline-block;width:90px;height:1.15em;background:#18130d;vertical-align:middle;margin:0 5px;border-radius:2px}
 
-/* 레트로 컴퓨터 터미널 (CRT 모달) */
-.crt-terminal{background:#0c120c;color:#4ade80;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
-  padding:24px;border-radius:10px;border:2px solid #1c361c;box-shadow:inset 0 0 30px rgba(20,80,20,0.4);position:relative;overflow:hidden}
-.crt-terminal::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.15) 0px,rgba(0,0,0,0.15) 2px,transparent 2px,transparent 4px);pointer-events:none}
-.crt-terminal h3{margin:0 0 14px;color:#86efac;font-size:15px;letter-spacing:.08em}
-.crt-terminal p{margin:0 0 14px;font-size:13.5px;line-height:1.6;color:#4ade80}
-.crt-input-row{display:flex;gap:10px;margin-top:18px}
-.crt-input{flex:1;background:#050905;border:1px solid #22c55e;color:#86efac;padding:10px 14px;font-size:18px;letter-spacing:.2em;text-transform:uppercase;border-radius:4px}
-.crt-btn{padding:0 20px;background:#15803d;color:#fff;border:none;border-radius:4px;font-weight:700;font-size:14px;letter-spacing:.05em}
+/* 호박색(Amber) CRT 단말기 모달 */
+.amber-crt{background:#0a0c0a;color:#fbbf24;font-family:var(--font-mono);padding:24px;border-radius:12px;
+  border:2px solid #78350f;box-shadow:inset 0 0 40px rgba(180,83,9,0.3);position:relative;overflow:hidden}
+.amber-crt::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,0.2) 0px,rgba(0,0,0,0.2) 2px,transparent 2px,transparent 4px);pointer-events:none}
+.amber-crt .header-line{color:#fde68a;font-size:14px;margin-bottom:16px;border-bottom:1px dashed #78350f;padding-bottom:8px}
+.amber-crt p{margin:0 0 14px;font-size:14px;line-height:1.6}
+.terminal-input-row{display:flex;gap:12px;margin-top:20px}
+.terminal-input{flex:1;background:#050605;border:1px solid #d97706;color:#fde68a;padding:12px 16px;font:700 20px var(--font-mono);letter-spacing:.25em;text-transform:uppercase;border-radius:6px}
+.terminal-input:focus{outline:none;border-color:#fbbf24;box-shadow:0 0 12px rgba(251,191,36,0.5)}
+.terminal-send-btn{padding:0 24px;background:#b45309;color:#fff;border:none;border-radius:6px;font:700 15px var(--font-mono);letter-spacing:.08em}
 
-/* 토스트 안내 */
-#toast{position:fixed;bottom:85px;left:50%;transform:translateX(-50%) translateY(20px);
-  padding:12px 24px;border-radius:24px;background:rgba(15,12,8,0.92);backdrop-filter:blur(12px);
-  border:1px solid var(--line-hi);color:#f5ebdb;font-size:14px;font-weight:600;box-shadow:0 12px 35px rgba(0,0,0,0.6);
-  pointer-events:none;z-index:90;opacity:0;transition:all .25s cubic-bezier(0.2,0.8,0.3,1)}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* 토스트 피드백 */
+#toast-notification{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  padding:12px 28px;border-radius:30px;background:rgba(12,16,20,0.92);backdrop-filter:blur(14px);
+  border:1px solid var(--panel-border);color:#f5eedc;font:600 14px/1 var(--font-ui);letter-spacing:.02em;
+  box-shadow:0 15px 40px rgba(0,0,0,0.7);pointer-events:none;z-index:90;opacity:0;transition:all .25s cubic-bezier(0.2,0.8,0.2,1)}
+#toast-notification.active{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* 화면 페이드아웃 (엔딩 관문) */
-#whiteout{position:fixed;inset:0;background:#fff;z-index:100;opacity:0;pointer-events:none;transition:opacity 2s ease}
-#whiteout.on{opacity:1;pointer-events:auto}
+/* 페이드 화이트아웃 엔딩 */
+#exit-curtain{position:fixed;inset:0;background:#fff;z-index:100;opacity:0;pointer-events:none;transition:opacity 2.2s ease}
+#exit-curtain.closed{opacity:1;pointer-events:auto}
 
 @media (pointer:coarse){
-  #joy-zone,#mobile-act,#mobile-crouch{display:block}
+  #virtual-stick,#touch-action-btn,#touch-crouch-btn{display:block}
 }
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="vignette"></div>
-<div id="reticle"></div>
-<div id="target-label"></div>
+<canvas id="canvas-3d"></canvas>
+<div id="cinematic-vignette"></div>
 
-<div id="hud">
-  <div class="hud-top">
-    <div class="tag-badge">
-      <b>STAGE 01</b>
-      <span id="ch-title">기억의 조각</span>
+<!-- 중앙 스마트 조준점 -->
+<div id="reticle-wrap">
+  <div id="reticle-ring"></div>
+  <div id="reticle-label">조사하기</div>
+</div>
+
+<!-- 메인 HUD -->
+<div id="hud-overlay">
+  <header class="hud-header">
+    <div class="stage-signature">
+      <span class="badge">STAGE 01</span>
+      <span class="title">THE CLASSROOM</span>
     </div>
-    <div id="fragments">
-      <i id="frag-1"></i><i id="frag-2"></i><i id="frag-3"></i><i id="frag-4"></i>
-      <i id="frag-5"></i><i id="frag-6"></i><i id="frag-7"></i><i id="frag-8"></i>
+    <div id="constellation-tracker" aria-label="기억의 조각 성좌도">
+      <span class="star-node" id="star-1" title="제 1조각"></span>
+      <span class="star-node" id="star-2" title="제 2조각"></span>
+      <span class="star-node" id="star-3" title="제 3조각"></span>
+      <span class="star-node" id="star-4" title="제 4조각"></span>
+      <span class="star-node" id="star-5" title="제 5조각"></span>
+      <span class="star-node" id="star-6" title="제 6조각"></span>
+      <span class="star-node" id="star-7" title="제 7조각"></span>
+      <span class="star-node" id="star-8" title="제 8조각"></span>
     </div>
-  </div>
-  <div class="hud-bottom">
-    <div id="objective">
-      <b id="obj-head">조사하기</b>
-      <div id="obj-text">입구 앞 책상 위에 놓인 일기를 조사하세요.</div>
-      <span class="hint" id="obj-hint">화면을 드래그해 둘러보고 대상을 클릭하세요.</span>
-    </div>
-    <div class="hud-actions">
-      <button class="hud-btn" id="btn-diary">일기장</button>
-      <button class="hud-btn" id="btn-pc">컴퓨터</button>
-      <button class="hud-btn" id="btn-fs">전체화면</button>
+  </header>
+
+  <footer class="hud-footer">
+    <section id="mission-briefing">
+      <div class="kicker" id="mission-kicker">CH 01 · 별이 된 지 300년</div>
+      <p class="objective" id="mission-goal">교탁 연탁 위 놓인 황동 천구의를 조사하십시오.</p>
+      <div class="sub-hint" id="mission-hint">화면을 드래그하여 시점을 회전하고, 대상을 중앙에 조준해 클릭하세요.</div>
+    </section>
+
+    <nav class="hud-buttons">
+      <button class="hud-act-btn" id="btn-open-diary">기록 아카이브</button>
+      <button class="hud-act-btn" id="btn-open-pc">연구 단말기</button>
+      <button class="hud-act-btn" id="btn-fullscreen">전체화면</button>
+    </nav>
+  </footer>
+</div>
+
+<!-- 모바일 조작 레이어 -->
+<div id="virtual-stick"><div id="stick-nub"></div></div>
+<button id="touch-action-btn" aria-label="상호작용">조사</button>
+<button id="touch-crouch-btn" aria-label="자세 낮추기">숙이기</button>
+
+<!-- 고문서/일기장 모달 -->
+<div class="modal-scrim" id="modal-parchment">
+  <div class="modal-window">
+    <header class="modal-top">
+      <div>
+        <h3 id="parchment-title">생애의 기록</h3>
+      </div>
+      <button class="modal-dismiss" id="parchment-close">닫기</button>
+    </header>
+    <div class="modal-content">
+      <article class="parchment-folio" id="parchment-body"></article>
     </div>
   </div>
 </div>
 
-<div id="joy-zone"><div id="joy-knob"></div></div>
-<button id="mobile-act">조사</button>
-<button id="mobile-crouch">숙이기</button>
-
-<!-- 범용 모달 -->
-<div class="modal-overlay" id="generic-modal">
-  <div class="modal-card">
-    <div class="modal-header">
+<!-- CRT 연구 단말기 모달 -->
+<div class="modal-scrim" id="modal-terminal">
+  <div class="modal-window" style="background:#080a08;border-color:#b45309">
+    <header class="modal-top" style="border-color:rgba(180,83,9,0.3)">
       <div>
-        <h2 id="modal-title">알림</h2>
-        <div class="sub" id="modal-sub"></div>
+        <h3 style="color:#fde68a;font-family:var(--font-mono)">CAMBRIDGE ARCHIVAL TERMINAL</h3>
       </div>
-      <button class="modal-close" id="modal-close">닫기</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-
-<!-- CRT 컴퓨터 터미널 모달 -->
-<div class="modal-overlay" id="pc-modal">
-  <div class="modal-card" style="background:#0a0f0a;border-color:#166534">
-    <div class="modal-header" style="border-color:#14532d">
-      <div>
-        <h2 style="color:#86efac">TEACHER'S TERMINAL</h2>
-        <div class="sub" style="color:#4ade80">SYSTEM READY · ACCESS LEVEL 1</div>
-      </div>
-      <button class="modal-close" id="pc-close" style="background:#14532d;color:#86efac;border-color:#22c55e">종료</button>
-    </div>
-    <div class="modal-body">
-      <div class="crt-terminal">
-        <h3 id="pc-prompt">[TASK: CODE VERIFICATION]</h3>
-        <p id="pc-desc">단서를 조합하여 해독한 영문 암호 또는 숫자를 입력하십시오.</p>
-        <div class="crt-input-row">
-          <input type="text" class="crt-input" id="pc-code-input" placeholder="암호 입력" autocomplete="off" spellcheck="false">
-          <button class="crt-btn" id="pc-submit">전송</button>
+      <button class="modal-dismiss" id="terminal-close" style="background:#78350f;color:#fde68a;border-color:#b45309">접속 종료</button>
+    </header>
+    <div class="modal-content">
+      <div class="amber-crt">
+        <div class="header-line">[SYSTEM READY · SECURITY CLEARANCE LEVEL 1]</div>
+        <p id="terminal-prompt">> 단서를 조합하여 도출한 영문 암호 또는 인계 코드를 입력하십시오.</p>
+        <div class="terminal-input-row">
+          <input type="text" class="terminal-input" id="terminal-field" placeholder="PASSCODE" autocomplete="off" spellcheck="false">
+          <button class="terminal-send-btn" id="terminal-execute">SUBMIT</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 인트로 스토리 모달 -->
-<div class="modal-overlay open" id="intro-modal">
-  <div class="modal-card" style="max-width:540px">
-    <div class="modal-header">
+<!-- 인트로 시네마틱 카드 -->
+<div class="modal-scrim visible" id="modal-intro">
+  <div class="modal-window" style="max-width:560px">
+    <header class="modal-top">
       <div>
-        <h2>이름 없는 교실</h2>
-        <div class="sub">스티븐 호킹의 8개의 기억</div>
+        <h3>이름 없는 교실 (The Classroom)</h3>
       </div>
-    </div>
-    <div class="modal-body">
-      <p style="margin-top:0">한 위대한 물리학자가 세상을 떠나며 자신의 생애를 8조각의 기억으로 나누어 교실 곳곳에 숨겼습니다.</p>
-      <div style="background:rgba(216,166,78,0.08);border-left:3px solid var(--brass);padding:14px 18px;margin:18px 0;font-style:italic">
+    </header>
+    <div class="modal-content">
+      <p style="margin-top:0;line-height:1.75;font-size:15px">한 위대한 천체물리학자가 세상을 떠나며 자신의 전 생애를 여덟 조각의 기억으로 나누어 이 세미나실에 묻어두었습니다.</p>
+      <blockquote style="margin:20px 0;padding:16px 20px;border-left:3px solid var(--gold);background:rgba(212,175,55,0.06);font-style:italic;line-height:1.8;color:#f4ebd0">
         "내 교실을 그대로 두어라. 무엇 하나 옮기지 마라.<br>
         내 삶을 여덟 조각으로 나누어 그 안에 두었다.<br>
-        내가 누구였는지 밝혀내는 자에게 내 진실을 전하겠다."
-      </div>
-      <p style="font-size:13.5px;color:var(--text-dim)">• PC: WASD 이동 / 마우스 드래그 시점 / C 숙이기<br>• 모바일: 좌측 가상 패드 / 우측 화면 터치 드래그<br>• 정답은 영문 또는 숫자만 입력합니다.</p>
-      <button class="hud-btn" id="intro-start" style="width:100%;height:44px;background:linear-gradient(135deg,#d8a64e,#946b28);color:#120e09;font-weight:900;margin-top:12px">교실 탐색 시작</button>
+        내가 누구였는지 밝혀내는 자에게 다음 문을 열어주겠다."
+      </blockquote>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.6">
+        • 데스크톱: WASD 이동 / 마우스 드래그 시선 / C 숙이기 / E 조사<br>
+        • 모바일: 좌측 가상 조이스틱 / 우측 화면 드래그 / 터치 버튼
+      </p>
+      <button class="hud-act-btn" id="btn-start-expedition" style="width:100%;height:46px;justify-content:center;background:linear-gradient(135deg,#d4af37,#8a6514);color:#120e09;font-weight:800;font-size:14px;margin-top:14px">세미나실 탐색 시작</button>
     </div>
   </div>
 </div>
 
-<div id="toast"></div>
-<div id="whiteout"></div>
+<div id="toast-notification"></div>
+<div id="exit-curtain"></div>
 
 <script>
 /* ==========================================================================
-   GAME STATE & CHAPTER DATA
+   GAME ENGINE: RECONSTRUCTED FROM FIRST PRINCIPLES
    ========================================================================== */
-var STATE = {
+var GAME = {
   chapter: 1,
-  pieces: [false,false,false,false,false,false,false,false],
-  revealed: 0,
-  crouch: false,
-  tookDiary1: false,
-  terminalOpen: false
+  stars: [false,false,false,false,false,false,false,false],
+  isCrouch: false,
+  shutterClosed: false,
+  terminalTargetCh: 1
 };
 
-var CHAPTERS = [
-  { n:1, title:"별이 된 지 300년", answer:"cox", hint:"교탁 위 달력 뒤편을 조사하세요.", piece:"사랑받는 아들로 태어난 날" },
-  { n:2, title:"친구들이 붙인 별명", answer:"einstein", hint:"사물함 위 곰 인형을 치워보세요.", piece:"친구들에게 좋은 별명을 얻은 날" },
-  { n:3, title:"대학의 스포츠팀", answer:"rowing", hint:"앞줄 왼쪽 책상 밑을 숙여서 보세요.", piece:"병에 걸린 사실을 알아낸 날" },
-  { n:4, title:"한 점에 대한 연구", answer:"bigbang", hint:"감독교사의 뒤편을 확인하세요.", piece:"우주의 시작에 대한 비밀을 알아낸 날" },
-  { n:5, title:"낯선 지도", answer:"vatican", hint:"오른쪽 뒤편 소화기 뒤를 확인하세요.", piece:"교황청에 방문한 날" },
-  { n:6, title:"새로운 책의 제목", answer:"historyoftime", hint:"앞쪽 벽면 벽시계 뒤를 조사하세요.", piece:"모두가 볼 수 있는 책을 펴낸 날" },
-  { n:7, title:"더 넓은 세계로", answer:"radical", hint:"앞줄 가운데 책상 위의 수학책을 치워보세요.", piece:"한국이라는 나라에 방문한 날" },
-  { n:8, title:"미소로 그리는 대화", answer:"0808", hint:"창가 네 번째 커튼을 닫아보세요.", piece:"죽을 고비를 맞아 의사에게 연락한 날" }
+var CHAPTER_DATA = [
+  { ch:1, kicker:"CH 01 · 별이 된 지 300년", answer:"cox",
+    goal:"교탁 위의 앤티크 황동 천구의를 조사하십시오.",
+    hint:"갈릴레이가 별이 된 날과 호킹의 탄생에 얽힌 스포츠 클럽의 포지션(콕스웨인) 단서입니다." },
+  { ch:2, kicker:"CH 02 · 친구들이 붙인 별명", answer:"einstein",
+    goal:"우측 서가에 꽂힌 백과사전을 조사하십시오.",
+    hint:"학창 시절 그에게 붙여졌던 위대한 물리학자의 별명입니다." },
+  { ch:3, kicker:"CH 03 · 옥스퍼드 조정 경기", answer:"rowing",
+    goal:"세미나 테이블 좌측 서랍 안을 조사하십시오.",
+    hint:"허약한 체형에도 불구하고 그가 열정을 쏟았던 유명 스포츠입니다." },
+  { ch:4, kicker:"CH 04 · 특이점과 우주의 기원", answer:"bigbang",
+    goal:"테이블 중앙의 OHP 슬라이드 환등기를 켜십시오.",
+    hint:"시간을 거꾸로 돌려 한 점의 폭발에서 시작된 우주의 탄생 이론입니다." },
+  { ch:5, kicker:"CH 05 · 로마 교황청 순례", answer:"vatican",
+    goal:"우측 뒤편 벽의 고지도 보관함을 조사하십시오.",
+    hint:"신부가 건네준 지도에 적힌 로마 안의 가장 작은 성스러운 국가입니다." },
+  { ch:6, kicker:"CH 06 · 대중을 위한 책", answer:"historyoftime",
+    goal:"좌측 벽면 황동 진자 괘종시계의 도어를 여십시오.",
+    hint:"전 세계 수많은 사람들에게 우주의 시작과 끝을 전한 기념비적 저작입니다." },
+  { ch:7, kicker:"CH 07 · 극동의 나라 방문", answer:"radical",
+    goal:"창가 선반 위 자개 서류함의 쪽지를 조사하십시오.",
+    hint:"한국 통역사의 메모 중 가장 처음에 적혀 있던 열정적인 단어입니다." },
+  { ch:8, kicker:"CH 08 · 침묵 속의 대화", answer:"0808",
+    goal:"창가의 목재 셔터를 닫아 세미나실을 암전시키십시오.",
+    hint:"뺨의 근육 센서로 완성한 마지막 교실의 탈출 인계 코드입니다." }
 ];
 
-var DIARIES = {
+var FOLIO_RECORDS = {
   1: {
-    date: "1942년 1월 8일",
-    text: "천사 같은 우리 아들이 태어났다. 오늘은 마침, 위대한 갈릴레오 갈릴레이가 별이 된 지 정확히 300년이 되는 날이다. 세상의 오만함을 버리고 우주의 일부임을 인정한 그분처럼 자라주길 바란다. 이 아이의 이름을 스티븐이라고 짓자."
+    date: "1942년 1월 8일 · 옥스퍼드셔",
+    text: "천사 같은 우리 아들이 태어났다. 오늘은 마침, 위대한 갈릴레오 갈릴레이가 별이 된 지 정확히 300년이 되는 날이다. 세상의 오만함을 버리고 우주의 일부임을 인정한 그분처럼 자라주길 바란다. 이 아이의 이름을 <span class='emphasis'>스티븐(Stephen)</span>이라고 짓자."
   },
   2: {
-    date: "1954년 3월 10일",
-    text: "새 학기가 시작되었다. 친구들은 나를 '아인슈타인'이라고 부른다. 위인전에서만 보던 위대한 물리학자의 이름을 내 별명으로 부르니 쑥스럽지만 기쁘다. 벽에 걸린 위인들의 액자를 보며 나도 그들처럼 우주의 진리를 밝혀내고 싶다."
+    date: "1954년 3월 10일 · 세인트올번스",
+    text: "새 학기가 시작되었다. 친구들은 나를 <span class='emphasis'>'아인슈타인(Einstein)'</span>이라고 부른다. 위인전에서만 보던 위대한 물리학자의 이름을 내 별명으로 부르니 쑥스럽지만 기쁘다. 벽에 걸린 위인들의 액자를 보며 나도 그들처럼 우주의 궁극적인 진리를 밝혀내고 싶다."
   },
   3: {
-    date: "1962년 4월 5일",
-    text: "옥스퍼드 조정(Rowing) 클럽에 들어갔다. 나처럼 허약하고 마른 체형의 사람도 할 수 있는 가장 중요한 포지션인 '키잡이(Coxswain)'를 맡게 되었다. 하지만 중동 여행 중 손가락이 마비되기 시작했다. 내 몸에 무언가 가혹한 비극이 닥쳐오고 있다."
+    date: "1962년 4월 5일 · 옥스퍼드 유니버시티 칼리지",
+    text: "옥스퍼드 조정(Rowing) 클럽에 들어갔다. 나처럼 허약하고 마른 체형의 사람도 할 수 있는 가장 중요한 포지션인 <span class='emphasis'>'키잡이(Coxswain)'</span>를 맡게 되었다. 하지만 중동 여행 중 손가락이 마비되기 시작했다. 내 몸에 무언가 가혹한 비극이 닥쳐오고 있다."
   },
   4: {
-    date: "1967년 6월 1일",
-    text: "펜로즈 교수님의 특이점 연구를 접했다. 무한한 중력으로 모든 시공간이 붕괴되는 블랙홀. 그렇다면 시간을 거꾸로 돌린다면? 우주는 한 점의 폭발에서 시작되었다는 뜻이다. 바로 '빅뱅(Big Bang)'이다!"
+    date: "1967년 6월 1일 · 케임브리지",
+    text: "로저 펜로즈 교수님의 특이점 연구에 매료되었다. 무한한 중력으로 모든 시공간이 소멸하는 블랙홀. 그렇다면 만약 시간을 거꾸로 돌린다면? 우주는 한 점의 대폭발에서 출발했다는 뜻이다. 바로 <span class='emphasis'>빅뱅(Big Bang)</span>이다!"
   },
   5: {
-    date: "1981년 2월 1일",
-    text: "로마 교황청의 초대를 받았다. 로마 안의 가장 작은 성스러운 국가 바티칸. 한 신부님이 건네준 지도를 따라가며 나는 종교와 과학이 우주의 기원을 두고 마주하는 깊은 침묵을 느꼈다."
+    date: "1981년 2월 1일 · 바티칸 시국",
+    text: "로마 교황청의 초대를 받았다. 로마 안의 가장 작은 성스러운 국가 <span class='emphasis'>바티칸(Vatican)</span>. 한 신부님이 건네준 지도를 따라가며 나는 종교와 과학이 우주의 기원을 두고 마주하는 깊은 침묵과 신비를 느꼈다."
   },
   6: {
-    date: "1988년 9월 15일",
-    text: "더 많은 이들에게 우주의 아름다움을 전하고 싶다. 대중을 위한 책을 집필했다. 시간과 공간, 시작과 끝을 담은 책. 제목은 <시간의 역사 (A Brief History of Time)>로 정했다."
+    date: "1988년 9월 15일 · 런던",
+    text: "더 많은 이들에게 우주의 아름다움을 전하고 싶다. 대중을 위한 책을 집필했다. 시간과 공간, 시작과 끝을 담은 책. 제목은 <span class='emphasis'>시간의 역사 (A Brief History of Time)</span>로 정했다."
   },
   7: {
-    date: "1990년 9월 8일",
-    text: "한국이라는 나라를 방문해 강연을 펼쳤다. 통역사가 건네준 쪽지에는 한국인들의 열정적인 성향이 적혀 있었다. 그들의 눈빛에서 우주를 향한 순수한 호기심과 지치지 않는 생명력을 보았다."
+    date: "1990년 9월 8일 · 서울",
+    text: "한국이라는 나라를 방문해 강연을 펼쳤다. 한국인 통역사가 건네준 쪽지에는 그들의 기질이 적혀 있었다. <span class='emphasis'>급진적인(Radical)</span> 열정과 우주를 향한 순수한 눈빛이 나를 깊이 감동시켰다."
   },
   8: {
-    date: "2014년 5월 3일",
-    text: "온몸의 근육이 굳어져 이제는 뺨의 근섬유 한 가닥으로만 세상과 소통한다. 스위치를 한 번 누르는데 2초. 그러나 내 생각은 여전히 저 광활한 우주의 끝을 자유롭게 유영하고 있다."
-  },
-  9: {
-    date: "2018년 3월 14일",
-    text: "나의 마지막 날이다. 공교롭게도 내 어린 시절 별명이었던 아인슈타인이 태어난 날이로군. 기억의 조각을 모두 맞춘 당신에게 마지막 인계 코드를 남긴다. 문을 열고 새로운 시공간으로 나아가라. 코드: 0808"
+    date: "2014년 5월 3일 · 케임브리지 저택",
+    text: "온몸의 근육이 굳어져 이제는 뺨의 근섬유 한 가닥으로만 세상과 소통한다. 스위치를 한 번 누르는데 2초. 그러나 내 생각은 여전히 저 광활한 우주의 끝을 자유롭게 유영하고 있다. 최종 탈출 코드: <span class='emphasis'>0808</span>."
   }
 };
 
 /* ==========================================================================
-   THREE.JS 3D SCENE SETUP
+   3D GRAPHICS PIPELINE & SPATIAL ENVIRONMENT
    ========================================================================== */
 var scene, camera, renderer, raycaster;
-var mouse = new THREE.Vector2();
-var interactables = [];
-var hoverTarget = null;
+var interactiveTargets = [];
+var activeHover = null;
 
-// 카메라 컨트롤 변수
-var yaw = Math.PI, pitch = -0.1;
-var camPos = new THREE.Vector3(0, 1.60, 3.2);
-var isCrouch = false;
-var moveDir = { f:0, b:0, l:0, r:0 };
-var joyVector = { x:0, y:0 };
+// 플레이어 내비게이션 상태
+var camEuler = { yaw: Math.PI, pitch: -0.08 };
+var playerCoord = new THREE.Vector3(0, 1.60, 2.6);
+var moveKeys = { w:0, s:0, a:0, d:0 };
+var analogVector = { x:0, y:0 };
 
-// 씬 구성 오브젝트 핸들러
-var clueObjects = {};
-var sunLight, sunPools = [];
-var doorMesh, doorPivot;
-var teacherHead;
+// 씬 인터랙티브 오브젝트 핸들러
+var propArmillary, propShutter, propDoorPivot, propProjectorLight;
+var sunlightDirectional, ambientHemisphere;
 
-function init3D() {
-  var canvas = document.getElementById("c");
+function launch3DWorld() {
+  var canvas = document.getElementById("canvas-3d");
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.1;
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x121722);
-  scene.fog = new THREE.FogExp2(0x121722, 0.028);
+  scene.background = new THREE.Color(0x0a0e14);
+  scene.fog = new THREE.FogExp2(0x0a0e14, 0.032);
 
   camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 80);
-  camera.position.copy(camPos);
+  camera.position.copy(playerCoord);
 
   raycaster = new THREE.Raycaster();
 
-  buildLighting();
-  buildArchitecture();
-  buildFurniture();
-  buildCluesAndProps();
+  buildPhysicallyBasedLighting();
+  buildSeminarArchitecture();
+  buildSeminarFurniture();
+  buildAcademicArtifacts();
 
-  window.addEventListener("resize", onResize);
-  setupControls();
-  renderLoop();
+  window.addEventListener("resize", handleWindowResize);
+  attachInputListeners();
+  startRenderLoop();
 }
 
 /* ==========================================================================
-   조명 시스템
+   물리 기반 조명 시스템
    ========================================================================== */
-function buildLighting() {
-  var hemi = new THREE.HemisphereLight(0xffeedd, 0x33281c, 0.55);
-  scene.add(hemi);
+function buildPhysicallyBasedLighting() {
+  ambientHemisphere = new THREE.HemisphereLight(0xffeedd, 0x1a2230, 0.55);
+  scene.add(ambientHemisphere);
 
-  var amb = new THREE.AmbientLight(0x6b778c, 0.4);
-  scene.add(amb);
+  var ambientFill = new THREE.AmbientLight(0x4a5568, 0.35);
+  scene.add(ambientFill);
 
-  sunLight = new THREE.DirectionalLight(0xffe8c8, 1.4);
-  sunLight.position.set(-8, 6.5, 0);
-  sunLight.target.position.set(0, 0, 0);
-  scene.add(sunLight);
-  scene.add(sunLight.target);
+  // 창밖에서 비스듬히 떨어지는 오후 3시 반의 온화한 태양광
+  sunlightDirectional = new THREE.DirectionalLight(0xffe2b8, 1.45);
+  sunlightDirectional.position.set(-7.5, 5.5, 0.5);
+  sunlightDirectional.target.position.set(0, 0, 0);
+  scene.add(sunlightDirectional);
+  scene.add(sunlightDirectional.target);
 
-  var boardLight = new THREE.SpotLight(0xfff0dd, 0.6, 12, Math.PI/4, 0.5);
-  boardLight.position.set(0, 3.1, -1.8);
-  boardLight.target.position.set(0, 1.5, -3.95);
-  scene.add(boardLight);
-  scene.add(boardLight.target);
+  // 칠판 상단 스팟 조명
+  var chalkboardSpot = new THREE.SpotLight(0xfff3e0, 0.65, 10, Math.PI / 4, 0.4);
+  chalkboardSpot.position.set(0, 3.2, -1.8);
+  chalkboardSpot.target.position.set(0, 1.6, -3.4);
+  scene.add(chalkboardSpot);
+  scene.add(chalkboardSpot.target);
+
+  // OHP 프로젝터 영사 빔 (초기에는 꺼져 있음)
+  propProjectorLight = new THREE.SpotLight(0xa5f3fc, 0, 8, Math.PI / 6, 0.2);
+  propProjectorLight.position.set(0, 0.85, 0.85);
+  propProjectorLight.target.position.set(0, 1.6, -3.38);
+  scene.add(propProjectorLight);
+  scene.add(propProjectorLight.target);
 }
 
 /* ==========================================================================
-   절차적 텍스처 생성기
+   절차적 PBR 텍스처 합성
    ========================================================================== */
-function makeWoodTexture(isFloor) {
+function createHerringboneFloorTexture() {
   var cv = document.createElement("canvas");
-  cv.width = 512; cv.height = 512;
+  cv.width = 1024; cv.height = 1024;
   var g = cv.getContext("2d");
-  if(isFloor) {
-    g.fillStyle = "#a87d52"; g.fillRect(0,0,512,512);
-    for(var y=0; y<512; y+=32) {
-      g.fillStyle = "rgba(40,25,12,0.35)"; g.fillRect(0, y, 512, 2);
-      for(var x=(y%64===0?0:64); x<512; x+=128) {
-        g.fillRect(x, y, 2, 32);
-      }
+  g.fillStyle = "#80532e"; g.fillRect(0,0,1024,1024);
+
+  // 엇갈림 헤링본 패턴 렌더
+  var plankW = 64, plankH = 256;
+  g.lineWidth = 2;
+  g.strokeStyle = "rgba(35,20,10,0.45)";
+  for(var y=0; y<1024; y+=plankW) {
+    g.beginPath(); g.moveTo(0, y); g.lineTo(1024, y); g.stroke();
+    for(var x=(y%(plankW*2)===0?0:plankH/2); x<1024; x+=plankH) {
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x, y+plankW); g.stroke();
     }
-    for(var i=0; i<300; i++) {
-      g.fillStyle = "rgba(0,0,0,0.03)";
-      g.fillRect(Math.random()*512, Math.random()*512, Math.random()*40+10, 1.5);
-    }
-  } else {
-    g.fillStyle = "#825732"; g.fillRect(0,0,512,512);
-    for(var i=0; i<400; i++) {
-      g.fillStyle = "rgba(255,255,255,0.025)";
-      g.fillRect(0, Math.random()*512, 512, Math.random()*3+1);
-    }
+  }
+  // 나뭇결 섬유질
+  for(var i=0; i<600; i++) {
+    g.fillStyle = "rgba(0,0,0,0.025)";
+    g.fillRect(Math.random()*1024, Math.random()*1024, Math.random()*80+20, 1.5);
   }
   var tex = new THREE.CanvasTexture(cv);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(4, 4);
   return tex;
 }
 
-function makeChalkboardTexture() {
+function createAcademicBlackboardTexture() {
   var cv = document.createElement("canvas");
-  cv.width = 1024; cv.height = 512;
+  cv.width = 2048; cv.height = 1024;
   var g = cv.getContext("2d");
-  g.fillStyle = "#203429"; g.fillRect(0,0,1024,512);
-  g.fillStyle = "rgba(255,255,255,0.04)";
-  for(var i=0; i<40; i++) {
-    g.fillRect(Math.random()*1024, Math.random()*512, Math.random()*200+50, Math.random()*60+20);
+  g.fillStyle = "#1e3328"; g.fillRect(0,0,2048,1024);
+
+  // 지우개 번짐 흔적
+  g.fillStyle = "rgba(255,255,255,0.035)";
+  for(var i=0; i<50; i++) {
+    g.fillRect(Math.random()*2048, Math.random()*1024, Math.random()*300+100, Math.random()*80+30);
   }
-  g.font = "italic 24px Georgia, serif";
-  g.fillStyle = "rgba(255,255,255,0.75)";
-  g.fillText("E = mc²", 80, 120);
-  g.fillText("R_μν - 1/2 R g_μν + Λ g_μν = 8πG/c⁴ T_μν", 80, 180);
-  g.font = "20px 'Gothic A1', sans-serif";
-  g.fillStyle = "rgba(255,255,255,0.55)";
-  g.fillText("[제 1강: 우주의 시공간 특이점]", 80, 240);
-  g.fillText("1. 우주는 팽창하고 있는가?", 100, 290);
-  g.fillText("2. 시간의 화살과 엔트로피의 방향", 100, 330);
+
+  // 아인슈타인 & 호킹 방정식 필기
+  g.font = "italic 44px Georgia, serif";
+  g.fillStyle = "rgba(255,255,255,0.82)";
+  g.fillText("R_μν - 1/2 R g_μν + Λ g_μν = (8πG / c⁴) T_μν", 140, 220);
+  g.fillText("S_BH = (k c³ A) / (4 G ħ)", 140, 320);
+
+  g.font = "600 32px 'Gothic A1', sans-serif";
+  g.fillStyle = "rgba(245,210,130,0.75)";
+  g.fillText("CAMBRIDGE ASTROPHYSICS · SPECIAL SEMINAR", 140, 120);
+
+  g.font = "28px 'Gothic A1', sans-serif";
+  g.fillStyle = "rgba(255,255,255,0.6)";
+  g.fillText("1. The Arrow of Time & Gravitational Singularity", 160, 440);
+  g.fillText("2. Reverse Expansion: A Point of Infinite Density (Big Bang)", 160, 520);
+  g.fillText("3. Quantum Fluctuations along the Event Horizon", 160, 600);
+
   var tex = new THREE.CanvasTexture(cv);
   return tex;
 }
 
 /* ==========================================================================
-   건축 구조물
+   세미나실 건축 구조 (8.4m x 6.8m x 3.4m)
    ========================================================================== */
-function buildArchitecture() {
-  var floorTex = makeWoodTexture(true);
-  floorTex.repeat.set(6, 6);
-  var floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.55, metalness: 0.05 });
-  var floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), floorMat);
-  floor.rotation.x = -Math.PI / 2;
-  scene.add(floor);
+function buildSeminarArchitecture() {
+  // 1. 헤링본 원목 바닥
+  var floorMat = new THREE.MeshStandardMaterial({
+    map: createHerringboneFloorTexture(),
+    roughness: 0.52,
+    metalness: 0.06
+  });
+  var floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 6.8), floorMat);
+  floorMesh.rotation.x = -Math.PI / 2;
+  scene.add(floorMesh);
 
-  var ceilMat = new THREE.MeshStandardMaterial({ color: 0xdedede, roughness: 0.85 });
-  var ceil = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), ceilMat);
-  ceil.position.y = 3.2;
-  ceil.rotation.x = Math.PI / 2;
-  scene.add(ceil);
+  // 2. 어쿠스틱 천장
+  var ceilingMat = new THREE.MeshStandardMaterial({ color: 0xdedede, roughness: 0.88 });
+  var ceilingMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 6.8), ceilingMat);
+  ceilingMesh.position.y = 3.4;
+  ceilingMesh.rotation.x = Math.PI / 2;
+  scene.add(ceilingMesh);
 
-  var wallMat = new THREE.MeshStandardMaterial({ color: 0xe8e2d2, roughness: 0.8 });
-  var wFront = new THREE.Mesh(new THREE.PlaneGeometry(10, 3.2), wallMat);
-  wFront.position.set(0, 1.6, -4.0);
-  scene.add(wFront);
+  // 3. 벽체 및 웨인스코팅 패널
+  var wallBaseMat = new THREE.MeshStandardMaterial({ color: 0xeee7d8, roughness: 0.82 });
+  var wainscotMat = new THREE.MeshStandardMaterial({ color: 0x4a3220, roughness: 0.58 });
 
-  var wBack = new THREE.Mesh(new THREE.PlaneGeometry(10, 3.2), wallMat);
-  wBack.position.set(0, 1.6, 4.0);
-  wBack.rotation.y = Math.PI;
-  scene.add(wBack);
+  // 전면 칠판 벽체 (z = -3.4)
+  var frontWall = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 3.4), wallBaseMat);
+  frontWall.position.set(0, 1.7, -3.4);
+  scene.add(frontWall);
 
-  var wRight = new THREE.Mesh(new THREE.PlaneGeometry(8, 3.2), wallMat);
-  wRight.position.set(5.0, 1.6, 0);
-  wRight.rotation.y = -Math.PI / 2;
-  scene.add(wRight);
+  // 전면 벽 하부 웨인스코팅 음각 패널
+  var frontWainscot = new THREE.Mesh(new THREE.BoxGeometry(8.4, 1.1, 0.04), wainscotMat);
+  frontWainscot.position.set(0, 0.55, -3.38);
+  scene.add(frontWainscot);
 
-  var wLeft = new THREE.Mesh(new THREE.PlaneGeometry(8, 3.2), wallMat);
-  wLeft.position.set(-5.0, 1.6, 0);
-  wLeft.rotation.y = Math.PI / 2;
-  scene.add(wLeft);
+  // 후면 출구 벽체 (z = 3.4)
+  var backWall = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 3.4), wallBaseMat);
+  backWall.position.set(0, 1.7, 3.4);
+  backWall.rotation.y = Math.PI;
+  scene.add(backWall);
 
-  var baseMat = new THREE.MeshStandardMaterial({ color: 0x543c26, roughness: 0.6 });
-  var bbFront = new THREE.Mesh(new THREE.BoxGeometry(10, 0.14, 0.04), baseMat);
-  bbFront.position.set(0, 0.07, -3.98); scene.add(bbFront);
-  var bbBack = new THREE.Mesh(new THREE.BoxGeometry(10, 0.14, 0.04), baseMat);
-  bbBack.position.set(0, 0.07, 3.98); scene.add(bbBack);
+  // 우측 서가 벽체 (x = 4.2)
+  var rightWall = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 3.4), wallBaseMat);
+  rightWall.position.set(4.2, 1.7, 0);
+  rightWall.rotation.y = -Math.PI / 2;
+  scene.add(rightWall);
 
-  var boardTex = makeChalkboardTexture();
-  var boardMat = new THREE.MeshStandardMaterial({ map: boardTex, roughness: 0.7 });
-  var boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 1.45), boardMat);
-  boardMesh.position.set(0, 1.60, -3.94);
+  // 좌측 창가 벽체 (x = -4.2)
+  var leftWall = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 3.4), wallBaseMat);
+  leftWall.position.set(-4.2, 1.7, 0);
+  leftWall.rotation.y = Math.PI / 2;
+  scene.add(leftWall);
+
+  // 4. 전면 대형 학술 칠판 (폭 5.2m, 높이 1.5m, 바닥에서 0.9m)
+  var boardMat = new THREE.MeshStandardMaterial({
+    map: createAcademicBlackboardTexture(),
+    roughness: 0.72
+  });
+  var boardMesh = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.5), boardMat);
+  boardMesh.position.set(0, 1.75, -3.37);
   scene.add(boardMesh);
 
-  var frameMat = new THREE.MeshStandardMaterial({ color: 0x614328, roughness: 0.5 });
-  var fTop = new THREE.Mesh(new THREE.BoxGeometry(5.52, 0.06, 0.05), frameMat);
-  fTop.position.set(0, 2.35, -3.92); scene.add(fTop);
-  var fBot = new THREE.Mesh(new THREE.BoxGeometry(5.52, 0.06, 0.12), frameMat);
-  fBot.position.set(0, 0.85, -3.90); scene.add(fBot);
+  // 칠판 월넛 몰딩 프레임
+  var frameMat = new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: 0.5 });
+  var frameTop = new THREE.Mesh(new THREE.BoxGeometry(5.34, 0.06, 0.06), frameMat);
+  frameTop.position.set(0, 2.52, -3.35); scene.add(frameTop);
+  var frameBot = new THREE.Mesh(new THREE.BoxGeometry(5.34, 0.08, 0.14), frameMat); // 분필 선반
+  frameBot.position.set(0, 0.98, -3.32); scene.add(frameBot);
 
-  buildWindows();
-  buildExitDoor();
-}
+  // 5. 좌측 아치형 격자 창문 3구 & 목재 셔터
+  buildArchedWindowsAndShutters();
 
-function buildWindows() {
-  var winZs = [-2.5, -0.85, 0.85, 2.5];
-  var frameMat = new THREE.MeshStandardMaterial({ color: 0x4a3622, roughness: 0.6 });
-  var glassMat = new THREE.MeshStandardMaterial({ color: 0xffeedd, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.85 });
-  var curtainMat = new THREE.MeshStandardMaterial({ color: 0x6e2c28, roughness: 0.85 });
-
-  for(var i=0; i<4; i++) {
-    var z = winZs[i];
-    var glass = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.8), glassMat);
-    glass.position.set(-4.98, 1.75, z);
-    glass.rotation.y = Math.PI / 2;
-    scene.add(glass);
-
-    var sill = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 1.4), frameMat);
-    sill.position.set(-4.95, 0.85, z); scene.add(sill);
-    var head = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 1.4), frameMat);
-    head.position.set(-4.95, 2.65, z); scene.add(head);
-
-    var cur = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.85, (i===3?0.35:1.35)), curtainMat);
-    cur.position.set(-4.88, 1.75, (i===3?z+0.45:z));
-    scene.add(cur);
-    if(i === 3) {
-      clueObjects.curtain = cur;
-      registerInteractable(cur, "curtain", "창가 커튼");
-    }
-
-    var pool = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5),
-      new THREE.MeshBasicMaterial({ color: 0xffe8c8, transparent: true, opacity: 0.18, depthWrite: false }));
-    pool.rotation.x = -Math.PI / 2;
-    pool.position.set(-3.4, 0.01, z + 0.4);
-    scene.add(pool);
-    sunPools.push(pool);
-  }
-}
-
-function buildExitDoor() {
-  doorPivot = new THREE.Group();
-  doorPivot.position.set(3.85, 0, 3.96);
-
-  var doorMat = new THREE.MeshStandardMaterial({ color: 0x5a3e26, roughness: 0.55 });
-  doorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.95, 2.15, 0.06), doorMat);
-  doorMesh.position.set(-0.475, 1.075, 0);
-  doorPivot.add(doorMesh);
-
-  var brassMat = new THREE.MeshStandardMaterial({ color: 0xd8a64e, metalness: 0.8, roughness: 0.3 });
-  var knob = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.12), brassMat);
-  knob.rotation.z = Math.PI / 2;
-  knob.position.set(-0.85, 1.05, 0.06);
-  doorPivot.add(knob);
-
-  scene.add(doorPivot);
-  registerInteractable(doorMesh, "door", "교실 뒷문");
+  // 6. 후면 아치형 출구 문
+  buildArchedDoubleExitDoor();
 }
 
 /* ==========================================================================
-   가구 조립 (책상 & 의자 6세트, 교탁, 감독교사)
+   창문 및 조작 가능한 목재 덧문(Ch 8 기믹)
    ========================================================================== */
-function buildFurniture() {
-  var deskWood = makeWoodTexture(false);
-  var topMat = new THREE.MeshStandardMaterial({ map: deskWood, roughness: 0.5 });
-  var steelMat = new THREE.MeshStandardMaterial({ color: 0x2e3338, roughness: 0.4, metalness: 0.6 });
-  var chairWood = new THREE.MeshStandardMaterial({ color: 0x8a5b35, roughness: 0.6 });
+function buildArchedWindowsAndShutters() {
+  var winMat = new THREE.MeshStandardMaterial({ color: 0xffeedd, roughness: 0.15, metalness: 0.1, transparent: true, opacity: 0.88 });
+  var woodFrameMat = new THREE.MeshStandardMaterial({ color: 0x48321e, roughness: 0.6 });
 
-  for(var r=0; r<2; r++) {
-    for(var c=0; c<3; c++) {
-      var dx = (c - 1) * 2.3;
-      var dz = -0.5 + r * 1.85;
+  var windowZCoords = [-1.8, 0.0, 1.8];
+  for(var i=0; i<3; i++) {
+    var wz = windowZCoords[i];
+    var glass = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.1), winMat);
+    glass.position.set(-4.18, 1.85, wz);
+    glass.rotation.y = Math.PI / 2;
+    scene.add(glass);
 
-      var deskGroup = new THREE.Group();
-      deskGroup.position.set(dx, 0, dz);
+    var sill = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 1.54), woodFrameMat);
+    sill.position.set(-4.14, 0.78, wz);
+    scene.add(sill);
 
-      var top = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.03, 0.46), topMat);
-      top.position.y = 0.72;
-      deskGroup.add(top);
+    // 가운데 창문(wz = 0.0)에 조작 가능한 우드 셔터 블라인드 장착
+    if(i === 1) {
+      propShutter = new THREE.Group();
+      propShutter.position.set(-4.12, 1.85, wz);
 
-      [[-0.30,-0.18],[0.30,-0.18],[-0.30,0.18],[0.30,0.18]].forEach(function(o){
-        var leg = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.70), steelMat);
-        leg.position.set(o[0], 0.35, o[1]);
-        deskGroup.add(leg);
-      });
+      var shutterLeaf = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.05, 1.42), woodFrameMat);
+      propShutter.add(shutterLeaf);
+      scene.add(propShutter);
 
-      var shelf = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.01, 0.36), steelMat);
-      shelf.position.y = 0.58;
-      deskGroup.add(shelf);
-
-      var seat = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.025, 0.38), chairWood);
-      seat.position.set(0, 0.43, 0.38);
-      deskGroup.add(seat);
-
-      var back = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.18, 0.02), chairWood);
-      back.position.set(0, 0.76, 0.52);
-      deskGroup.add(back);
-
-      [[-0.16,-0.14],[0.16,-0.14],[-0.16,0.14],[0.16,0.14]].forEach(function(o){
-        var cleg = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.42), steelMat);
-        cleg.position.set(o[0], 0.21, 0.38 + o[1]);
-        deskGroup.add(cleg);
-      });
-
-      scene.add(deskGroup);
+      // 처음에는 열려 있어 옆으로 밀려 있음
+      propShutter.position.z = wz + 0.85;
+      registerInteractableObject(shutterLeaf, "shutter", "창가 목재 덧문");
     }
   }
+}
 
-  var podMat = new THREE.MeshStandardMaterial({ color: 0x5a3e28, roughness: 0.55 });
-  var podium = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.76, 0.65), podMat);
-  podium.position.set(0, 0.38, -2.85);
+/* ==========================================================================
+   출구 문 (아치형 양개 원목 문)
+   ========================================================================== */
+function buildArchedDoubleExitDoor() {
+  propDoorPivot = new THREE.Group();
+  propDoorPivot.position.set(0.65, 0, 3.38);
+
+  var doorMat = new THREE.MeshStandardMaterial({ color: 0x4a321f, roughness: 0.52 });
+  var doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(1.3, 2.3, 0.08), doorMat);
+  doorLeaf.position.set(-0.65, 1.15, 0);
+  propDoorPivot.add(doorLeaf);
+
+  // 황동 빗장 손잡이
+  var brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.28 });
+  var latch = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.16), brassMat);
+  latch.rotation.z = Math.PI / 2;
+  latch.position.set(-1.18, 1.10, 0.07);
+  propDoorPivot.add(latch);
+
+  scene.add(propDoorPivot);
+  registerInteractableObject(doorLeaf, "door", "세미나실 출구 문");
+}
+
+/* ==========================================================================
+   세미나실 가구 (중앙 테이블, 안락의자, 교수 연탁)
+   ========================================================================== */
+function buildSeminarFurniture() {
+  var tableWood = new THREE.MeshStandardMaterial({ color: 0x543924, roughness: 0.48 });
+  var brassTrim = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.35 });
+  var leatherMat = new THREE.MeshStandardMaterial({ color: 0x2b1e16, roughness: 0.65 });
+  var steelMat = new THREE.MeshStandardMaterial({ color: 0x22262a, roughness: 0.45, metalness: 0.6 });
+
+  // 1. 중앙 와이드 마호가니 세미나 테이블 (길이 3.2m, 폭 1.1m, 높이 0.74m)
+  var tableGroup = new THREE.Group();
+  tableGroup.position.set(0, 0, 0.2);
+
+  var tabletop = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.05, 1.1), tableWood);
+  tabletop.position.y = 0.74;
+  tableGroup.add(tabletop);
+
+  // 4개 원형 목재 다리 & 황동 링
+  [[-1.4,-0.4],[1.4,-0.4],[-1.4,0.4],[1.4,0.4]].forEach(function(pos){
+    var leg = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.028, 0.71), tableWood);
+    leg.position.set(pos[0], 0.36, pos[1]);
+    tableGroup.add(leg);
+    var ring = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.039, 0.04), brassTrim);
+    ring.position.set(pos[0], 0.02, pos[1]);
+    tableGroup.add(ring);
+  });
+  scene.add(tableGroup);
+
+  // 2. 세미나 가죽 의자 4좌석 (정밀 수납 결합)
+  [[-0.9, -0.42, 0], [0.9, -0.42, 0], [-0.9, 0.42, Math.PI], [0.9, 0.42, Math.PI]].forEach(function(cfg){
+    var chair = new THREE.Group();
+    chair.position.set(cfg[0], 0, 0.2 + cfg[1]);
+    chair.rotation.y = cfg[2];
+
+    var seat = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.05, 0.44), leatherMat);
+    seat.position.y = 0.44; chair.add(seat);
+    var back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.36, 0.04), leatherMat);
+    back.position.set(0, 0.74, 0.20); chair.add(back);
+
+    [[-0.18,-0.16],[0.18,-0.16],[-0.18,0.16],[0.18,0.16]].forEach(function(cp){
+      var cl = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.012, 0.43), steelMat);
+      cl.position.set(cp[0], 0.215, cp[1]); chair.add(cl);
+    });
+    scene.add(chair);
+  });
+
+  // 3. 교수 연탁 포디움 & 앰버 CRT 컴퓨터 (z = -2.6)
+  var podium = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.78, 0.64), tableWood);
+  podium.position.set(0, 0.39, -2.6);
   scene.add(podium);
 
-  buildCrtComputer();
-  buildTeacher();
+  buildAmberTerminalHardware();
 }
 
-function buildCrtComputer() {
+function buildAmberTerminalHardware() {
   var crtGroup = new THREE.Group();
-  crtGroup.position.set(0.25, 0.76, -2.85);
+  crtGroup.position.set(0.30, 0.78, -2.6);
 
-  var pcBeige = new THREE.MeshStandardMaterial({ color: 0xd9ceb8, roughness: 0.6 });
-  var screenMat = new THREE.MeshBasicMaterial({ color: 0x143818 });
+  var beigeMat = new THREE.MeshStandardMaterial({ color: 0xd6cbb5, roughness: 0.62 });
+  var phosphorScreen = new THREE.MeshBasicMaterial({ color: 0xd97706 }); // 호박색 인광 스크린
 
-  var mon = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.32, 0.34), pcBeige);
-  mon.position.y = 0.20;
-  crtGroup.add(mon);
+  var monitor = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.30, 0.32), beigeMat);
+  monitor.position.y = 0.18;
+  crtGroup.add(monitor);
 
-  var scr = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.22), screenMat);
-  scr.position.set(0, 0.20, 0.172);
-  crtGroup.add(scr);
+  var screenPlane = new THREE.Mesh(new THREE.PlaneGeometry(0.26, 0.20), phosphorScreen);
+  screenPlane.position.set(0, 0.18, 0.162);
+  crtGroup.add(screenPlane);
 
-  var kb = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.02, 0.14), pcBeige);
-  kb.position.set(0, 0.01, 0.22);
-  crtGroup.add(kb);
+  var keyboard = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.14), beigeMat);
+  keyboard.position.set(0, 0.01, 0.24);
+  crtGroup.add(keyboard);
 
   scene.add(crtGroup);
-  registerInteractable(mon, "computer", "교탁 컴퓨터");
+  registerInteractableObject(monitor, "terminal_pc", "연구용 CRT 단말기");
 }
 
-function buildTeacher() {
-  var tGroup = new THREE.Group();
-  tGroup.position.set(3.0, 0, -3.3);
+/* ==========================================================================
+   학술적 단서 오브제 (천구의, 서가, 슬라이드 환등기 등)
+   ========================================================================== */
+function buildAcademicArtifacts() {
+  var brassPBR = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.28 });
+  var goldDeco = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.92, roughness: 0.22 });
 
-  var suitMat = new THREE.MeshStandardMaterial({ color: 0x242a34, roughness: 0.7 });
-  var shirtMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.6 });
-  var tieMat = new THREE.MeshStandardMaterial({ color: 0x9e2424, roughness: 0.5 });
-  var skinMat = new THREE.MeshStandardMaterial({ color: 0xdec1a6, roughness: 0.75 });
-  var hairMat = new THREE.MeshStandardMaterial({ color: 0x221c18, roughness: 0.9 });
-  var shoeMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.3 });
+  // [Ch 1] 앤티크 황동 자오선 천구의 (교수 연탁 좌측 x = -0.85, z = -2.55)
+  propArmillary = new THREE.Group();
+  propArmillary.position.set(-0.55, 0.78, -2.6);
 
-  var armChair = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.44, 0.54), suitMat);
-  armChair.position.y = 0.22;
-  tGroup.add(armChair);
+  var globeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.10, 0.03, 16), brassPBR);
+  globeBase.position.y = 0.015; propArmillary.add(globeBase);
+  var globeStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.10), brassPBR);
+  globeStem.position.y = 0.08; propArmillary.add(globeStem);
 
-  var torso = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.48, 0.26), suitMat);
-  torso.position.y = 0.68;
-  tGroup.add(torso);
+  var ringOuter = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.008, 8, 24), brassPBR);
+  ringOuter.position.y = 0.18; ringOuter.rotation.x = Math.PI / 4;
+  propArmillary.add(ringOuter);
+  var ringInner = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.007, 8, 24), goldDeco);
+  ringInner.position.y = 0.18; ringInner.rotation.y = Math.PI / 3;
+  propArmillary.add(ringInner);
 
-  var shirt = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.18), shirtMat);
-  shirt.position.set(0, 0.78, 0.132);
-  tGroup.add(shirt);
-  var tie = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 0.01), tieMat);
-  tie.position.set(0, 0.74, 0.138);
-  tGroup.add(tie);
+  scene.add(propArmillary);
+  registerInteractableObject(ringOuter, "armillary", "황동 자오선 천구의");
 
-  teacherHead = new THREE.Group();
-  teacherHead.position.set(0, 1.05, 0.02);
-  var headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 14), skinMat);
-  teacherHead.add(headMesh);
-  var hair = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 12, 0, Math.PI*2, 0, Math.PI/1.8), hairMat);
-  hair.rotation.x = -0.2;
-  teacherHead.add(hair);
+  // [Ch 2] 케임브리지 고서 서가 (우측 벽 x = 4.16, z = -1.2)
+  var shelfMat = new THREE.MeshStandardMaterial({ color: 0x422a18, roughness: 0.6 });
+  var bookshelf = new THREE.Mesh(new THREE.BoxGeometry(0.40, 2.2, 1.4), shelfMat);
+  bookshelf.position.set(4.0, 1.1, -1.2);
+  scene.add(bookshelf);
 
-  var brassMat = new THREE.MeshStandardMaterial({ color: 0xd8a64e, metalness: 0.8, roughness: 0.3 });
-  var glasses = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.01), brassMat);
-  glasses.position.set(0, 0.02, 0.11);
-  teacherHead.add(glasses);
-  tGroup.add(teacherHead);
+  var bookGold = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.5 });
+  var encyclopedia = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.08), bookGold);
+  encyclopedia.position.set(3.85, 1.35, -1.2);
+  scene.add(encyclopedia);
+  registerInteractableObject(encyclopedia, "encyclopedia", "양장본 백과사전");
 
-  [-0.11, 0.11].forEach(function(sd){
-    var thigh = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.11, 0.34), suitMat);
-    thigh.position.set(sd, 0.44, 0.17);
-    tGroup.add(thigh);
-    var calf = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.38, 0.11), suitMat);
-    calf.position.set(sd, 0.20, 0.30);
-    tGroup.add(calf);
-    var shoe = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.06, 0.20), shoeMat);
-    shoe.position.set(sd, 0.03, 0.34);
-    tGroup.add(shoe);
-  });
+  // [Ch 3] 세미나 테이블 좌측 황동 서랍 (x = -0.65, z = 0.15)
+  var drawerMesh = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.10, 0.26),
+    new THREE.MeshStandardMaterial({ color: 0x6e482b, roughness: 0.5 }));
+  drawerMesh.position.set(-0.65, 0.66, 0.15);
+  scene.add(drawerMesh);
+  registerInteractableObject(drawerMesh, "table_drawer", "테이블 황동 서랍");
 
-  [-0.22, 0.22].forEach(function(sd){
-    var arm = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.10), suitMat);
-    arm.position.set(sd, 0.62, 0.06);
-    arm.rotation.x = 0.35;
-    tGroup.add(arm);
-    var hand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.10), skinMat);
-    hand.position.set(sd*0.8, 0.46, 0.24);
-    tGroup.add(hand);
-  });
+  // [Ch 4] OHP 슬라이드 천체 환등기 (테이블 중앙 x = 0, z = 0.85)
+  var projectorGroup = new THREE.Group();
+  projectorGroup.position.set(0, 0.74, 0.85);
 
-  scene.add(tGroup);
-  clueObjects.teacher = tGroup;
-  registerInteractable(torso, "teacher", "감독교사");
-}
+  var projBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.30),
+    new THREE.MeshStandardMaterial({ color: 0x8a929a, roughness: 0.4, metalness: 0.5 }));
+  projBase.position.y = 0.08; projectorGroup.add(projBase);
 
-function buildCluesAndProps() {
-  var calGroup = new THREE.Group();
-  calGroup.position.set(0.60, 0.76, -2.85);
-  var calMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.08),
-    new THREE.MeshStandardMaterial({ color: 0xf5eedc, roughness: 0.8 }));
-  calGroup.add(calMesh);
-  scene.add(calGroup);
-  clueObjects.calendar = calGroup;
-  registerInteractable(calMesh, "calendar", "탁상 달력");
+  var projArm = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.38),
+    new THREE.MeshStandardMaterial({ color: 0x3a4046, metalness: 0.7 }));
+  projArm.position.set(-0.12, 0.30, -0.10); projectorGroup.add(projArm);
 
-  var lockerMat = new THREE.MeshStandardMaterial({ color: 0x6e4b2d, roughness: 0.6 });
-  var locker = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.0, 0.42), lockerMat);
-  locker.position.set(-2.6, 0.50, 3.75);
-  scene.add(locker);
+  var projLens = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.08, 0.10),
+    new THREE.MeshStandardMaterial({ color: 0x2a3036, metalness: 0.6 }));
+  projLens.position.set(-0.06, 0.46, -0.06); projectorGroup.add(projLens);
 
-  var bearGroup = new THREE.Group();
-  bearGroup.position.set(-2.6, 1.02, 3.75);
-  var furMat = new THREE.MeshStandardMaterial({ color: 0x9e683a, roughness: 0.9 });
-  var bearBody = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 12), furMat);
-  bearBody.position.y = 0.11;
-  bearGroup.add(bearBody);
-  var bearHead = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 12), furMat);
-  bearHead.position.set(0, 0.26, 0.02);
-  bearGroup.add(bearHead);
-  scene.add(bearGroup);
-  clueObjects.doll = bearGroup;
-  registerInteractable(bearBody, "doll", "테디베어 인형");
+  scene.add(projectorGroup);
+  registerInteractableObject(projBase, "ohp_projector", "OHP 슬라이드 환등기");
 
-  var postitMat = new THREE.MeshStandardMaterial({ color: 0xf3ea68, roughness: 0.8 });
-  var postit = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.10), postitMat);
-  postit.position.set(-2.3, 0.698, 1.35);
-  postit.rotation.x = Math.PI / 2;
-  scene.add(postit);
-  clueObjects.postit = postit;
-  registerInteractable(postit, "postit", "책상 밑 쪽지");
+  // [Ch 5] 황동 지도 롤러 보관함 (우측 뒤편 벽 x = 4.16, z = 1.8)
+  var mapRoller = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.2), brassPBR);
+  mapRoller.rotation.x = Math.PI / 2;
+  mapRoller.position.set(4.14, 1.6, 1.8);
+  scene.add(mapRoller);
+  registerInteractableObject(mapRoller, "map_roller", "황동 지도 롤러");
 
-  var d1Mat = new THREE.MeshStandardMaterial({ color: 0xf7f1e1, roughness: 0.7 });
-  var d1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.01, 0.18), d1Mat);
-  d1.position.set(0, 0.74, 1.35);
-  scene.add(d1);
-  registerInteractable(d1, "diary1", "첫 번째 일기");
-
-  var extGroup = new THREE.Group();
-  extGroup.position.set(4.45, 0, 3.40);
-  var redMat = new THREE.MeshStandardMaterial({ color: 0xb9241b, roughness: 0.3, metalness: 0.4 });
-  var extBody = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.45, 16), redMat);
-  extBody.position.y = 0.24;
-  extGroup.add(extBody);
-  scene.add(extGroup);
-  clueObjects.extinguisher = extGroup;
-  registerInteractable(extBody, "extinguisher", "분말 소화기");
-
+  // [Ch 6] 벽면 황동 진자 괘종시계 (전면 좌측 벽 x = -2.8, z = -3.36)
   var clockGroup = new THREE.Group();
-  clockGroup.position.set(0, 2.68, -3.92);
-  var clockCase = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.20, 0.04, 24),
-    new THREE.MeshStandardMaterial({ color: 0x241d13, roughness: 0.5 }));
-  clockCase.rotation.x = Math.PI / 2;
+  clockGroup.position.set(-2.8, 2.2, -3.36);
+
+  var clockCase = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.85, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0x3d2716, roughness: 0.5 }));
   clockGroup.add(clockCase);
-  var clockFace = new THREE.Mesh(new THREE.CircleGeometry(0.18, 24),
-    new THREE.MeshBasicMaterial({ color: 0xf7f3e6 }));
-  clockFace.position.z = 0.022;
-  clockGroup.add(clockFace);
+
+  var dialFace = new THREE.Mesh(new THREE.CircleGeometry(0.14, 24),
+    new THREE.MeshBasicMaterial({ color: 0xfbf7ed }));
+  dialFace.position.set(0, 0.22, 0.062); clockGroup.add(dialFace);
+
+  var pendulumBob = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.01, 16), brassPBR);
+  pendulumBob.rotation.x = Math.PI / 2;
+  pendulumBob.position.set(0, -0.22, 0.05); clockGroup.add(pendulumBob);
+
   scene.add(clockGroup);
-  clueObjects.clock = clockGroup;
-  registerInteractable(clockFace, "clock", "벽시계");
+  registerInteractableObject(clockCase, "pendulum_clock", "황동 진자 괘종시계");
 
-  var bookMat = new THREE.MeshStandardMaterial({ color: 0x28547a, roughness: 0.5 });
-  var mathBook = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.03, 0.18), bookMat);
-  mathBook.position.set(0.22, 0.75, 1.35);
-  scene.add(mathBook);
-  clueObjects.mathbook = mathBook;
-  registerInteractable(mathBook, "mathbook", "수학 교과서");
-
-  buildScientistFrames();
+  // [Ch 7] 창가 선반 자개 서류함 (x = -4.10, z = 1.2)
+  var lacquerBox = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.12, 0.20),
+    new THREE.MeshStandardMaterial({ color: 0x11161d, roughness: 0.3, metalness: 0.4 }));
+  lacquerBox.position.set(-4.08, 0.84, 1.2);
+  scene.add(lacquerBox);
+  registerInteractableObject(lacquerBox, "lacquer_box", "한국 방문 자개 서류함");
 }
 
-function buildScientistFrames() {
-  var scis = ["newton", "archimedes", "abel", "einstein", "galilei", "gauss"];
-  var names = ["아이작 뉴턴", "아르키메데스", "닐스 아벨", "알베르트 아인슈타인", "갈릴레오 갈릴레이", "칼 프리드리히 가우스"];
-  var frameMat = new THREE.MeshStandardMaterial({ color: 0x543c22, roughness: 0.5 });
-
-  for(var i=0; i<6; i++) {
-    var z = -2.5 + i * 1.0;
-    var g = new THREE.Group();
-    g.position.set(4.94, 1.65, z);
-    g.rotation.y = -Math.PI / 2;
-
-    var frame = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.68, 0.03), frameMat);
-    g.add(frame);
-
-    var portrait = new THREE.Mesh(new THREE.PlaneGeometry(0.48, 0.60),
-      new THREE.MeshBasicMaterial({ color: 0xd9ceb8 }));
-    portrait.position.z = 0.018;
-    g.add(portrait);
-
-    scene.add(g);
-    registerInteractable(portrait, "frame_" + scis[i], names[i] + " 초상화");
-  }
+function registerInteractableObject(mesh, id, displayName) {
+  mesh.userData = { isInteractable: true, id: id, displayName: displayName };
+  interactiveTargets.push(mesh);
 }
 
-function registerInteractable(mesh, id, name) {
-  mesh.userData = { isInteractable: true, id: id, name: name };
-  interactables.push(mesh);
-}
-
-function checkRaycast() {
+/* ==========================================================================
+   레이캐스팅 조준 & 상호작용 트리거
+   ========================================================================== */
+function evaluateRaycastFocus() {
   raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-  var hits = raycaster.intersectObjects(interactables, true);
-  var reticle = document.getElementById("reticle");
-  var label = document.getElementById("target-label");
+  var intersections = raycaster.intersectObjects(interactiveTargets, true);
 
-  if(hits.length > 0 && hits[0].distance < 4.5) {
-    var target = hits[0].object;
-    while(target && !target.userData.isInteractable && target.parent) {
-      target = target.parent;
+  var wrap = document.getElementById("reticle-wrap");
+  var tag = document.getElementById("reticle-label");
+
+  if(intersections.length > 0 && intersections[0].distance < 4.8) {
+    var candidate = intersections[0].object;
+    while(candidate && !candidate.userData.isInteractable && candidate.parent) {
+      candidate = candidate.parent;
     }
-    if(target && target.userData.isInteractable) {
-      hoverTarget = target.userData;
-      reticle.classList.add("active");
-      label.textContent = hoverTarget.name;
-      label.classList.add("on");
+    if(candidate && candidate.userData.isInteractable) {
+      activeHover = candidate.userData;
+      wrap.classList.add("target");
+      tag.textContent = activeHover.displayName;
       return;
     }
   }
-  hoverTarget = null;
-  reticle.classList.remove("active");
-  label.classList.remove("on");
+  activeHover = null;
+  wrap.classList.remove("target");
 }
 
-function triggerInteraction() {
-  if(!hoverTarget) return;
-  var id = hoverTarget.id;
+function executeInteraction() {
+  if(!activeHover) return;
+  var id = activeHover.id;
 
-  if(id === "diary1") {
-    STATE.tookDiary1 = true;
-    showDiary(1);
-    updateObjective("탁상 달력 조사", "교탁 위의 달력을 치우고 숨겨진 기록을 찾으세요.");
-    return;
-  }
-
-  if(id === "computer") {
-    openTerminal();
-    return;
-  }
-
-  if(id === "calendar") {
-    if(STATE.chapter === 1) {
-      animateMove(clueObjects.calendar, new THREE.Vector3(0.95, 0.76, -2.85));
-      revealFragment(1);
-      toast("달력을 치우자 첫 번째 기억의 조각이 드러났다!");
+  if(id === "armillary") {
+    if(GAME.chapter === 1) {
+      // 천구의 회전 애니메이션
+      var rot = 0;
+      var timer = setInterval(function(){
+        rot += 0.1;
+        propArmillary.rotation.y = rot;
+        if(rot >= Math.PI * 2) {
+          clearInterval(timer);
+          propArmillary.rotation.y = 0;
+          unlockLifeStar(1);
+          notifyToast("천구의 내부에서 첫 번째 생애 기록을 발견했습니다!");
+        }
+      }, 16);
     } else {
-      toast("1942년의 날짜가 적힌 오래된 달력이다.");
+      notifyToast("정밀하게 가공된 17세기 천체 자오선 의식 기구입니다.");
     }
     return;
   }
 
-  if(id === "doll") {
-    if(STATE.chapter === 2) {
-      animateMove(clueObjects.doll, new THREE.Vector3(-2.1, 1.02, 3.75));
-      revealFragment(2);
-      toast("곰 인형 밑에서 두 번째 기억의 조각이 나타났다!");
+  if(id === "encyclopedia") {
+    if(GAME.chapter === 2) {
+      unlockLifeStar(2);
+      notifyToast("백과사전 안에서 학창 시절의 별명 기록을 찾았습니다!");
     } else {
-      toast("낡았지만 소중히 다뤄진 테디베어 인형이다.");
+      notifyToast("금박 장정된 케임브리지 백과사전입니다.");
     }
     return;
   }
 
-  if(id === "postit") {
-    if(STATE.chapter === 3) {
-      revealFragment(3);
-      toast("책상 밑에 붙은 쪽지에서 세 번째 기억의 조각을 찾았다!");
+  if(id === "table_drawer") {
+    if(GAME.chapter === 3) {
+      unlockLifeStar(3);
+      notifyToast("서랍 안에서 옥스퍼드 조정 클럽의 깃발과 메모를 찾았습니다!");
     } else {
-      toast("노란색 쪽지가 단단히 붙어 있다.");
+      notifyToast("황동 손잡이가 달린 원목 서랍입니다.");
     }
     return;
   }
 
-  if(id === "teacher") {
-    if(STATE.chapter === 4) {
-      animateMove(clueObjects.teacher, new THREE.Vector3(2.4, 0, -3.3));
-      revealFragment(4);
-      toast("감독교사가 비켜서며 네 번째 조각이 드러났다!");
+  if(id === "ohp_projector") {
+    if(GAME.chapter === 4) {
+      propProjectorLight.intensity = 1.8;
+      unlockLifeStar(4);
+      notifyToast("환등기가 켜지며 우주 특이점의 팽창 다이어그램이 투사됩니다!");
     } else {
-      toast("감독교사는 묵묵히 정면을 응시하고 있다.");
+      notifyToast("슬라이드 필름을 영사하는 광학 환등기입니다.");
     }
     return;
   }
 
-  if(id === "extinguisher") {
-    if(STATE.chapter === 5) {
-      animateMove(clueObjects.extinguisher, new THREE.Vector3(4.0, 0, 3.4));
-      revealFragment(5);
-      toast("소화기를 옮기자 다섯 번째 기억의 조각이 나타났다!");
+  if(id === "map_roller") {
+    if(GAME.chapter === 5) {
+      unlockLifeStar(5);
+      notifyToast("지도가 펼쳐지며 바티칸 시국의 순례 경로가 드러났습니다!");
     } else {
-      toast("빨간색 분말 소화기다.");
+      notifyToast("두루마리 고지도가 말려 있는 황동 롤러입니다.");
     }
     return;
   }
 
-  if(id === "clock") {
-    if(STATE.chapter === 6) {
-      animateMove(clueObjects.clock, new THREE.Vector3(0.6, 2.68, -3.92));
-      revealFragment(6);
-      toast("벽시계 뒤편에서 여섯 번째 기억의 조각을 발견했다!");
+  if(id === "pendulum_clock") {
+    if(GAME.chapter === 6) {
+      unlockLifeStar(6);
+      notifyToast("괘종시계 내부에서 <시간의 역사> 초고 원고를 발견했습니다!");
     } else {
-      toast("10시 10분에 멈춘 교실 벽시계다.");
+      notifyToast("묵직한 황동 추가 흔들리는 오래된 괘종시계입니다.");
     }
     return;
   }
 
-  if(id === "mathbook") {
-    if(STATE.chapter === 7) {
-      animateMove(clueObjects.mathbook, new THREE.Vector3(0.55, 0.75, 1.35));
-      revealFragment(7);
-      toast("수학책을 치우자 일곱 번째 기억의 조각이 나타났다!");
+  if(id === "lacquer_box") {
+    if(GAME.chapter === 7) {
+      unlockLifeStar(7);
+      notifyToast("자개함 안에서 한국 방문 통역사의 단어 메모를 찾았습니다!");
     } else {
-      toast("두꺼운 대학교 수학 교재다.");
+      notifyToast("영롱한 자개로 장식된 한국 방문 기념 서류함입니다.");
     }
     return;
   }
 
-  if(id === "curtain") {
-    if(STATE.chapter === 8) {
-      clueObjects.curtain.scale.z = 3.8;
-      clueObjects.curtain.position.z = 2.5;
-      scene.background.setHex(0x05070a);
-      sunLight.intensity = 0.15;
-      revealFragment(8);
-      toast("커튼을 닫자 마지막 기억의 조각이 모습을 드러냈다!");
+  if(id === "shutter") {
+    if(GAME.chapter === 8) {
+      GAME.shutterClosed = true;
+      propShutter.position.z = 0; // 덧문 닫힘
+      scene.background.setHex(0x040608);
+      sunlightDirectional.intensity = 0.08;
+      ambientHemisphere.intensity = 0.12;
+      unlockLifeStar(8);
+      notifyToast("덧문이 닫히며 뺨의 근육 센서와 최종 코드(0808)가 나타났습니다!");
     } else {
-      toast("두꺼운 암막 커튼이다.");
+      notifyToast("창가의 햇살을 차단하는 원목 셔터 블라인드입니다.");
     }
     return;
   }
 
-  if(id.startsWith("frame_")) {
-    toast("위대한 과학자의 초상화다.");
+  if(id === "terminal_pc") {
+    displayTerminalScreen();
     return;
   }
 
   if(id === "door") {
-    if(STATE.pieces.every(function(p){return p===true;})) {
-      triggerEnding();
+    if(GAME.stars.every(function(s){ return s === true; })) {
+      triggerEndingSequence();
     } else {
-      toast("문이 굳게 잠겨 있다. 모든 기억의 조각을 모아야 한다.");
+      notifyToast("문이 굳게 잠겨 있습니다. 8개의 기억 성좌를 모두 밝혀야 합니다.");
     }
     return;
   }
 }
 
-function revealFragment(n) {
-  if(STATE.pieces[n-1]) return;
-  STATE.pieces[n-1] = true;
-  document.getElementById("frag-" + n).classList.add("on");
-  showDiary(n);
+function unlockLifeStar(n) {
+  if(GAME.stars[n-1]) return;
+  GAME.stars[n-1] = true;
+  document.getElementById("star-" + n).classList.add("lit");
+  displayParchmentFolio(n);
+
   if(n < 8) {
-    STATE.chapter = n + 1;
-    var nextCh = CHAPTERS[n];
-    updateObjective("제 " + (n+1) + "장: " + nextCh.title, nextCh.hint);
+    GAME.chapter = n + 1;
+    var nextMeta = CHAPTER_DATA[n];
+    document.getElementById("mission-kicker").textContent = nextMeta.kicker;
+    document.getElementById("mission-goal").textContent = nextMeta.goal;
+    document.getElementById("mission-hint").textContent = nextMeta.hint;
   } else {
-    updateObjective("마지막 관문: 출구 개방", "컴퓨터에 최종 인계 코드 '0808'을 입력하고 뒷문으로 탈출하세요.");
+    document.getElementById("mission-kicker").textContent = "FINAL · 탈출 인계";
+    document.getElementById("mission-goal").textContent = "단말기에 최종 코드 '0808'을 입력하고 출구 문으로 향하십시오.";
+    document.getElementById("mission-hint").textContent = "모든 기억이 복원되었습니다. 세미나실의 잠금이 해제됩니다.";
   }
 }
 
-function updateObjective(head, text) {
-  document.getElementById("obj-head").textContent = head;
-  document.getElementById("obj-text").textContent = text;
-}
-
-function animateMove(obj, targetPos) {
-  if(!obj) return;
-  var start = obj.position.clone();
-  var t = 0;
-  var interval = setInterval(function(){
-    t += 0.05;
-    obj.position.lerpVectors(start, targetPos, Math.min(t, 1));
-    if(t >= 1) clearInterval(interval);
-  }, 16);
-}
-
-function showDiary(n) {
-  var data = DIARIES[n];
+/* ==========================================================================
+   UI 프리젠테이션 (일기장, 터미널, 토스트)
+   ========================================================================== */
+function displayParchmentFolio(n) {
+  var data = FOLIO_RECORDS[n];
   if(!data) return;
-  var html = '<div class="diary-sheet">' +
-             '<div class="d-date">' + data.date + '</div>' +
-             '<p>' + data.text + '</p>' +
-             '</div>';
-  openModal("일기장", "기억의 조각 #" + n, html);
+  var body = document.getElementById("parchment-body");
+  body.innerHTML = '<div class="entry-date">' + data.date + '</div>' +
+                   '<p>' + data.text + '</p>';
+  document.getElementById("parchment-title").textContent = "생애의 조각 #" + n;
+  document.getElementById("modal-parchment").classList.add("visible");
 }
 
-function openModal(title, sub, bodyHtml) {
-  document.getElementById("modal-title").textContent = title;
-  document.getElementById("modal-sub").textContent = sub;
-  document.getElementById("modal-body").innerHTML = bodyHtml;
-  document.getElementById("generic-modal").classList.add("open");
+function displayTerminalScreen() {
+  var ch = CHAPTER_DATA[GAME.chapter - 1];
+  document.getElementById("terminal-prompt").textContent = "> [" + ch.kicker + "] 단서를 입력하십시오.";
+  document.getElementById("terminal-field").value = "";
+  document.getElementById("modal-terminal").classList.add("visible");
+  setTimeout(function(){ document.getElementById("terminal-field").focus(); }, 120);
 }
 
-function closeModal() {
-  document.getElementById("generic-modal").classList.remove("open");
-}
+function verifyTerminalSubmission() {
+  var val = document.getElementById("terminal-field").value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  var curr = CHAPTER_DATA[GAME.chapter - 1];
 
-function openTerminal() {
-  var ch = CHAPTERS[STATE.chapter - 1];
-  document.getElementById("pc-prompt").textContent = "[제 " + STATE.chapter + "장 단서 입력]";
-  document.getElementById("pc-desc").textContent = ch.hint;
-  document.getElementById("pc-code-input").value = "";
-  document.getElementById("pc-modal").classList.add("open");
-  setTimeout(function(){ document.getElementById("pc-code-input").focus(); }, 100);
-}
-
-function closeTerminal() {
-  document.getElementById("pc-modal").classList.remove("open");
-}
-
-function handleTerminalSubmit() {
-  var input = document.getElementById("pc-code-input").value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-  var curr = CHAPTERS[STATE.chapter - 1];
-  if(input === curr.answer) {
-    toast("암호가 일치합니다! 새로운 기억이 해금되었습니다.");
-    closeTerminal();
-    revealFragment(STATE.chapter);
+  if(val === curr.answer) {
+    notifyToast("인증 성공: 새로운 기억의 좌표가 해금되었습니다.");
+    document.getElementById("modal-terminal").classList.remove("visible");
+    unlockLifeStar(GAME.chapter);
   } else {
-    toast("인증 실패: 잘못된 코드입니다.");
+    notifyToast("인증 실패: 유효하지 않은 패스코드입니다.");
   }
 }
 
-function toast(msg) {
-  var t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(function(){ t.classList.remove("show"); }, 2800);
+function notifyToast(text) {
+  var t = document.getElementById("toast-notification");
+  t.textContent = text;
+  t.classList.add("active");
+  setTimeout(function(){ t.classList.remove("active"); }, 2800);
 }
 
-function triggerEnding() {
-  toast("모든 기억이 맞춰졌다. 문이 열린다...");
+function triggerEndingSequence() {
+  notifyToast("모든 생애의 조각이 맞춰졌습니다. 출구 문이 열립니다...");
   var rot = 0;
-  var timer = setInterval(function(){
-    rot += 0.03;
-    doorPivot.rotation.y = Math.min(rot, Math.PI / 2);
-    if(rot >= Math.PI / 2) {
-      clearInterval(timer);
-      document.getElementById("whiteout").classList.add("on");
+  var step = setInterval(function(){
+    rot += 0.025;
+    propDoorPivot.rotation.y = Math.min(rot, Math.PI / 2.2);
+    if(rot >= Math.PI / 2.2) {
+      clearInterval(step);
+      document.getElementById("exit-curtain").classList.add("closed");
+      sessionStorage.setItem("nameless-stage2-access", "0808");
       setTimeout(function(){
-        alert("축하합니다! 스티븐 호킹의 교실을 탈출하셨습니다.\n스테이지 2 인계 코드: 0808");
+        alert("축하합니다! 스티븐 호킹의 8가지 생애를 복원하고 교실을 탈출하셨습니다.\n스테이지 02 인계 코드: 0808");
         location.href = "../index.html";
-      }, 2200);
+      }, 2400);
     }
   }, 16);
 }
 
-function setupControls() {
-  var canvas = document.getElementById("c");
-  var isDragging = false;
-  var prevX = 0, prevY = 0;
+/* ==========================================================================
+   입력 및 1인칭 컨트롤러
+   ========================================================================== */
+function attachInputListeners() {
+  var canvas = document.getElementById("canvas-3d");
+  var isPanning = false;
+  var lastX = 0, lastY = 0;
 
   canvas.addEventListener("pointerdown", function(e){
-    isDragging = true;
-    prevX = e.clientX; prevY = e.clientY;
-    canvas.classList.add("dragging");
+    isPanning = true;
+    lastX = e.clientX; lastY = e.clientY;
   });
 
   window.addEventListener("pointermove", function(e){
-    if(isDragging) {
-      var dx = e.clientX - prevX;
-      var dy = e.clientY - prevY;
-      prevX = e.clientX; prevY = e.clientY;
-      yaw += dx * 0.0035;
-      pitch = Math.max(-1.1, Math.min(1.1, pitch + dy * 0.003));
+    if(isPanning) {
+      var dx = e.clientX - lastX;
+      var dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      camEuler.yaw += dx * 0.0032;
+      camEuler.pitch = Math.max(-1.15, Math.min(1.15, camEuler.pitch + dy * 0.0028));
     }
-    checkRaycast();
+    evaluateRaycastFocus();
   });
 
-  window.addEventListener("pointerup", function(e){
-    if(!isDragging) return;
-    isDragging = false;
-    canvas.classList.remove("dragging");
-  });
+  window.addEventListener("pointerup", function(){ isPanning = false; });
+  canvas.addEventListener("click", executeInteraction);
 
-  canvas.addEventListener("click", function(){
-    triggerInteraction();
-  });
-
+  // 키보드 조작
   window.addEventListener("keydown", function(e){
-    if(e.key === "w" || e.key === "W" || e.key === "ArrowUp") moveDir.f = 1;
-    if(e.key === "s" || e.key === "S" || e.key === "ArrowDown") moveDir.b = 1;
-    if(e.key === "a" || e.key === "A" || e.key === "ArrowLeft") moveDir.l = 1;
-    if(e.key === "d" || e.key === "D" || e.key === "ArrowRight") moveDir.r = 1;
-    if(e.key === "c" || e.key === "C") toggleCrouch();
-    if(e.key === "e" || e.key === "E" || e.key === " ") triggerInteraction();
+    if(e.key==="w"||e.key==="W"||e.key==="ArrowUp") moveKeys.w = 1;
+    if(e.key==="s"||e.key==="S"||e.key==="ArrowDown") moveKeys.s = 1;
+    if(e.key==="a"||e.key==="A"||e.key==="ArrowLeft") moveKeys.a = 1;
+    if(e.key==="d"||e.key==="D"||e.key==="ArrowRight") moveKeys.d = 1;
+    if(e.key==="c"||e.key==="C") toggleCrouching();
+    if(e.key==="e"||e.key==="E"||e.key===" ") executeInteraction();
   });
 
   window.addEventListener("keyup", function(e){
-    if(e.key === "w" || e.key === "W" || e.key === "ArrowUp") moveDir.f = 0;
-    if(e.key === "s" || e.key === "S" || e.key === "ArrowDown") moveDir.b = 0;
-    if(e.key === "a" || e.key === "A" || e.key === "ArrowLeft") moveDir.l = 0;
-    if(e.key === "d" || e.key === "D" || e.key === "ArrowRight") moveDir.r = 0;
+    if(e.key==="w"||e.key==="W"||e.key==="ArrowUp") moveKeys.w = 0;
+    if(e.key==="s"||e.key==="S"||e.key==="ArrowDown") moveKeys.s = 0;
+    if(e.key==="a"||e.key==="A"||e.key==="ArrowLeft") moveKeys.a = 0;
+    if(e.key==="d"||e.key==="D"||e.key==="ArrowRight") moveKeys.d = 0;
   });
 
-  var joyZone = document.getElementById("joy-zone");
-  var joyKnob = document.getElementById("joy-knob");
-  var joyId = null;
+  // 모바일 가상 아날로그 스틱
+  var stickZone = document.getElementById("virtual-stick");
+  var stickNub = document.getElementById("stick-nub");
+  var stickPointerId = null;
 
-  joyZone.addEventListener("pointerdown", function(e){
-    joyId = e.pointerId;
-    joyZone.setPointerCapture(e.pointerId);
+  stickZone.addEventListener("pointerdown", function(e){
+    stickPointerId = e.pointerId;
+    stickZone.setPointerCapture(e.pointerId);
   });
-  joyZone.addEventListener("pointermove", function(e){
-    if(e.pointerId !== joyId) return;
-    var rect = joyZone.getBoundingClientRect();
+  stickZone.addEventListener("pointermove", function(e){
+    if(e.pointerId !== stickPointerId) return;
+    var rect = stickZone.getBoundingClientRect();
     var cx = rect.left + rect.width / 2;
     var cy = rect.top + rect.height / 2;
-    var dx = e.clientX - cx;
-    var dy = e.clientY - cy;
+    var dx = e.clientX - cx, dy = e.clientY - cy;
     var dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
-    var ang = Math.atan2(dy, dx);
-    joyVector.x = Math.cos(ang) * (dist / 45);
-    joyVector.y = Math.sin(ang) * (dist / 45);
-    joyKnob.style.transform = "translate(calc(-50% + " + (joyVector.x*35) + "px), calc(-50% + " + (joyVector.y*35) + "px))";
+    var angle = Math.atan2(dy, dx);
+    analogVector.x = Math.cos(angle) * (dist / 45);
+    analogVector.y = Math.sin(angle) * (dist / 45);
+    stickNub.style.transform = "translate(calc(-50% + " + (analogVector.x*35) + "px), calc(-50% + " + (analogVector.y*35) + "px))";
   });
-  function endJoy(e) {
-    if(e.pointerId !== joyId) return;
-    joyId = null;
-    joyVector.x = joyVector.y = 0;
-    joyKnob.style.transform = "translate(-50%, -50%)";
+  function resetStick(e){
+    if(e.pointerId !== stickPointerId) return;
+    stickPointerId = null;
+    analogVector.x = analogVector.y = 0;
+    stickNub.style.transform = "translate(-50%, -50%)";
   }
-  joyZone.addEventListener("pointerup", endJoy);
-  joyZone.addEventListener("pointercancel", endJoy);
+  stickZone.addEventListener("pointerup", resetStick);
+  stickZone.addEventListener("pointercancel", resetStick);
 
-  document.getElementById("mobile-act").addEventListener("click", triggerInteraction);
-  document.getElementById("mobile-crouch").addEventListener("click", toggleCrouch);
+  document.getElementById("touch-action-btn").addEventListener("click", executeInteraction);
+  document.getElementById("touch-crouch-btn").addEventListener("click", toggleCrouching);
 
-  document.getElementById("intro-start").addEventListener("click", function(){
-    document.getElementById("intro-modal").classList.remove("open");
+  // 모달 제어 리스너
+  document.getElementById("btn-start-expedition").addEventListener("click", function(){
+    document.getElementById("modal-intro").classList.remove("visible");
   });
-  document.getElementById("modal-close").addEventListener("click", closeModal);
-  document.getElementById("pc-close").addEventListener("click", closeTerminal);
-  document.getElementById("pc-submit").addEventListener("click", handleTerminalSubmit);
-  document.getElementById("pc-code-input").addEventListener("keydown", function(e){
-    if(e.key === "Enter") handleTerminalSubmit();
+  document.getElementById("parchment-close").addEventListener("click", function(){
+    document.getElementById("modal-parchment").classList.remove("visible");
   });
-  document.getElementById("btn-diary").addEventListener("click", function(){
-    showDiary(STATE.chapter);
+  document.getElementById("terminal-close").addEventListener("click", function(){
+    document.getElementById("modal-terminal").classList.remove("visible");
   });
-  document.getElementById("btn-pc").addEventListener("click", openTerminal);
-  document.getElementById("btn-fs").addEventListener("click", function(){
+  document.getElementById("terminal-execute").addEventListener("click", verifyTerminalSubmission);
+  document.getElementById("terminal-field").addEventListener("keydown", function(e){
+    if(e.key === "Enter") verifyTerminalSubmission();
+  });
+  document.getElementById("btn-open-diary").addEventListener("click", function(){
+    displayParchmentFolio(GAME.chapter);
+  });
+  document.getElementById("btn-open-pc").addEventListener("click", displayTerminalScreen);
+  document.getElementById("btn-fullscreen").addEventListener("click", function(){
     if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
     else document.exitFullscreen().catch(function(){});
   });
 }
 
-function toggleCrouch() {
-  isCrouch = !isCrouch;
-  toast(isCrouch ? "자세를 낮췄습니다." : "일어섰습니다.");
+function toggleCrouching() {
+  GAME.isCrouch = !GAME.isCrouch;
+  notifyToast(GAME.isCrouch ? "자세를 낮춰 아래를 살핍니다." : "일어섰습니다.");
 }
 
-function onResize() {
+function handleWindowResize() {
   if(!renderer || !camera) return;
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-var clock = new THREE.Clock();
+/* ==========================================================================
+   실시간 렌더 루프
+   ========================================================================== */
+var frameClock = new THREE.Clock();
 
-function renderLoop() {
-  requestAnimationFrame(renderLoop);
-  var dt = Math.min(clock.getDelta(), 0.1);
+function startRenderLoop() {
+  requestAnimationFrame(startRenderLoop);
+  var delta = Math.min(frameClock.getDelta(), 0.1);
 
-  var lookX = Math.sin(yaw) * Math.cos(pitch);
-  var lookY = Math.sin(pitch);
-  var lookZ = Math.cos(yaw) * Math.cos(pitch);
-  var lookTarget = camPos.clone().add(new THREE.Vector3(lookX, lookY, lookZ));
-  camera.lookAt(lookTarget);
+  // 카메라 시선 벡터 계산
+  var dirX = Math.sin(camEuler.yaw) * Math.cos(camEuler.pitch);
+  var dirY = Math.sin(camEuler.pitch);
+  var dirZ = Math.cos(camEuler.yaw) * Math.cos(camEuler.pitch);
+  var focalPoint = playerCoord.clone().add(new THREE.Vector3(dirX, dirY, dirZ));
+  camera.lookAt(focalPoint);
 
-  var targetEye = isCrouch ? 0.85 : 1.60;
-  camPos.y += (targetEye - camPos.y) * 0.12;
+  // 서기 / 숙이기 시선 높이 부드러운 전환
+  var targetHeight = GAME.isCrouch ? 0.85 : 1.60;
+  playerCoord.y += (targetHeight - playerCoord.y) * 0.14;
 
-  var fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw)).normalize();
-  var right = new THREE.Vector3(-Math.cos(yaw), 0, Math.sin(yaw)).normalize();
-  var moveV = new THREE.Vector3();
+  // 이동 벡터 합성
+  var forwardVec = new THREE.Vector3(Math.sin(camEuler.yaw), 0, Math.cos(camEuler.yaw)).normalize();
+  var strafeVec = new THREE.Vector3(-Math.cos(camEuler.yaw), 0, Math.sin(camEuler.yaw)).normalize();
+  var velocity = new THREE.Vector3();
 
-  if(moveDir.f) moveV.add(fwd);
-  if(moveDir.b) moveV.sub(fwd);
-  if(moveDir.r) moveV.add(right);
-  if(moveDir.l) moveV.sub(right);
+  if(moveKeys.w) velocity.add(forwardVec);
+  if(moveKeys.s) velocity.sub(forwardVec);
+  if(moveKeys.d) velocity.add(strafeVec);
+  if(moveKeys.a) velocity.sub(strafeVec);
 
-  if(Math.abs(joyVector.y) > 0.05) moveV.addScaledVector(fwd, -joyVector.y);
-  if(Math.abs(joyVector.x) > 0.05) moveV.addScaledVector(right, joyVector.x);
+  if(Math.abs(analogVector.y) > 0.05) velocity.addScaledVector(forwardVec, -analogVector.y);
+  if(Math.abs(analogVector.x) > 0.05) velocity.addScaledVector(strafeVec, analogVector.x);
 
-  if(moveV.lengthSq() > 0) {
-    moveV.normalize().multiplyScalar(2.6 * dt);
-    var nextX = camPos.x + moveV.x;
-    var nextZ = camPos.z + moveV.z;
-    if(nextX > -4.4 && nextX < 4.4) camPos.x = nextX;
-    if(nextZ > -3.3 && nextZ < 3.5) camPos.z = nextZ;
+  if(velocity.lengthSq() > 0) {
+    velocity.normalize().multiplyScalar(2.8 * delta);
+    var futureX = playerCoord.x + velocity.x;
+    var futureZ = playerCoord.z + velocity.z;
+    // 세미나실 내부 충돌 범위 (8.4m x 6.8m)
+    if(futureX > -3.8 && futureX < 3.8) playerCoord.x = futureX;
+    if(futureZ > -3.0 && futureZ < 3.0) playerCoord.z = futureZ;
   }
-  camera.position.copy(camPos);
+  camera.position.copy(playerCoord);
 
-  if(teacherHead) {
-    teacherHead.rotation.x = Math.sin(clock.getElapsedTime() * 1.2) * 0.04;
+  // 미세한 천체 자오선 링 공전
+  if(propArmillary) {
+    propArmillary.children[2].rotation.z = Math.sin(frameClock.getElapsedTime() * 0.5) * 0.08;
   }
 
   renderer.render(scene, camera);
 }
 
-window.addEventListener("DOMContentLoaded", init3D);
+window.addEventListener("DOMContentLoaded", launch3DWorld);
 </script>
 </body>
 </html>
