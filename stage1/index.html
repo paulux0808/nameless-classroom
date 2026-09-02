@@ -3101,7 +3101,7 @@ function loadClassroom3DAssets(){
       if(gltf && gltf.scene){
         var char = gltf.scene;
         char.scale.set(0.96, 0.96, 0.96);
-        char.position.set(0, 0.02, 0.06);
+        char.position.set(0, 0.045, 0.22);
         char.traverse(function(node){
           if(node.isMesh){
             node.castShadow = true;
