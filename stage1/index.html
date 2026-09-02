@@ -966,10 +966,11 @@ function limb(r1,r2,len,color,rough){
 }
 function put(o,x,y,z,rx,ry,rz){o.position.set(x,y,z);
   if(rx)o.rotation.x=rx; if(ry)o.rotation.y=ry; if(rz)o.rotation.z=rz; return o;}
-function cyl(r1,r2,h,color,x,y,z,seg,rough){
+function cyl(r1,r2,h,color,x,y,z,seg,rough,rx,ry,rz){
   var m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,seg||18),
     new THREE.MeshStandardMaterial({color:color,roughness:rough===undefined?0.8:rough}));
-  m.position.set(x,y,z);return m;
+  m.position.set(x,y,z);
+  if(rx)m.rotation.x=rx; if(ry)m.rotation.y=ry; if(rz)m.rotation.z=rz; return m;
 }
 function ball(r,color,x,y,z,rough){
   var m=new THREE.Mesh(new THREE.SphereGeometry(r,18,14),
@@ -1249,110 +1250,140 @@ function buildRoom(){
   /* --- 감독교사 (벽에 기댄 단정한 정장 차림의 시험관) --- */
   var tG=new THREE.Group();tG.position.set(3.1,0,-3.42);teacherGroup=tG;
   /* 의자 접촉 그림자 */
-  tG.add(put(shadowDecal(0.9,0.9,0.44,0,0),0,0.002,0.08));
+  tG.add(put(shadowDecal(0.85,0.85,0.42,0,0),0,0.002,0.06));
+
   /* 앤티크 팔걸이 원목 의자 */
-  var woodCh=0x4c3320, padCol=0x271d17;
-  tG.add(box(0.54,0.06,0.52,woodCh,0,0.42,0.08)); /* 좌판 베이스 */
-  tG.add(box(0.50,0.04,0.48,padCol,0,0.46,0.08)); /* 가죽 쿠션 */
-  tG.add(box(0.48,0.48,0.04,padCol,0,0.74,-0.15)); /* 가죽 등쿠션 */
-  tG.add(box(0.54,0.05,0.06,woodCh,0,0.99,-0.15)); /* 등받이 상단 프레임 */
-  tG.add(cyl(0.016,0.016,0.54,woodCh,-0.23,0.72,-0.15,10,0.5)); /* 등받이 좌우 기둥 */
-  tG.add(cyl(0.016,0.016,0.54,woodCh, 0.23,0.72,-0.15,10,0.5));
-  [-0.14,0,0.14].forEach(function(spx){
-    tG.add(cyl(0.010,0.010,0.46,woodCh,spx,0.72,-0.15,8,0.5)); /* 등받이 살대 */
+  var woodCh=0x4a3220, padCol=0x261e18;
+  tG.add(box(0.52,0.05,0.50,woodCh,0,0.415,0.06)); /* 좌판 베이스 */
+  tG.add(box(0.48,0.04,0.46,padCol,0,0.455,0.06)); /* 가죽 방석 */
+  tG.add(box(0.44,0.46,0.04,padCol,0,0.72,-0.15)); /* 등받이 가죽 쿠션 */
+  tG.add(box(0.52,0.05,0.05,woodCh,0,0.965,-0.15)); /* 등받이 상단 프레임 */
+  tG.add(cyl(0.016,0.016,0.54,woodCh,-0.22,0.70,-0.15,12,0.5)); /* 등받이 좌우 기둥 */
+  tG.add(cyl(0.016,0.016,0.54,woodCh, 0.22,0.70,-0.15,12,0.5));
+  [-0.12,0,0.12].forEach(function(spx){
+    tG.add(cyl(0.010,0.010,0.44,woodCh,spx,0.70,-0.15,8,0.5)); /* 등받이 살대 */
   });
   /* 팔걸이 */
   [-1,1].forEach(function(sd){
-    tG.add(box(0.05,0.03,0.38,woodCh,sd*0.25,0.66,0.08));
-    tG.add(cyl(0.014,0.014,0.22,woodCh,sd*0.25,0.54,0.22,8,0.5));
+    tG.add(cyl(0.014,0.014,0.20,woodCh,sd*0.24,0.53,0.20,10,0.5)); /* 앞 지지대 */
+    tG.add(box(0.05,0.026,0.38,woodCh,sd*0.24,0.635,0.05)); /* 팔걸이 상판 */
   });
-  /* 의자 다리 & 크로스바 */
-  [[-0.22,-0.14],[0.22,-0.14],[-0.22,0.28],[0.22,0.28]].forEach(function(o){
-    tG.add(cyl(0.018,0.014,0.42,woodCh,o[0],0.21,0.08+o[1],10,0.5));
+  /* 4개 다리 및 수평 연결 크로스바 */
+  [[-0.21,-0.16],[0.21,-0.16],[-0.21,0.22],[0.21,0.22]].forEach(function(o){
+    tG.add(cyl(0.018,0.014,0.41,woodCh,o[0],0.205,0.06+o[1],10,0.5));
   });
-  tG.add(cyl(0.010,0.010,0.44,woodCh,0,0.15,-0.06,8,0.5,Math.PI/2));
-  tG.add(cyl(0.010,0.010,0.44,woodCh,0,0.15, 0.22,8,0.5,Math.PI/2));
+  /* 수평 크로스바 연결 */
+  [-1,1].forEach(function(sd){
+    var sb=cyl(0.010,0.010,0.38,woodCh,sd*0.21,0.14,0.09,8,0.5);
+    sb.rotation.x=Math.PI/2;tG.add(sb);
+  });
+  var fb1=cyl(0.010,0.010,0.42,woodCh,0,0.14,-0.10,8,0.5);
+  fb1.rotation.z=Math.PI/2;tG.add(fb1);
+  var fb2=cyl(0.010,0.010,0.42,woodCh,0,0.14,0.28,8,0.5);
+  fb2.rotation.z=Math.PI/2;tG.add(fb2);
 
-  /* 감독교사 인체 및 복식 */
-  var suitCol=0x26303d, shirtCol=0xf2efe9, tieCol=0x78252a, skinCol=0xdcb594, hairCol=0x352d27, shoeCol=0x151618;
-  /* 골반 및 둔부 */
-  tG.add(box(0.38,0.16,0.34,suitCol,0,0.52,0.09));
-  /* 대퇴부(허벅지) & 정강이 */
-  [-1,1].forEach(function(sd){
-    tG.add(box(0.14,0.13,0.38,suitCol,sd*0.12,0.505,0.27)); /* 허벅지 */
-    tG.add(box(0.125,0.38,0.14,suitCol,sd*0.12,0.25,0.46)); /* 정강이 */
-    /* 단정한 가죽 정장 구두 */
-    tG.add(box(0.11,0.07,0.24,shoeCol,sd*0.12,0.038,0.52));
-    tG.add(ball(0.052,shoeCol,sd*0.12,0.045,0.61,0.4)); /* 앞코 둥글림 */
-  });
-  /* 복부 & 가슴 (정장 수트) */
-  var bodyG=new THREE.Group();
-  bodyG.add(box(0.38,0.28,0.26,suitCol,0,0.68,0.07)); /* 복부 */
-  bodyG.add(box(0.42,0.32,0.28,suitCol,0,0.92,0.045)); /* 가슴 */
-  /* 셔츠 깃과 넥타이 */
-  bodyG.add(box(0.14,0.26,0.02,shirtCol,0,0.93,0.19)); /* 셔츠 V존 */
-  bodyG.add(box(0.05,0.24,0.025,tieCol,0,0.90,0.195)); /* 와인색 넥타이 */
-  /* 수트 옷깃 (라펠) */
-  [-1,1].forEach(function(sd){
-    var lapel=box(0.08,0.24,0.03,suitCol,sd*0.10,0.93,0.19);
-    lapel.rotation.z=sd*0.16;bodyG.add(lapel);
-  });
-  tG.add(bodyG);
+  /* 감독교사 인체 및 복식 (수학적으로 정밀 계산된 앉은 자세) */
+  var suitCol=0x242d38, shirtCol=0xf4f1ea, tieCol=0x7c2226, skinCol=0xdcb896, hairCol=0x2e2620, shoeCol=0x141416, glassCol=0xcda554;
 
-  /* 어깨, 팔, 손 (무릎 위에 점잖게 모은 자세) */
+  /* 골반 & 둔부 */
+  tG.add(box(0.35,0.13,0.30,suitCol,0,0.505,0.05));
+
+  /* 다리와 단정한 가죽 구두 */
   [-1,1].forEach(function(sd){
-    /* 어깨 패드 */
-    tG.add(ball(0.095,suitCol,sd*0.22,1.02,0.04,0.7));
-    /* 상완 */
-    var armU=cyl(0.065,0.055,0.32,suitCol,sd*0.23,0.87,0.08,12,0.75);
-    armU.rotation.x=0.28;armU.rotation.z=sd*0.12;tG.add(armU);
-    /* 전완 */
-    var armL=cyl(0.054,0.048,0.30,suitCol,sd*0.20,0.68,0.26,12,0.75);
-    armL.rotation.x=1.35;armL.rotation.y=sd*0.25;tG.add(armL);
-    /* 손 (무릎 위에 가지런히 얹음) */
-    var hand=box(0.085,0.045,0.11,skinCol,sd*0.13,0.59,0.40);
-    hand.rotation.y=sd*-0.22;tG.add(hand);
+    /* 허벅지 (골반에서 무릎까지 자연스러운 수평 전방 배치) */
+    tG.add(box(0.125,0.115,0.32,suitCol,sd*0.11,0.495,0.21));
+    /* 무릎 관절 캡 */
+    tG.add(box(0.12,0.11,0.06,suitCol,sd*0.11,0.485,0.37));
+    /* 정강이 (무릎에서 발목까지 수직 배치) */
+    tG.add(box(0.115,0.38,0.115,suitCol,sd*0.11,0.265,0.37));
+    /* 옥스퍼드 가죽 정장 구두 (군더더기 없는 슬림 로우 프로파일) */
+    tG.add(box(0.096,0.025,0.08,shoeCol,sd*0.11,0.013,0.33)); /* 뒷굽 */
+    tG.add(box(0.098,0.055,0.20,shoeCol,sd*0.11,0.035,0.43)); /* 구두 바디 */
+    tG.add(box(0.088,0.040,0.07,shoeCol,sd*0.11,0.025,0.53)); /* 앞코 */
   });
 
-  /* 목, 머리, 얼굴, 안경, 헤어스타일 */
-  tG.add(cyl(0.055,0.06,0.11,skinCol,0,1.10,0.03,12,0.6)); /* 목 */
-  tG.add(box(0.12,0.035,0.08,shirtCol,0,1.07,0.07)); /* 화이트 셔츠 칼라 */
-  /* 두상 (자연스러운 비율의 얼굴 윤곽) */
-  var head=ball(0.12,skinCol,0,1.23,0.03,0.6);
-  head.scale.set(0.96,1.15,1.05);tG.add(head);
-  /* 코와 턱 */
-  tG.add(box(0.024,0.045,0.035,skinCol,0,1.215,0.155)); /* 코 */
-  tG.add(box(0.065,0.035,0.04,skinCol,0,1.14,0.13)); /* 턱 */
-  /* 귀 */
+  /* 상체 (단정하게 테일러링된 수트 재킷 & 셔츠 & 타이) */
+  tG.add(box(0.33,0.18,0.20,suitCol,0,0.645,0.035)); /* 복부 */
+  tG.add(box(0.36,0.24,0.22,suitCol,0,0.835,0.025)); /* 가슴 */
+  /* 셔츠 V존 & 와인색 타이 */
+  tG.add(box(0.10,0.20,0.01,shirtCol,0,0.85,0.136));
+  tG.add(box(0.032,0.20,0.015,tieCol,0,0.84,0.142));
+  tG.add(box(0.038,0.036,0.02,tieCol,0,0.94,0.144)); /* 매듭 */
+  /* 라펠 (옷깃) */
   [-1,1].forEach(function(sd){
-    tG.add(box(0.02,0.05,0.035,skinCol,sd*0.12,1.22,0.02));
+    var lapel=box(0.055,0.21,0.018,suitCol,sd*0.072,0.845,0.138);
+    lapel.rotation.z=sd*0.12;tG.add(lapel);
+    /* 셔츠 칼라 깃 */
+    tG.add(box(0.042,0.032,0.015,shirtCol,sd*0.042,0.955,0.13));
   });
-  /* 금테 안경 (학구적인 감독관의 인상) */
-  var glassCol=0xc49a46;
-  [-1,1].forEach(function(sd){
-    var rim=cyl(0.026,0.026,0.008,glassCol,sd*0.045,1.23,0.15,12,0.3);
-    rim.rotation.x=Math.PI/2;tG.add(rim); /* 렌즈 림 */
-    tG.add(box(0.006,0.006,0.14,glassCol,sd*0.075,1.235,0.08)); /* 안경 다리 */
-  });
-  tG.add(box(0.04,0.006,0.008,glassCol,0,1.235,0.155)); /* 브릿지 */
-  /* 헤어스타일 (단정한 2:8 가르마 원숙한 스타일) */
-  var hairTop=ball(0.132,hairCol,0,1.27,0.015,0.85);
-  hairTop.scale.set(0.98,0.92,1.05);tG.add(hairTop);
-  tG.add(box(0.07,0.035,0.14,hairCol,-0.06,1.31,0.02)); /* 가르마 볼륨 */
-  tG.add(box(0.24,0.12,0.08,hairCol,0,1.21,-0.075)); /* 뒷머리 */
 
-  /* 감독교사 명찰 핀 */
-  var tag=plane(0.22,0.075,new THREE.MeshStandardMaterial({map:tex(function(g,w,h){
+  /* 양 어깨, 팔, 손 (무릎 위에 점잖게 올린 유기적인 단일 라인) */
+  [-1,1].forEach(function(sd){
+    /* 어깨 */
+    tG.add(ball(0.068,suitCol,sd*0.19,0.925,0.02,0.7));
+    /* 상완 (어깨에서 팔꿈치로 자연스럽게 전하방 하강) */
+    var armU=cyl(0.050,0.044,0.22,suitCol,sd*0.19,0.82,0.042,12,0.75);
+    armU.rotation.x=0.20;tG.add(armU);
+    /* 팔꿈치 관절 */
+    tG.add(ball(0.042,suitCol,sd*0.19,0.715,0.065,0.7));
+    /* 전완 (팔꿈치에서 무릎 위 손목으로 꺾임 없이 완벽 연결) */
+    var armL=cyl(0.042,0.036,0.24,suitCol,sd*0.15,0.64,0.162,12,0.75);
+    armL.rotation.x=0.74;armL.rotation.y=sd*0.32;tG.add(armL);
+    /* 화이트 셔츠 커프스 (소매) */
+    var cuff=cyl(0.038,0.038,0.025,shirtCol,sd*0.11,0.565,0.26,12,0.7);
+    cuff.rotation.x=0.74;cuff.rotation.y=sd*0.32;tG.add(cuff);
+    /* 손 (무릎 위에 차분히 얹힌 자연스러운 손) */
+    var palm=box(0.075,0.022,0.075,skinCol,sd*0.11,0.555,0.305);
+    palm.rotation.y=sd*-0.15;tG.add(palm);
+    var fingers=box(0.070,0.018,0.055,skinCol,sd*0.11,0.545,0.365);
+    fingers.rotation.x=0.12;fingers.rotation.y=sd*-0.15;tG.add(fingers);
+    var thumb=box(0.018,0.016,0.035,skinCol,sd*0.068,0.555,0.295);
+    thumb.rotation.y=sd*0.25;tG.add(thumb);
+  });
+
+  /* 목, 머리, 얼굴, 안경, 곡면 헤어스타일 */
+  tG.add(cyl(0.044,0.048,0.08,skinCol,0,1.00,0.02,12,0.6)); /* 목 */
+  var head=ball(0.096,skinCol,0,1.135,0.03,0.6);
+  head.scale.set(0.94,1.08,0.98);tG.add(head);
+  tG.add(box(0.088,0.060,0.075,skinCol,0,1.085,0.05)); /* 턱선 */
+  tG.add(box(0.014,0.028,0.018,skinCol,0,1.135,0.12)); /* 코 */
+  [-1,1].forEach(function(sd){
+    tG.add(box(0.014,0.036,0.022,skinCol,sd*0.095,1.135,0.03)); /* 귀 */
+  });
+
+  /* 자연스러운 360° 곡면 헤어스타일 (뒷통수 사각 박스 완전 제거) */
+  var hairCap=ball(0.102,hairCol,0,1.155,0.025,0.85);
+  hairCap.scale.set(0.96,0.92,1.02);tG.add(hairCap);
+  var hairBack=ball(0.090,hairCol,0,1.105,-0.015,0.85);
+  hairBack.scale.set(0.95,0.88,0.92);tG.add(hairBack);
+  var hairPart=ball(0.052,hairCol,-0.035,1.205,0.035,0.85);
+  hairPart.scale.set(1.2,0.6,1.0);tG.add(hairPart);
+  [-1,1].forEach(function(sd){
+    tG.add(box(0.014,0.045,0.032,hairCol,sd*0.094,1.14,0.045)); /* 구루나룻 */
+  });
+
+  /* 지적인 클래식 금테 원형 안경 */
+  var glassMat=new THREE.MeshStandardMaterial({color:glassCol,roughness:0.35,metalness:0.7});
+  [-1,1].forEach(function(sd){
+    var rim=new THREE.Mesh(new THREE.TorusGeometry(0.020,0.0024,8,20),glassMat);
+    rim.position.set(sd*0.038,1.140,0.125);tG.add(rim);
+    tG.add(box(0.003,0.003,0.095,glassCol,sd*0.058,1.140,0.078)); /* 안경 다리 */
+    tG.add(box(0.016,0.004,0.003,0x221a14,sd*0.038,1.140,0.120)); /* 온화한 눈매 */
+  });
+  tG.add(box(0.020,0.003,0.003,glassCol,0,1.140,0.125)); /* 안경 브릿지 */
+
+  /* 감독교사 명찰 핀 (왼쪽 가슴에 단정하게 밀착 부착) */
+  var tag=plane(0.12,0.045,new THREE.MeshStandardMaterial({map:tex(function(g,w,h){
       g.fillStyle="#f6f3eb";g.fillRect(0,0,w,h);
-      g.fillStyle="#1a3d34";g.fillRect(0,0,w,18); /* 상단 청록색 띠 */
+      g.fillStyle="#1a3d34";g.fillRect(0,0,w,14);
       g.strokeStyle="#b8a788";g.lineWidth=2;g.strokeRect(1,1,w-2,h-2);
       g.fillStyle="#2b2419";g.textAlign="center";g.textBaseline="middle";
-      g.font="900 38px 'Gothic A1',sans-serif";g.fillText("감독교사",w/2,h/2+7);
-    },240,80)}),0.13,0.92,0.19);
+      g.font="900 32px 'Gothic A1',sans-serif";g.fillText("감독교사",w/2,h/2+5);
+    },240,90)}),0.10,0.86,0.148);
   tG.add(tag);
   scene.add(tG);
 
-  /* 감독교사 상호작용 히트박스 (클릭 용이하도록 전신 커버) */
+  /* 감독교사 상호작용 히트박스 */
   var tBack=box(0.85,1.35,0.70,0x36414f,3.1,0.9,-3.42);
   tBack.material.transparent=true;tBack.material.opacity=0;
   scene.add(hot(tBack,"teacher","감독교사"));
@@ -1376,9 +1407,9 @@ function buildRoom(){
       scene.add(cyl(0.018,0.018,0.71,legCol,x+o[0],0.365,z+o[1],10,0.5));
       scene.add(cyl(0.022,0.022,0.035,rubCol,x+o[0],0.018,z+o[1],10,0.8));
     });
-    /* 책상 좌우/전면 하부 파이프 보강 */
-    scene.add(cyl(0.012,0.012,0.48,legCol,x-0.52,0.22,z,8,0.5,Math.PI/2));
-    scene.add(cyl(0.012,0.012,0.48,legCol,x+0.52,0.22,z,8,0.5,Math.PI/2));
+    /* 책상 좌우 하부 수평 파이프 보강 (수평 회전 적용) */
+    var cp1=cyl(0.012,0.012,0.48,legCol,x-0.52,0.22,z,8,0.5);cp1.rotation.x=Math.PI/2;scene.add(cp1);
+    var cp2=cyl(0.012,0.012,0.48,legCol,x+0.52,0.22,z,8,0.5);cp2.rotation.x=Math.PI/2;scene.add(cp2);
     scene.add(box(0.96,0.015,0.44,0x2b302e,x,0.56,z)); /* 책상 밑 책 보관 선반 */
 
     /* 학생 의자 (인체공학적 곡면 합판 + 스틸 파이프) */
