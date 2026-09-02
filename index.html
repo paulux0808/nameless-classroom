@@ -21,20 +21,12 @@ main{width:min(1120px,92vw);padding:clamp(34px,6vw,74px) 0;position:relative}.ma
   <header class="masthead"><div class="brand">NAMELESS</div><div class="folio">STAGE ARCHIVE<br>SELECT ENTRY</div></header>
   <section class="stages" aria-label="스테이지 선택">
     <button class="stage" type="button" data-number="1" data-stage-one><span class="stage-index">STAGE 01 · MEMORY FRAGMENTS</span><h2>이름 없는 교실</h2><p>교실에 남겨진 기록을 따라 한 인물의 이름을 복원합니다.</p><span class="stage-foot"><span class="ready">PLAYABLE</span><span class="arrow">→</span></span></button>
-    <button class="stage" type="button" data-number="2" data-stage-two><span class="stage-index">STAGE 02 · 1943</span><h2>이름 없는 시설</h2><p>책임자의 자리에서 제출된 기록을 검토하고 시설의 다음 단계를 결정합니다.</p><span class="stage-foot"><span class="locked">STAGE 01 CODE REQUIRED</span><span class="arrow">→</span></span></button>
+    <button class="stage" type="button" data-number="2" data-stage-two aria-label="스테이지 2 준비 중"><span class="stage-index">STAGE 02 · PREPARING</span><h2>이름 없는 시설</h2><p>스테이지 2는 현재 준비 중입니다.</p><span class="stage-foot"><span class="locked">PREPARING</span><span class="arrow">→</span></span></button>
   </section>
 </main>
-<section id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
-  <form class="gate-card" data-code-form><div class="gate-kicker">STAGE 02 ACCESS</div><h2 id="gate-title">인계 코드</h2><p>스테이지 1의 마지막 문에서 확인한 네 자리 코드를 입력하십시오.</p><input class="code" data-code-input inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" aria-label="네 자리 인계 코드"><div class="gate-message" data-code-message aria-live="polite"></div><div class="gate-actions"><button type="button" data-close>취소</button><button class="enter" type="submit">스테이지 2 시작</button></div></form>
-</section>
 <script>
-const gate=document.querySelector('#gate'),input=document.querySelector('[data-code-input]'),message=document.querySelector('[data-code-message]');
 document.querySelector('[data-stage-one]').addEventListener('click',()=>{location.href='stage1/';});
-document.querySelector('[data-stage-two]').addEventListener('click',()=>{gate.classList.add('open');message.textContent='';input.value='';setTimeout(()=>input.focus(),30);});
-document.querySelector('[data-close]').addEventListener('click',()=>{gate.classList.remove('open');});
-gate.addEventListener('click',event=>{if(event.target===gate)gate.classList.remove('open');});
-document.addEventListener('keydown',event=>{if(event.key==='Escape')gate.classList.remove('open');});
-document.querySelector('[data-code-form]').addEventListener('submit',event=>{event.preventDefault();if(input.value.trim()!=='0808'){message.textContent='코드가 일치하지 않습니다.';input.select();return;}sessionStorage.setItem('nameless-stage2-access','0808');location.href='stage2/';});
+document.querySelector('[data-stage-two]').addEventListener('click',()=>{location.href='preparing/';});
 </script>
 </body>
 </html>
