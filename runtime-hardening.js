@@ -136,6 +136,10 @@
   };
 
   global.store = resilientStore;
+  var recoveredState = resilientStore.get();
+  if (recoveredState) {
+    global.S = Object.assign(typeof global.fresh === "function" ? global.fresh() : {}, recoveredState);
+  }
 
   var runtime = {
     version: VERSION,
