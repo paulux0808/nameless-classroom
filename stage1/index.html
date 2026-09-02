@@ -1327,8 +1327,7 @@ function buildRoom(){
       g.fillStyle="#3d6d78";g.font="500 22px monospace";g.fillText("scholarship terminal",48,270);
     },640,384)});
   var screen=plane(0.78,0.48,screenMat,0,0.01,0.02);
-  computerG.add(screen);
-  scene.add(hot(screen,"computer","컴퓨터"));
+  computerG.add(hot(screen,"computer","컴퓨터"));
   screenGlow=new THREE.PointLight(0x63c3b2,0.55,3.4);screenGlow.position.set(0,1.2,-2.6);scene.add(screenGlow);
 
   /* 탁상달력 (Chapter 1 Clue) */
