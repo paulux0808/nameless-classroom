@@ -744,7 +744,7 @@ var yaw=0,pitch=0,SPOTS=[
  {p:[-3.1,1.62,0.4],y:Math.PI*0.5,label:"창가"}];
 var spotIdx=0;
 /* 걸어 다니기 — 책상·교탁·사람은 통과하지 못한다 */
-var keys={}, joy={x:0,z:0}, lastT=0, EYE=1.60, EYE_LOW=0.85, SPEED=3.0, crouch=false;
+var keys={}, joy={x:0,z:0}, lastT=0, EYE=1.60, EYE_LOW=0.42, SPEED=3.0, crouch=false;
 var IS_TOUCH=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 var BLOCKS=[
   {x:0,   z:-2.90, hx:0.95, hz:0.50},
@@ -1487,9 +1487,9 @@ function buildRoom(){
       g.strokeStyle="rgba(60,55,20,.55)";g.lineWidth=4;
       for(var i=0;i<4;i++){g.beginPath();g.moveTo(18,34+i*26);
         g.lineTo(w-18-(i===3?40:0),34+i*26);g.stroke();}
-    },160,140)});
-  var post=new THREE.Mesh(new THREE.PlaneGeometry(0.15,0.13),postMat);
-  post.position.set(-2.30,0.695,1.35);post.rotation.x=Math.PI/2;postitObj=post;
+    },160,140), side: THREE.DoubleSide});
+  var post=new THREE.Mesh(new THREE.PlaneGeometry(0.18,0.15),postMat);
+  post.position.set(-2.30,0.67,1.35);post.rotation.x=-Math.PI/2;postitObj=post;
   scene.add(hot(post,"postit","쪽지"));
 
   /* 첫 일기 — 입구 앞 책상 위 */
@@ -1843,7 +1843,7 @@ function buildRoom(){
   /* 15칸 후면 학생 사물함 (3단 x 5열: 환기 루버 슬릿, 황동 명찰 홀더, 매립형 손잡이) */
   scene.add(shadowDecal(3.4,0.72,0.46,-2.2,3.75));
   var lockerWood=0x6e4b2d, lockerTrim=0x4c321c, doorBase=0x5a3c22;
-  var lockerUnit=new THREE.Group();lockerUnit.position.set(-2.2,0,3.75);
+  var lockerUnit=new THREE.Group();lockerUnit.position.set(-2.2,0,3.75);lockerUnit.rotation.y=Math.PI;
 
   /* 사물함 메인 프레임 (폭 3.14m x 높이 1.02m x 깊이 0.44m) */
   lockerUnit.add(box(3.14,1.02,0.44,lockerWood,0,0.52,0));
@@ -2432,6 +2432,7 @@ function toggleCrouch(){
   crouch=!crouch;
   $("#crouch").classList.toggle("on",crouch);
   $$("#toolbar #t-crouch").forEach(function(b){b.classList.toggle("act",crouch);});
+  if(crouch && pitch < 0.08) pitch = 0.22;
 }
 function gotoSpot(i){
   spotIdx=i;var s=SPOTS[i];
@@ -3082,7 +3083,7 @@ function loadClassroom3DAssets(){
       if(gltf && gltf.scene){
         var chair = gltf.scene;
         chair.scale.set(0.95, 0.95, 0.95);
-        chair.rotation.y = Math.PI;
+        chair.rotation.y = 0; // 교실 정면(+Z)을 향해 착석
         chair.position.set(0, 0, 0.05);
         chair.traverse(function(node){
           if(node.isMesh){
@@ -3185,12 +3186,14 @@ function loadClassroom3DAssets(){
               var d = gltfDesk.scene.clone();
               d.scale.set(0.92, 0.82, 0.88);
               d.position.set(x, 0, z);
+              d.rotation.y = Math.PI; // 칠판을 향하도록 180도 회전
               d.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
               sFurn.add(d);
 
               var ch = gltfChair.scene.clone();
               ch.scale.set(0.85, 0.85, 0.85);
-              ch.position.set(x, 0, z + 0.38);
+              ch.position.set(x, 0, z + 0.42);
+              ch.rotation.y = Math.PI; // 책상과 칠판을 향하도록 180도 회전
               ch.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
               sFurn.add(ch);
             }
@@ -3246,21 +3249,22 @@ function loadClassroom3DAssets(){
     });
   }
 
-  /* 7. 고서적 / 수학책 (book_encyclopedia_set_01.gltf) */
-  var bkGrp = mathBookG || window.mathBookG;
-  if(bkGrp){
-    tryLoad("books/book_encyclopedia_set_01.gltf", function(gltf){
-      if(gltf && gltf.scene){
-        var bk = gltf.scene;
-        bk.scale.set(1.35, 1.35, 1.35);
-        bk.position.set(0, 0.01, 0);
-        bk.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-        var bkProc = mathBookProcedural || window.mathBookProcedural;
-        if(bkProc) bkProc.visible = false;
-        bkGrp.add(bk);
-      }
-    });
-  }
+  /* 7. 창가 선반 위 고서적/백과사전 세트 (book_encyclopedia_set_01.gltf) - 학생 책상 위가 아닌 창가 선반 장식 */
+  tryLoad("books/book_encyclopedia_set_01.gltf", function(gltf){
+    if(gltf && gltf.scene){
+      var bks = gltf.scene;
+      var box = new THREE.Box3().setFromObject(bks);
+      var center = box.getCenter(new THREE.Vector3());
+      bks.position.x -= center.x;
+      bks.position.z -= center.z;
+      bks.position.y -= box.min.y;
+      bks.scale.set(0.55, 0.55, 0.55);
+      bks.position.set(-4.25, 0.86, 0.35); // 창가 선반 화분 옆
+      bks.rotation.y = Math.PI / 2;
+      bks.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+      scene.add(bks);
+    }
+  });
 
   /* 8. 교탁 위 CRT 모니터 (computer.glb) */
   var cComp = computerG || window.computerG;
