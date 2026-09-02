@@ -1231,19 +1231,22 @@ function buildRoom(){
   scene.add(podiumG);
 
   /* 90년대 CRT 컴퓨터 (스위블 받침대 + 브라운관 하우징) */
-  scene.add(box(0.38,0.025,0.34,0x282d34,0,0.795,-2.95));
-  scene.add(cyl(0.075,0.085,0.05,0x323842,0,0.83,-2.95,16,0.6));
-  scene.add(box(0.88,0.58,0.10,0x282e37,0,1.18,-2.96)); /* 전면 베젤 */
-  scene.add(box(0.80,0.50,0.18,0x20242b,0,1.18,-3.10)); /* 몸체 */
-  scene.add(box(0.64,0.40,0.14,0x191d23,0,1.18,-3.26)); /* 후면 튜브 */
+  var compG=new THREE.Group();compG.position.set(0,1.18,-2.96);scene.add(compG);window.computerG=compG;
+  var compProcedural=new THREE.Group();compG.add(compProcedural);window.compProcedural=compProcedural;
+
+  compProcedural.add(box(0.38,0.025,0.34,0x282d34,0,0.795-1.18,0.01));
+  compProcedural.add(cyl(0.075,0.085,0.05,0x323842,0,0.83-1.18,0.01,16,0.6));
+  compProcedural.add(box(0.88,0.58,0.10,0x282e37,0,0,0)); /* 전면 베젤 */
+  compProcedural.add(box(0.80,0.50,0.18,0x20242b,0,0,-0.14)); /* 몸체 */
+  compProcedural.add(box(0.64,0.40,0.14,0x191d23,0,0,-0.30)); /* 후면 튜브 */
   /* 조작부 (플로피 슬롯, 전원 버튼, LED) */
-  scene.add(box(0.16,0.015,0.01,0x101317,-0.26,0.94,-2.905));
-  scene.add(box(0.028,0.020,0.015,0x8b2b24,0.34,0.94,-2.905));
-  scene.add(ball(0.007,0x3de874,0.38,0.94,-2.900,0.2));
+  compProcedural.add(box(0.16,0.015,0.01,0x101317,-0.26,0.94-1.18,0.055));
+  compProcedural.add(box(0.028,0.020,0.015,0x8b2b24,0.34,0.94-1.18,0.055));
+  compProcedural.add(ball(0.007,0x3de874,0.38,0.94-1.18,0.060,0.2));
 
   /* 키보드 & 마우스 */
-  var kb=box(0.48,0.025,0.16,0x303640,0,0.80,-2.72);kb.rotation.x=-0.08;scene.add(kb);
-  scene.add(box(0.065,0.028,0.09,0x353b45,0.36,0.795,-2.72));
+  var kb=box(0.48,0.025,0.16,0x303640,0,0.80-1.18,0.24);kb.rotation.x=-0.08;compProcedural.add(kb);
+  compProcedural.add(box(0.065,0.028,0.09,0x353b45,0.36,0.795-1.18,0.24));
 
   /* 컴퓨터 모니터 화면 (챕터 진행 단말기) */
   var screenMat=new THREE.MeshBasicMaterial({map:tex(function(g,w,h){
@@ -1292,69 +1295,71 @@ function buildRoom(){
   var tG=new THREE.Group();tG.position.set(3.1,0,-3.42);teacherGroup=tG;
   tG.add(put(shadowDecal(0.85,0.85,0.42,0,0),0,0.002,0.06));
 
-  /* 앤티크 원목 의자 */
+  /* 앤티크 원목 의자 (3D 에셋 로드 시 대체 가능한 그룹) */
+  var tChairProcedural=new THREE.Group();tG.add(tChairProcedural);window.tChairProcedural=tChairProcedural;
   var woodCh=0x5c422c, padCol=0x261e18;
-  tG.add(box(0.52,0.05,0.50,woodCh,0,0.42,0.06));
-  tG.add(box(0.48,0.04,0.46,padCol,0,0.46,0.06));
-  tG.add(box(0.44,0.48,0.04,padCol,0,0.72,-0.15));
-  tG.add(box(0.52,0.05,0.05,woodCh,0,0.96,-0.15));
-  tG.add(cyl(0.016,0.016,0.54,woodCh,-0.22,0.70,-0.15,12,0.5));
-  tG.add(cyl(0.016,0.016,0.54,woodCh, 0.22,0.70,-0.15,12,0.5));
+  tChairProcedural.add(box(0.52,0.05,0.50,woodCh,0,0.42,0.06));
+  tChairProcedural.add(box(0.48,0.04,0.46,padCol,0,0.46,0.06));
+  tChairProcedural.add(box(0.44,0.48,0.04,padCol,0,0.72,-0.15));
+  tChairProcedural.add(box(0.52,0.05,0.05,woodCh,0,0.96,-0.15));
+  tChairProcedural.add(cyl(0.016,0.016,0.54,woodCh,-0.22,0.70,-0.15,12,0.5));
+  tChairProcedural.add(cyl(0.016,0.016,0.54,woodCh, 0.22,0.70,-0.15,12,0.5));
   [-0.12,0,0.12].forEach(function(spx){
-    tG.add(cyl(0.010,0.010,0.44,woodCh,spx,0.70,-0.15,8,0.5));
+    tChairProcedural.add(cyl(0.010,0.010,0.44,woodCh,spx,0.70,-0.15,8,0.5));
   });
   [-1,1].forEach(function(sd){
-    tG.add(cyl(0.014,0.014,0.20,woodCh,sd*0.24,0.53,0.18,10,0.5));
-    tG.add(box(0.05,0.026,0.38,woodCh,sd*0.24,0.63,0.04));
+    tChairProcedural.add(cyl(0.014,0.014,0.20,woodCh,sd*0.24,0.53,0.18,10,0.5));
+    tChairProcedural.add(box(0.05,0.026,0.38,woodCh,sd*0.24,0.63,0.04));
   });
   [[-0.20,-0.15],[0.20,-0.15],[-0.20,0.22],[0.20,0.22]].forEach(function(o){
-    tG.add(cyl(0.018,0.014,0.41,woodCh,o[0],0.205,0.06+o[1],10,0.5));
+    tChairProcedural.add(cyl(0.018,0.014,0.41,woodCh,o[0],0.205,0.06+o[1],10,0.5));
   });
   [-1,1].forEach(function(sd){
     var sb=cyl(0.010,0.010,0.36,woodCh,sd*0.20,0.14,0.08,8,0.5);
-    sb.rotation.x=Math.PI/2;tG.add(sb);
+    sb.rotation.x=Math.PI/2;tChairProcedural.add(sb);
   });
   var fb=cyl(0.010,0.010,0.40,woodCh,0,0.14,0.27,8,0.5);
-  fb.rotation.z=Math.PI/2;tG.add(fb);
+  fb.rotation.z=Math.PI/2;tChairProcedural.add(fb);
 
-  /* 인체: 묵직한 네이비 수트 & 단정한 감독교사 착석 자세 */
+  /* 인체: 묵직한 네이비 수트 & 단정한 감독교사 착석 자세 (3D 에셋 로드 시 대체 가능한 그룹) */
+  var tMannequinProcedural=new THREE.Group();tG.add(tMannequinProcedural);window.tMannequinProcedural=tMannequinProcedural;
   var coat=0x2c3542, skin=0xdcbb9d, trous=0x222832, shoe=0x18181a, hairCol=0x383028;
-  var pelvis=ball(0.145,trous,0,0.53,0.10);pelvis.scale.set(1.3,0.82,1.0);tG.add(pelvis);
-  var torso=cyl(0.165,0.20,0.44,coat,0,0.79,0.055,20,0.82);torso.rotation.x=-0.09;tG.add(torso);
-  var chest=ball(0.185,coat,0,0.98,0.035);chest.scale.set(1.28,0.86,0.92);tG.add(chest);
-  tG.add(cyl(0.052,0.062,0.10,skin,0,1.09,0.02,14,0.72));
-  var head=ball(0.126,skin,0,1.235,0.022,0.72);head.scale.set(1,1.15,1.04);tG.add(head);
-  var hair=ball(0.133,hairCol,0,1.265,0.006,0.86);hair.scale.set(1.02,1.0,1.04);tG.add(hair);
-  var nape=ball(0.108,hairCol,0,1.20,-0.045,0.86);nape.scale.set(1,0.86,0.8);tG.add(nape);
+  var pelvis=ball(0.145,trous,0,0.53,0.10);pelvis.scale.set(1.3,0.82,1.0);tMannequinProcedural.add(pelvis);
+  var torso=cyl(0.165,0.20,0.44,coat,0,0.79,0.055,20,0.82);torso.rotation.x=-0.09;tMannequinProcedural.add(torso);
+  var chest=ball(0.185,coat,0,0.98,0.035);chest.scale.set(1.28,0.86,0.92);tMannequinProcedural.add(chest);
+  tMannequinProcedural.add(cyl(0.052,0.062,0.10,skin,0,1.09,0.02,14,0.72));
+  var head=ball(0.126,skin,0,1.235,0.022,0.72);head.scale.set(1,1.15,1.04);tMannequinProcedural.add(head);
+  var hair=ball(0.133,hairCol,0,1.265,0.006,0.86);hair.scale.set(1.02,1.0,1.04);tMannequinProcedural.add(hair);
+  var nape=ball(0.108,hairCol,0,1.20,-0.045,0.86);nape.scale.set(1,0.86,0.8);tMannequinProcedural.add(nape);
 
   /* 화이트 셔츠 깃 & 와인색 타이 */
-  tG.add(box(0.08,0.20,0.01,0xf5f3ed,0,0.95,0.155));
-  tG.add(box(0.028,0.20,0.015,0x82242a,0,0.93,0.162));
-  tG.add(box(0.034,0.034,0.02,0x82242a,0,1.04,0.164));
+  tMannequinProcedural.add(box(0.08,0.20,0.01,0xf5f3ed,0,0.95,0.155));
+  tMannequinProcedural.add(box(0.028,0.20,0.015,0x82242a,0,0.93,0.162));
+  tMannequinProcedural.add(box(0.034,0.034,0.02,0x82242a,0,1.04,0.164));
   [-1,1].forEach(function(sd){
     var lap=box(0.048,0.20,0.016,coat,sd*0.062,0.94,0.160);
-    lap.rotation.z=sd*0.14;tG.add(lap);
+    lap.rotation.z=sd*0.14;tMannequinProcedural.add(lap);
   });
 
   /* 금테 안경 */
   var glassMat=new THREE.MeshStandardMaterial({color:0xd4aa4a,roughness:0.35,metalness:0.75});
   [-1,1].forEach(function(sd){
     var rim=new THREE.Mesh(new THREE.TorusGeometry(0.022,0.0026,8,20),glassMat);
-    rim.position.set(sd*0.044,1.235,0.145);tG.add(rim);
-    tG.add(box(0.003,0.003,0.11,0xd4aa4a,sd*0.068,1.235,0.08));
+    rim.position.set(sd*0.044,1.235,0.145);tMannequinProcedural.add(rim);
+    tMannequinProcedural.add(box(0.003,0.003,0.11,0xd4aa4a,sd*0.068,1.235,0.08));
   });
-  tG.add(box(0.022,0.003,0.003,0xd4aa4a,0,1.235,0.145));
+  tMannequinProcedural.add(box(0.022,0.003,0.003,0xd4aa4a,0,1.235,0.145));
 
   /* 양팔 (어깨 -> 팔꿈치 -> 무릎 위로 자연스럽게 얹은 손) */
   [-1,1].forEach(function(sd){
-    tG.add(put(limb(0.062,0.052,0.29,coat), sd*0.222,0.875,0.015, -0.26));
-    tG.add(put(limb(0.052,0.046,0.27,coat), sd*0.208,0.700,0.215, -1.24));
+    tMannequinProcedural.add(put(limb(0.062,0.052,0.29,coat), sd*0.222,0.875,0.015, -0.26));
+    tMannequinProcedural.add(put(limb(0.052,0.046,0.27,coat), sd*0.208,0.700,0.215, -1.24));
     var hand=ball(0.052,skin,sd*0.198,0.665,0.345,0.7);
-    hand.scale.set(1,0.8,1.25);tG.add(hand);
-    tG.add(put(limb(0.098,0.086,0.34,trous), sd*0.118,0.525,0.295, Math.PI/2));
-    tG.add(put(limb(0.078,0.062,0.40,trous), sd*0.118,0.265,0.470, 0.06));
-    tG.add(box(0.115,0.075,0.25,shoe,sd*0.118,0.042,0.520));
-    tG.add(ball(0.058,shoe,sd*0.118,0.052,0.615,0.5));
+    hand.scale.set(1,0.8,1.25);tMannequinProcedural.add(hand);
+    tMannequinProcedural.add(put(limb(0.098,0.086,0.34,trous), sd*0.118,0.525,0.295, Math.PI/2));
+    tMannequinProcedural.add(put(limb(0.078,0.062,0.40,trous), sd*0.118,0.265,0.470, 0.06));
+    tMannequinProcedural.add(box(0.115,0.075,0.25,shoe,sd*0.118,0.042,0.520));
+    tMannequinProcedural.add(ball(0.058,shoe,sd*0.118,0.052,0.615,0.5));
   });
 
   /* "감독교사" 명찰 핀 */
@@ -1365,7 +1370,7 @@ function buildRoom(){
     g.fillStyle="#2b2419";g.textAlign="center";g.textBaseline="middle";
     g.font="900 32px 'Gothic A1',sans-serif";g.fillText("감독교사",w/2,h/2+5);
   },240,90)});
-  var tag=plane(0.12,0.045,tagMat,0.11,0.93,0.175);tG.add(tag);
+  var tag=plane(0.12,0.045,tagMat,0.11,0.93,0.175);tMannequinProcedural.add(tag);
   scene.add(tG);
 
   /* 감독교사 인터랙션 히트박스 */
@@ -1413,62 +1418,65 @@ function buildRoom(){
   var rivetMat=new THREE.MeshStandardMaterial({color:0xb0b5b8,roughness:0.35,metalness:0.85});
   var legCol=0x2e3532, rubCol=0x151618, trayCol=0x262b29;
 
+  var desksProcedural=new THREE.Group();scene.add(desksProcedural);window.desksProcedural=desksProcedural;
+  var studentFurnitureG=new THREE.Group();scene.add(studentFurnitureG);window.studentFurnitureG=studentFurnitureG;
+
   for(var r=0;r<2;r++)for(var c=0;c<3;c++){
     var x=(c-1)*2.3, z=-0.5+r*1.85;
     /* 바닥 접촉 그림자 (책상 및 의자) */
-    scene.add(shadowDecal(1.10,0.80,0.40,x,z));
-    scene.add(shadowDecal(0.65,0.65,0.32,x,z+0.38));
+    desksProcedural.add(shadowDecal(1.10,0.80,0.40,x,z));
+    desksProcedural.add(shadowDecal(0.65,0.65,0.32,x,z+0.38));
 
     /* 원목 상판 (인체공학적 코너 라운딩, 펜 홈) */
     var top=new THREE.Mesh(new THREE.BoxGeometry(0.68,0.035,0.46),deskMat);
-    top.position.set(x,0.72,z);scene.add(top);deskTops.push(top);
-    scene.add(box(0.70,0.016,0.48,0x72502e,x,0.702,z)); /* 하단 오크 엣지 밴딩 */
-    scene.add(box(0.48,0.007,0.026,0x52361b,x,0.739,z-0.16)); /* 상판 펜 굴림 홈 */
+    top.position.set(x,0.72,z);desksProcedural.add(top);deskTops.push(top);
+    desksProcedural.add(box(0.70,0.016,0.48,0x72502e,x,0.702,z)); /* 하단 오크 엣지 밴딩 */
+    desksProcedural.add(box(0.48,0.007,0.026,0x52361b,x,0.739,z-0.16)); /* 상판 펜 굴림 홈 */
 
     /* 스틸 튜브 다리 & 고무 발 */
     [[-0.30,-0.18],[0.30,-0.18],[-0.30,0.18],[0.30,0.18]].forEach(function(o){
-      scene.add(cyl(0.015,0.015,0.69,legCol,x+o[0],0.355,z+o[1],12,0.45));
-      scene.add(cyl(0.019,0.019,0.032,rubCol,x+o[0],0.016,z+o[1],12,0.85));
+      desksProcedural.add(cyl(0.015,0.015,0.69,legCol,x+o[0],0.355,z+o[1],12,0.45));
+      desksProcedural.add(cyl(0.019,0.019,0.032,rubCol,x+o[0],0.016,z+o[1],12,0.85));
     });
     /* 책상 좌우 하부 수평 파이프 보강 */
-    var cp1=cyl(0.011,0.011,0.36,legCol,x-0.30,0.22,z,8,0.45);cp1.rotation.x=Math.PI/2;scene.add(cp1);
-    var cp2=cyl(0.011,0.011,0.36,legCol,x+0.30,0.22,z,8,0.45);cp2.rotation.x=Math.PI/2;scene.add(cp2);
+    var cp1=cyl(0.011,0.011,0.36,legCol,x-0.30,0.22,z,8,0.45);cp1.rotation.x=Math.PI/2;desksProcedural.add(cp1);
+    var cp2=cyl(0.011,0.011,0.36,legCol,x+0.30,0.22,z,8,0.45);cp2.rotation.x=Math.PI/2;desksProcedural.add(cp2);
 
     /* 책상 측면 가방걸이 고리 (Bag Hooks - 좌우 각 1개) */
     [-1,1].forEach(function(sd){
       var hook=new THREE.Mesh(new THREE.TorusGeometry(0.018,0.0035,6,12,Math.PI),
         new THREE.MeshStandardMaterial({color:0xb0b5b8,roughness:0.35,metalness:0.8}));
-      hook.position.set(x+sd*0.31,0.64,z-0.08);hook.rotation.z=sd*Math.PI/2;scene.add(hook);
+      hook.position.set(x+sd*0.31,0.64,z-0.08);hook.rotation.z=sd*Math.PI/2;desksProcedural.add(hook);
     });
 
     /* 책상 밑 철제 타공 책 보관 바구니 (Book storage tray basket) */
-    scene.add(box(0.58,0.012,0.34,trayCol,x,0.58,z));       /* 바닥판 */
-    scene.add(box(0.58,0.080,0.010,trayCol,x,0.62,z-0.165)); /* 후면 차단판 */
-    scene.add(box(0.010,0.080,0.34,trayCol,x-0.285,0.62,z)); /* 좌측 측판 */
-    scene.add(box(0.010,0.080,0.34,trayCol,x+0.285,0.62,z)); /* 우측 측판 */
+    desksProcedural.add(box(0.58,0.012,0.34,trayCol,x,0.58,z));       /* 바닥판 */
+    desksProcedural.add(box(0.58,0.080,0.010,trayCol,x,0.62,z-0.165)); /* 후면 차단판 */
+    desksProcedural.add(box(0.010,0.080,0.34,trayCol,x-0.285,0.62,z)); /* 좌측 측판 */
+    desksProcedural.add(box(0.010,0.080,0.34,trayCol,x+0.285,0.62,z)); /* 우측 측판 */
 
     /* 학생 의자 (인체공학적 곡면 성형 합판 + 리벳 헤드) */
     var seat=new THREE.Mesh(new THREE.BoxGeometry(0.40,0.028,0.38),chWoodMat);
-    seat.position.set(x,0.43,z+0.38);scene.add(seat);
+    seat.position.set(x,0.43,z+0.38);desksProcedural.add(seat);
     var backrest=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.18,0.024),chWoodMat);
-    backrest.position.set(x,0.76,z+0.52);scene.add(backrest);
+    backrest.position.set(x,0.76,z+0.52);desksProcedural.add(backrest);
     /* 의자 프레임 고정 리벳 (Silver Dome Rivets) */
     [[-0.14,-0.12],[0.14,-0.12],[-0.14,0.12],[0.14,0.12]].forEach(function(ro){
       var rvt=new THREE.Mesh(new THREE.SphereGeometry(0.005,8,6),rivetMat);
-      rvt.position.set(x+ro[0],0.446,z+0.38+ro[1]);scene.add(rvt);
+      rvt.position.set(x+ro[0],0.446,z+0.38+ro[1]);desksProcedural.add(rvt);
     });
     [[-0.14,0.04],[0.14,0.04],[-0.14,-0.04],[0.14,-0.04]].forEach(function(rbo){
       var rvtB=new THREE.Mesh(new THREE.SphereGeometry(0.005,8,6),rivetMat);
-      rvtB.position.set(x+rbo[0],0.76+rbo[1],z+0.534);scene.add(rvtB);
+      rvtB.position.set(x+rbo[0],0.76+rbo[1],z+0.534);desksProcedural.add(rvtB);
     });
 
     /* 의자 다리 프레임 & 고무 패드 */
     [[-0.16,-0.14],[0.16,-0.14],[-0.16,0.14],[0.16,0.14]].forEach(function(o){
-      scene.add(cyl(0.013,0.013,0.42,legCol,x+o[0],0.21,z+0.38+o[1],8,0.45));
-      scene.add(cyl(0.016,0.016,0.022,rubCol,x+o[0],0.011,z+0.38+o[1],8,0.85));
+      desksProcedural.add(cyl(0.013,0.013,0.42,legCol,x+o[0],0.21,z+0.38+o[1],8,0.45));
+      desksProcedural.add(cyl(0.016,0.016,0.022,rubCol,x+o[0],0.011,z+0.38+o[1],8,0.85));
     });
-    scene.add(cyl(0.011,0.011,0.36,legCol,x-0.14,0.60,z+0.51,8,0.45));
-    scene.add(cyl(0.011,0.011,0.36,legCol,x+0.14,0.60,z+0.51,8,0.45));
+    desksProcedural.add(cyl(0.011,0.011,0.36,legCol,x-0.14,0.60,z+0.51,8,0.45));
+    desksProcedural.add(cyl(0.011,0.011,0.36,legCol,x+0.14,0.60,z+0.51,8,0.45));
   }
   /* 앞줄 왼쪽 책상 밑면에 붙은 포스트잇 — 숙여야 보인다 */
   var postMat=new THREE.MeshStandardMaterial({map:tex(function(g,w,h){
@@ -1747,6 +1755,7 @@ function buildRoom(){
   /* 소화기 (Chapter 5 Clue - PBR 광택 도장 & 압력게이지 & 경고 라벨) */
   scene.add(shadowDecal(0.50,0.50,0.38,4.45,3.40));
   var ext=new THREE.Group();ext.position.set(4.45,0,3.40);extinguisherGroup=ext;
+  var extProcedural=new THREE.Group();ext.add(extProcedural);window.extProcedural=extProcedural;
   
   var extLabelPbr=pbrTex(function(g,w,h){
     g.fillStyle="#b81d13";g.fillRect(0,0,w,h);
@@ -1778,27 +1787,27 @@ function buildRoom(){
     metalness:0.25
   });
   var body=new THREE.Mesh(new THREE.CylinderGeometry(0.10,0.10,0.44,24),extMat);
-  body.position.y=0.24;body.rotation.y=-Math.PI*0.75;ext.add(body);
+  body.position.y=0.24;body.rotation.y=-Math.PI*0.75;extProcedural.add(body);
   var dome=new THREE.Mesh(new THREE.SphereGeometry(0.10,20,12,0,Math.PI*2,0,Math.PI/2),
     new THREE.MeshStandardMaterial({color:0xb81d13,roughness:0.20,metalness:0.25}));
-  dome.position.y=0.46;ext.add(dome);
+  dome.position.y=0.46;extProcedural.add(dome);
 
   /* 하부 고무 베이스 & 상부 브라스 넥 */
-  ext.add(cyl(0.104,0.104,0.040,0x161718,0,0.020,0,20,0.85));
-  ext.add(cyl(0.035,0.035,0.040,0xd8a848,0,0.51,0,12,0.3,0,0,0));
-  ext.add(box(0.035,0.11,0.032,0x222428,0,0.57,-0.02));
+  extProcedural.add(cyl(0.104,0.104,0.040,0x161718,0,0.020,0,20,0.85));
+  extProcedural.add(cyl(0.035,0.035,0.040,0xd8a848,0,0.51,0,12,0.3,0,0,0));
+  extProcedural.add(box(0.035,0.11,0.032,0x222428,0,0.57,-0.02));
 
   /* 손잡이 레버 & 안전핀 */
-  var leverT=box(0.026,0.014,0.15,0x1e2023,0,0.62,0.035);leverT.rotation.x=-0.22;ext.add(leverT);
-  var leverB=box(0.026,0.014,0.14,0x1e2023,0,0.57,0.04);ext.add(leverB);
+  var leverT=box(0.026,0.014,0.15,0x1e2023,0,0.62,0.035);leverT.rotation.x=-0.22;extProcedural.add(leverT);
+  var leverB=box(0.026,0.014,0.14,0x1e2023,0,0.57,0.04);extProcedural.add(leverB);
   /* 황동 안전핀 링 */
   var pinRing=new THREE.Mesh(new THREE.TorusGeometry(0.018,0.003,8,16),
     new THREE.MeshStandardMaterial({color:0xd8a848,roughness:0.3,metalness:0.8}));
-  pinRing.position.set(-0.028,0.60,0.01);ext.add(pinRing);
+  pinRing.position.set(-0.028,0.60,0.01);extProcedural.add(pinRing);
 
   /* 압력 게이지 (원형 인디케이터 페이스: 정상(초록)/비정상(빨강)) */
   var gaugeHousing=cyl(0.022,0.022,0.014,0xd8a848,0,0.54,0.034,16,0.25);
-  gaugeHousing.rotation.x=Math.PI/2;ext.add(gaugeHousing);
+  gaugeHousing.rotation.x=Math.PI/2;extProcedural.add(gaugeHousing);
   var gaugeFaceMat=new THREE.MeshBasicMaterial({map:tex(function(g,w,h){
     var R=w/2;
     g.fillStyle="#f8f8f8";g.beginPath();g.arc(R,R,R,0,7);g.fill();
@@ -1813,14 +1822,14 @@ function buildRoom(){
     g.fillStyle="#1a1a1a";g.beginPath();g.arc(R,R,5,0,7);g.fill();
   },128,128)});
   var gaugeFace=plane(0.036,0.036,gaugeFaceMat,0,0.54,0.042);
-  ext.add(gaugeFace);
+  extProcedural.add(gaugeFace);
 
   /* 고무 분사 호스 및 황동 노즐 */
   var hose=new THREE.Mesh(new THREE.TorusGeometry(0.11,0.014,8,20,Math.PI*0.88),
     new THREE.MeshStandardMaterial({color:0x1b1c1e,roughness:0.85}));
-  hose.position.set(-0.05,0.36,0);hose.rotation.y=Math.PI/2;hose.rotation.z=-0.2;ext.add(hose);
-  ext.add(cyl(0.018,0.012,0.11,0x18191a,-0.10,0.21,0.04,10,0.7));
-  var nozzle=cyl(0.014,0.010,0.03,0xd8a848,-0.10,0.14,0.04,10,0.35);ext.add(nozzle);
+  hose.position.set(-0.05,0.36,0);hose.rotation.y=Math.PI/2;hose.rotation.z=-0.2;extProcedural.add(hose);
+  extProcedural.add(cyl(0.018,0.012,0.11,0x18191a,-0.10,0.21,0.04,10,0.7));
+  var nozzle=cyl(0.014,0.010,0.03,0xd8a848,-0.10,0.14,0.04,10,0.35);extProcedural.add(nozzle);
   scene.add(ext);
 
   var eh=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.20,0.80,10),
@@ -1903,46 +1912,48 @@ function buildRoom(){
     metalness:0.0
   });
 
+  var dollProcedural=new THREE.Group();doll.add(dollProcedural);window.dollProcedural=dollProcedural;
+
   var db=new THREE.Mesh(new THREE.SphereGeometry(0.12,20,16),furMat);
-  db.position.y=0.12;db.scale.set(1.08,1.20,1.02);doll.add(db);
+  db.position.y=0.12;db.scale.set(1.08,1.20,1.02);dollProcedural.add(db);
   var belly=plane(0.14,0.17,bellyMat,0,0.12,0.122);
-  belly.scale.set(1,1.15,1);doll.add(belly);
+  belly.scale.set(1,1.15,1);dollProcedural.add(belly);
 
   var dh=new THREE.Mesh(new THREE.SphereGeometry(0.105,20,16),furMat);
-  dh.position.set(0,0.31,0.015);dh.scale.set(1.12,1.0,1.05);doll.add(dh);
+  dh.position.set(0,0.31,0.015);dh.scale.set(1.12,1.0,1.05);dollProcedural.add(dh);
   var snout=new THREE.Mesh(new THREE.SphereGeometry(0.052,16,12),bellyMat);
-  snout.position.set(0,0.29,0.105);snout.scale.set(1.1,0.85,0.9);doll.add(snout);
+  snout.position.set(0,0.29,0.105);snout.scale.set(1.1,0.85,0.9);dollProcedural.add(snout);
 
   /* 손바느질 자수 코 & 미소 입선 */
   var noseCol=0x26140b;
-  doll.add(box(0.026,0.018,0.01,noseCol,0,0.316,0.151));
-  doll.add(box(0.005,0.022,0.01,noseCol,0,0.298,0.151));
-  var mouthL=box(0.014,0.004,0.008,noseCol,-0.008,0.288,0.150);mouthL.rotation.z=-0.25;doll.add(mouthL);
-  var mouthR=box(0.014,0.004,0.008,noseCol, 0.008,0.288,0.150);mouthR.rotation.z= 0.25;doll.add(mouthR);
+  dollProcedural.add(box(0.026,0.018,0.01,noseCol,0,0.316,0.151));
+  dollProcedural.add(box(0.005,0.022,0.01,noseCol,0,0.298,0.151));
+  var mouthL=box(0.014,0.004,0.008,noseCol,-0.008,0.288,0.150);mouthL.rotation.z=-0.25;dollProcedural.add(mouthL);
+  var mouthR=box(0.014,0.004,0.008,noseCol, 0.008,0.288,0.150);mouthR.rotation.z= 0.25;dollProcedural.add(mouthR);
 
   /* 호박색 글래스 버튼 눈 (Amber Glass Eyes) */
   [-1,1].forEach(function(sd){
-    var eyeGlass=ball(0.014,0xb46414,sd*0.042,0.335,0.098,0.15);doll.add(eyeGlass);
-    doll.add(ball(0.008,0x111214,sd*0.042,0.335,0.105,0.1)); /* 동공 */
-    doll.add(ball(0.003,0xffffff,sd*0.042+0.003,0.339,0.110,0.05)); /* 반사 하이라이트 */
+    var eyeGlass=ball(0.014,0xb46414,sd*0.042,0.335,0.098,0.15);dollProcedural.add(eyeGlass);
+    dollProcedural.add(ball(0.008,0x111214,sd*0.042,0.335,0.105,0.1)); /* 동공 */
+    dollProcedural.add(ball(0.003,0xffffff,sd*0.042+0.003,0.339,0.110,0.05)); /* 반사 하이라이트 */
   });
 
   /* 둥근 곰 귀 */
   [-1,1].forEach(function(sd){
     var ear=ball(0.038,0x9e6634,sd*0.088,0.395,0.01,0.92);
-    ear.scale.set(0.9,1.1,0.6);doll.add(ear);
+    ear.scale.set(0.9,1.1,0.6);dollProcedural.add(ear);
     var earIn=ball(0.024,0xe2c49b,sd*0.088,0.395,0.025,0.95);
-    earIn.scale.set(0.8,1.0,0.5);doll.add(earIn);
+    earIn.scale.set(0.8,1.0,0.5);dollProcedural.add(earIn);
   });
 
   /* 팔과 다리, 발바닥 스웨이드 패드 */
   [-1,1].forEach(function(sd){
     var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.036,0.030,0.14,14),furMat);
-    arm.position.set(sd*0.115,0.155,0.04);arm.rotation.set(0.4,0,sd*0.45);doll.add(arm);
+    arm.position.set(sd*0.115,0.155,0.04);arm.rotation.set(0.4,0,sd*0.45);dollProcedural.add(arm);
     var leg=new THREE.Mesh(new THREE.CylinderGeometry(0.042,0.036,0.13,14),furMat);
-    leg.position.set(sd*0.075,0.045,0.09);leg.rotation.set(Math.PI/2,0,sd*0.18);doll.add(leg);
+    leg.position.set(sd*0.075,0.045,0.09);leg.rotation.set(Math.PI/2,0,sd*0.18);dollProcedural.add(leg);
     var pad=plane(0.052,0.065,bellyMat,sd*0.075,0.045,0.156);
-    pad.rotation.y=sd*-0.18;doll.add(pad);
+    pad.rotation.y=sd*-0.18;dollProcedural.add(pad);
   });
 
   /* 새틴 와인 레드 리본 나비넥타이 */
@@ -1951,7 +1962,7 @@ function buildRoom(){
   tieG.add(new THREE.Mesh(new THREE.BoxGeometry(0.024,0.024,0.02),tieMat));
   var wingL=new THREE.Mesh(new THREE.BoxGeometry(0.054,0.038,0.012),tieMat);wingL.position.x=-0.032;wingL.rotation.z=0.2;tieG.add(wingL);
   var wingR=new THREE.Mesh(new THREE.BoxGeometry(0.054,0.038,0.012),tieMat);wingR.position.x= 0.032;wingR.rotation.z=-0.2;tieG.add(wingR);
-  doll.add(tieG);
+  dollProcedural.add(tieG);
   scene.add(doll);
   var dHot=new THREE.Mesh(new THREE.SphereGeometry(0.28,12,10),
             new THREE.MeshBasicMaterial({transparent:true,opacity:0}));
@@ -1977,17 +1988,18 @@ function buildRoom(){
 
   /* 미끼 오브제 (화분, 쓰레기통, 분필함, 우산꽂이, 라디에이터 등) */
   scene.add(shadowDecal(0.60,0.60,0.36,-4.3,-1.9));
-  var pot=new THREE.Group();pot.position.set(-4.3,0,-1.9);
-  pot.add(cyl(0.18,0.16,0.035,0x8b4c2c,0,0.018,0,20,0.85));
-  pot.add(cyl(0.165,0.12,0.28,0xa25b36,0,0.16,0,20,0.82));
-  pot.add(cyl(0.178,0.178,0.035,0xb0653d,0,0.29,0,20,0.8));
-  pot.add(cyl(0.155,0.155,0.02,0x322416,0,0.288,0,16,0.98));
+  var pot=new THREE.Group();pot.position.set(-4.3,0,-1.9);window.plantG=pot;
+  var plantProcedural=new THREE.Group();pot.add(plantProcedural);window.plantProcedural=plantProcedural;
+  plantProcedural.add(cyl(0.18,0.16,0.035,0x8b4c2c,0,0.018,0,20,0.85));
+  plantProcedural.add(cyl(0.165,0.12,0.28,0xa25b36,0,0.16,0,20,0.82));
+  plantProcedural.add(cyl(0.178,0.178,0.035,0xb0653d,0,0.29,0,20,0.8));
+  plantProcedural.add(cyl(0.155,0.155,0.02,0x322416,0,0.288,0,16,0.98));
   [[0,0.34,0,0,0],[0.12,0.29,0.06,0.45,0.25],[-0.11,0.30,-0.07,-0.40,-0.20],
    [0.05,0.27,-0.12,0.22,-0.45],[-0.07,0.26,0.12,-0.25,0.45]].forEach(function(L,i){
     var lfMat=new THREE.MeshStandardMaterial({color:i%2?0x2f603c:0x3b7248,roughness:0.62});
     var lf=new THREE.Mesh(new THREE.SphereGeometry(0.085,12,10),lfMat);
     lf.position.set(L[0],0.30+L[1],L[2]);
-    lf.scale.set(0.65,2.4,0.18);lf.rotation.set(L[4],0,L[3]);pot.add(lf);
+    lf.scale.set(0.65,2.4,0.18);lf.rotation.set(L[4],0,L[3]);plantProcedural.add(lf);
   });
   scene.add(pot);
   var potH=box(0.50,0.80,0.50,0xffffff,-4.3,0.4,-1.9);
@@ -1995,13 +2007,14 @@ function buildRoom(){
   scene.add(hot(potH,"decoy:plant","화분"));
 
   scene.add(shadowDecal(0.48,0.48,0.32,1.6,-3.5));
-  var binG=new THREE.Group();binG.position.set(1.6,0,-3.5);
-  binG.add(cyl(0.17,0.13,0.40,0x404852,0,0.20,0,20,0.5));
+  var binG=new THREE.Group();binG.position.set(1.6,0,-3.5);window.trashG=binG;
+  var trashProcedural=new THREE.Group();binG.add(trashProcedural);window.trashProcedural=trashProcedural;
+  trashProcedural.add(cyl(0.17,0.13,0.40,0x404852,0,0.20,0,20,0.5));
   var binRim=new THREE.Mesh(new THREE.TorusGeometry(0.172,0.011,8,24),
     new THREE.MeshStandardMaterial({color:0x636e7c,roughness:0.4,metalness:0.5}));
-  binRim.rotation.x=Math.PI/2;binRim.position.y=0.40;binG.add(binRim);
-  binG.add(ball(0.036,0xf4efe4,0.03,0.36,0.02,0.9));
-  binG.add(ball(0.030,0xe8e2d2,-0.04,0.35,-0.03,0.92));
+  binRim.rotation.x=Math.PI/2;binRim.position.y=0.40;trashProcedural.add(binRim);
+  trashProcedural.add(ball(0.036,0xf4efe4,0.03,0.36,0.02,0.9));
+  trashProcedural.add(ball(0.030,0xe8e2d2,-0.04,0.35,-0.03,0.92));
   scene.add(binG);
   var binH=cyl(0.20,0.20,0.46,0xffffff,1.6,0.23,-3.5,10);
   binH.material.transparent=true;binH.material.opacity=0;
@@ -2490,6 +2503,9 @@ function loop(t){
     arrowObj.rotation.y+=0.02;}
   if(window.clockSecondHand){
     clockSecondHand.rotation.z=-now*(Math.PI/30);
+  }
+  if(window.teacherMixer){
+    window.teacherMixer.update(dt);
   }
   var dir=new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch));
   camera.lookAt(camera.position.clone().add(dir));
@@ -3029,6 +3045,197 @@ function setupPostProcessing(){
   }
 }
 
+/* =========================================================================
+   실제 3D 완성형 모델(GLTF/GLB) 비동기 로더 & 씬 업그레이드 파이프라인
+   ========================================================================= */
+function loadClassroom3DAssets(){
+  if(!window.THREE || !THREE.GLTFLoader) return;
+  var loader = new THREE.GLTFLoader();
+  var candidates = ["../assets/models/", "assets/models/", "/assets/models/", "stage1/assets/models/"];
+
+  function tryLoad(subPath, onLoad){
+    var idx = 0;
+    function attempt(){
+      if(idx >= candidates.length) return;
+      var url = candidates[idx++] + subPath;
+      loader.load(url, function(gltf){
+        try{ onLoad(gltf); }catch(err){ console.warn("Asset load handler error:", subPath, err); }
+      }, undefined, function(){
+        attempt();
+      });
+    }
+    attempt();
+  }
+
+  /* 1. 감독교사 (business_man.glb - Rig|sitting_idle 완벽 착석 애니메이션) & 앤티크 암체어 */
+  if(window.teacherGroup){
+    tryLoad("armchair/ArmChair_01.gltf", function(gltf){
+      if(gltf && gltf.scene){
+        var chair = gltf.scene;
+        chair.scale.set(0.95, 0.95, 0.95);
+        chair.rotation.y = Math.PI;
+        chair.position.set(0, 0, 0.05);
+        chair.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+        if(window.tChairProcedural) window.tChairProcedural.visible = false;
+        teacherGroup.add(chair);
+      }
+    });
+
+    tryLoad("teacher/teacher.glb", function(gltf){
+      if(gltf && gltf.scene){
+        var char = gltf.scene;
+        char.scale.set(0.96, 0.96, 0.96);
+        char.position.set(0, 0.02, 0.06);
+        char.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if(node.material && node.material.map) node.material.map.encoding = THREE.sRGBEncoding;
+          }
+        });
+        if(gltf.animations && gltf.animations.length){
+          var mixer = new THREE.AnimationMixer(char);
+          var clip = THREE.AnimationClip.findByName(gltf.animations, "Rig|sitting_idle") || gltf.animations[0];
+          if(clip){
+            mixer.clipAction(clip).play();
+            window.teacherMixer = mixer;
+          }
+        }
+        if(window.tMannequinProcedural) window.tMannequinProcedural.visible = false;
+        teacherGroup.add(char);
+      }
+    });
+  }
+
+  /* 2. 테디베어 곰인형 (teddy_bear.glb - 사물함 위 착석 & 정면 응시) */
+  if(window.dollGroup){
+    tryLoad("teddy/teddy_bear.glb", function(gltf){
+      if(gltf && gltf.scene){
+        var bear = gltf.scene;
+        bear.scale.set(0.46, 0.46, 0.46);
+        bear.position.set(0, 0.01, 0);
+        bear.rotation.y = Math.PI;
+        bear.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            node.receiveShadow = true;
+            if(node.material && node.material.map) node.material.map.encoding = THREE.sRGBEncoding;
+          }
+        });
+        if(window.dollProcedural) window.dollProcedural.visible = false;
+        dollGroup.add(bear);
+      }
+    });
+  }
+
+  /* 3. 한국형 분말 소화기 (korean_fire_extinguisher_01.gltf) */
+  if(window.extinguisherGroup){
+    tryLoad("extinguisher/korean_fire_extinguisher_01.gltf", function(gltf){
+      if(gltf && gltf.scene){
+        var extModel = gltf.scene;
+        extModel.scale.set(0.78, 0.78, 0.78);
+        extModel.position.set(0, 0, 0);
+        extModel.traverse(function(node){
+          if(node.isMesh){
+            node.castShadow = true;
+            node.receiveShadow = true;
+          }
+        });
+        if(window.extProcedural) window.extProcedural.visible = false;
+        extinguisherGroup.add(extModel);
+      }
+    });
+  }
+
+  /* 4. 학생 책상 & 의자 6세트 (SchoolDesk_01.gltf & SchoolChair_01.gltf) */
+  if(window.studentFurnitureG){
+    tryLoad("desk/SchoolDesk_01.gltf", function(gltfDesk){
+      tryLoad("chair/SchoolChair_01.gltf", function(gltfChair){
+        if(gltfDesk && gltfDesk.scene && gltfChair && gltfChair.scene){
+          for(var r=0; r<2; r++){
+            for(var c=0; c<3; c++){
+              var x=(c-1)*2.3, z=-0.5+r*1.85;
+              var d = gltfDesk.scene.clone();
+              d.scale.set(0.92, 0.82, 0.88);
+              d.position.set(x, 0, z);
+              d.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+              studentFurnitureG.add(d);
+
+              var ch = gltfChair.scene.clone();
+              ch.scale.set(0.85, 0.85, 0.85);
+              ch.position.set(x, 0, z + 0.38);
+              ch.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+              studentFurnitureG.add(ch);
+            }
+          }
+          if(window.desksProcedural) window.desksProcedural.visible = false;
+        }
+      });
+    });
+  }
+
+  /* 5. 창가 화분 (potted_plant_01.gltf) */
+  if(window.plantG){
+    tryLoad("plant/potted_plant_01.gltf", function(gltf){
+      if(gltf && gltf.scene){
+        var plant = gltf.scene;
+        plant.scale.set(0.55, 0.55, 0.55);
+        plant.position.set(0, -0.22, 0);
+        plant.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+        if(window.plantProcedural) window.plantProcedural.visible = false;
+        plantG.add(plant);
+      }
+    });
+  }
+
+  /* 6. 쓰레기통 (metal_trash_can.gltf) */
+  if(window.trashG){
+    tryLoad("trashcan/metal_trash_can.gltf", function(gltf){
+      if(gltf && gltf.scene){
+        var tc = gltf.scene;
+        tc.scale.set(3.2, 3.2, 3.2);
+        tc.position.set(0, 0.05, 0);
+        tc.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+        if(window.trashProcedural) window.trashProcedural.visible = false;
+        trashG.add(tc);
+      }
+    });
+  }
+
+  /* 7. 고서적 / 수학책 (book_encyclopedia_set_01.gltf) */
+  if(window.mathBookG){
+    tryLoad("books/book_encyclopedia_set_01.gltf", function(gltf){
+      if(gltf && gltf.scene){
+        var bk = gltf.scene;
+        bk.scale.set(1.35, 1.35, 1.35);
+        bk.position.set(0, 0.01, 0);
+        bk.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+        if(window.mathBookProcedural) window.mathBookProcedural.visible = false;
+        mathBookG.add(bk);
+      }
+    });
+  }
+
+  /* 8. 교탁 위 CRT 모니터 (computer.glb) */
+  if(window.computerG){
+    tryLoad("computer/computer.glb", function(gltf){
+      if(gltf && gltf.scene){
+        var comp = gltf.scene;
+        comp.scale.set(0.13, 0.13, 0.13);
+        comp.position.set(0, -0.36, -0.08);
+        comp.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
+        if(window.compProcedural) window.compProcedural.visible = false;
+        computerG.add(comp);
+      }
+    });
+  }
+}
+
 /* 부팅 */
 function boot(){
   var cv=$("#scene");
@@ -3039,7 +3246,7 @@ function boot(){
   renderer.shadowMap.enabled=true;
   renderer.shadowMap.type=THREE.PCFSoftShadowMap;
   ray=new THREE.Raycaster();
-  buildRoom();polishScene();checkOrient();resize();setupPostProcessing();initControls();bindUI();
+  buildRoom();polishScene();checkOrient();resize();setupPostProcessing();loadClassroom3DAssets();initControls();bindUI();
   /* 저장된 상태 복원 */
   Object.keys(SYM_OF).forEach(function(id){drawFrameBars(id);});
   syncPools();
