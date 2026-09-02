@@ -93,6 +93,20 @@ test("corrupt primary save falls back to the previous valid backup", () => {
   assert.equal(f.context.store.get().ch, 2);
 });
 
+test("backup recovery is applied before the game boots", () => {
+  const seed = fixture();
+  seed.context.store.set(state({ ch: 2, pieces: [1] }));
+  seed.context.store.set(state({ ch: 3, pieces: [1, 2] }));
+  const backup = seed.storage.get("nameless-classroom-v2.backup");
+  const f = fixture({
+    "nameless-classroom-v2": "corrupt",
+    "nameless-classroom-v2.backup": backup,
+    "nameless-classroom-v1": "corrupt"
+  });
+  assert.equal(f.context.S.ch, 2);
+  assert.deepEqual(Array.from(f.context.S.pieces), [1]);
+});
+
 test("modal state blocks movement and object picking", () => {
   const f = fixture();
   f.nodes.modal.classList.contains = () => false;
