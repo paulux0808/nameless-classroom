@@ -2176,28 +2176,40 @@ function buildRoom(){
 function rotSig(sig,n){var s=sig.slice();for(var i=0;i<(n%4+4)%4;i++)s=[s[3],s[0],s[1],s[2]];return s;}
 /* 칠판에 붙는 종이 한 장 */
 function paperTex(title,sub,accent){
-  return new THREE.MeshStandardMaterial({side:THREE.DoubleSide,map:tex(function(g,w,h){
-    g.fillStyle="#f6f0de";g.fillRect(0,0,w,h);
-    g.fillStyle=accent||"#a03528";g.fillRect(0,0,w,10);
-    g.fillStyle="#2b2419";g.textAlign="center";g.textBaseline="middle";
-    g.font="700 30px 'Gothic A1',sans-serif";g.fillText(title,w/2,h*0.40);
-    if(sub){g.font="500 22px 'Gothic A1',sans-serif";g.fillStyle="#7a6c55";
-      g.fillText(sub,w/2,h*0.66);}
-    g.strokeStyle="rgba(90,78,55,.25)";g.lineWidth=2;
-    for(var i=0;i<3;i++){g.beginPath();g.moveTo(24,h*0.80+i*13);g.lineTo(w-24,h*0.80+i*13);g.stroke();}
-  },260,190)});
+  return new THREE.MeshStandardMaterial({
+    side:THREE.DoubleSide,
+    roughness:0.45,
+    metalness:0.05,
+    emissive:0x1c1712, /* 은은한 자체 발광으로 음영 속에서도 퀘스트 편지가 선명하게 노출 */
+    map:tex(function(g,w,h){
+      g.fillStyle="#fbf7ec";g.fillRect(0,0,w,h);
+      g.strokeStyle="#b89a6b";g.lineWidth=4;g.strokeRect(4,4,w-8,h-8);
+      g.fillStyle=accent||"#a03528";g.fillRect(8,8,w-16,14);
+      g.fillStyle="#2b2419";g.textAlign="center";g.textBaseline="middle";
+      g.font="700 30px 'Gothic A1',sans-serif";g.fillText(title,w/2,h*0.40);
+      if(sub){g.font="500 22px 'Gothic A1',sans-serif";g.fillStyle="#7a6c55";
+        g.fillText(sub,w/2,h*0.66);}
+      g.strokeStyle="rgba(90,78,55,.25)";g.lineWidth=2;
+      for(var i=0;i<3;i++){g.beginPath();g.moveTo(24,h*0.80+i*13);g.lineTo(w-24,h*0.80+i*13);g.stroke();}
+    },260,190)
+  });
 }
 function buildRewardLetters(){
   function add(n,x,y,z,rx,ry,rz){
     var next=n+1, meta=next===9?{era:"2018",title:"마지막 일기"}:CH[next-1];
-    var m=plane(0.34,0.25,paperTex(meta.title,meta.era,"#a03528"),x,y,z);
+    var mat=paperTex(meta.title,meta.era,"#a03528");
+    mat.polygonOffset=true;
+    mat.polygonOffsetFactor=-2;
+    mat.polygonOffsetUnits=-2;
+    var m=plane(0.34,0.25,mat,x,y,z);
     m.rotation.set(rx||0,ry||0,rz||0);
+    m.renderOrder=3;
     m.userData.hot={id:"reward:"+n,name:"편지"};
     m.visible=false;scene.add(m);rewardObjs[n]=m;
   }
-  add(1, 0.62,0.842,-2.89,-Math.PI/2,0,0);
-  add(2,-2.60,1.055, 3.70,-Math.PI/2,0,0);
-  add(3,-2.30,0.685, 1.35, Math.PI/2,0,0);
+  add(1, 0.62,0.805,-2.89,-Math.PI/2,0,0);
+  add(2,-2.60,1.072, 3.70,-Math.PI/2,0,0); /* 사물함 상단(1.065m) 표면 위에 정확히 안착 */
+  add(3,-2.30,0.668, 1.35,-Math.PI/2,0,0); /* 학생 책상 하단(0.670m) 밑면에 정확히 부착 */
   add(4, 3.10,1.000,-3.89,0,0,0);
   add(5, 4.45,0.720, 3.89,0,Math.PI,0);
   add(6, 0.00,2.680,-3.89,0,0,0);
