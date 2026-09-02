@@ -1,19 +1,33 @@
-# 이름 없는 교실 — 기억의 조각
+# NAMELESS
 
-교실을 탐색하며 한 인물의 일기와 기억 조각을 찾아가는 3D 방 탈출 게임입니다.
+브라우저에서 실행되는 내러티브 퍼즐 게임입니다.
 
-## 실행
+## Play
 
-- 배포 주소에서는 `index.html`을 바로 엽니다.
-- 로컬 테스트는 이 폴더에서 `python3 -m http.server 8000`을 실행한 뒤 브라우저에서 `http://localhost:8000`으로 접속합니다.
-- 모바일에서는 가로 화면을 권장합니다.
+- Stage 1: `stage1/index.html`
+- Stage 2 Chapter 1: `stage2/index.html`
+- Stage selector: `index.html`
 
-## 조작
+GitHub Pages에서는 루트 스테이지 선택 화면에서 각 스테이지로 진입합니다. Stage 2를 직접 시작할 때는 Stage 1 마지막 문에서 확인한 인계 코드가 필요합니다.
 
-- 이동: `W A S D` 또는 방향키
-- 시점: 화면 드래그
-- 조사: 물건 클릭 또는 모바일의 `조사` 버튼
-- 숙이기: `C` 또는 `숙이기` 버튼
+## Structure
 
-정답은 숫자 또는 영어만 사용하며, 대소문자를 구분하지 않고 띄어쓰기를 입력하지 않습니다.
-\n## 안정화 런타임\n\n`runtime-hardening.js`는 기존 퍼즐과 연출을 유지하면서 다음 기능을 보강합니다.\n\n- 기존 `nameless-classroom-v1` 저장 데이터 자동 호환\n- 체크섬·백업을 포함한 `nameless-classroom-v2` 저장\n- 모달과 엔딩 화면에서 이동 및 조사를 차단\n- 화면 전환 중 중복 입력 방지와 이동 직전 저장\n- 앱 전환 후 남은 이동 입력 초기화\n- 기기 성능에 따른 렌더링 해상도 자동 조절\n\n검증은 `node --test tests/runtime-hardening.test.mjs`로 실행합니다.\n
+```text
+index.html             NAMELESS stage selector
+stage1/                Stage 1 — 이름 없는 교실
+stage2/index.html      Stage 2 — Chapter 01 standalone build
+stage2/source.zip      Stage 2 reusable runtime and chapter source
+```
+
+Stage 2 source is bundled into a standalone offline HTML file with:
+
+```sh
+unzip source.zip -d source
+cd source
+npm install
+npm test
+npm run check
+npm run audit:ch01
+npm run build:ch01
+npm run check:offline
+```
