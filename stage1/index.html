@@ -735,7 +735,9 @@ function chapter(){return CH[Math.min(S.ch,8)-1];}
 var THREE=window.THREE, renderer,scene,camera,ray,hotspots=[],frameObjs={},curtainObjs=[],
     sunLight,fillLight,ambLight,hemiLight,backLamp,screenGlow,ceilMesh,lightPools=[],lightShafts=[],dust,dustMat,groundLight,
     arrowObj,diaryObj,boardGroup,calendarObj,calendarBaseObj,postitObj,teacherGroup,extinguisherGroup,dollGroup,clockGroup,
-    mathBookObj,doorPivot,rewardObjs={},clueHotObjs={},revealMovers=[],exitSequence=null;
+    mathBookObj,doorPivot,rewardObjs={},clueHotObjs={},revealMovers=[],exitSequence=null,
+    tChairProcedural,tMannequinProcedural,dollProcedural,extProcedural,desksProcedural,studentFurnitureG,
+    trashG,trashProcedural,plantG,plantProcedural,computerG,compProcedural,mathBookG,mathBookProcedural,teacherMixer;
 var yaw=0,pitch=0,SPOTS=[
  {p:[0,1.62,3.1],y:Math.PI,label:"교실 뒤"},
  {p:[0,1.62,-1.4],y:Math.PI,label:"교탁 앞"},
@@ -1231,8 +1233,8 @@ function buildRoom(){
   scene.add(podiumG);
 
   /* 90년대 CRT 컴퓨터 (스위블 받침대 + 브라운관 하우징) */
-  var compG=new THREE.Group();compG.position.set(0,1.18,-2.96);scene.add(compG);window.computerG=compG;
-  var compProcedural=new THREE.Group();compG.add(compProcedural);window.compProcedural=compProcedural;
+  computerG=new THREE.Group();computerG.position.set(0,1.18,-2.96);scene.add(computerG);window.computerG=computerG;
+  compProcedural=new THREE.Group();computerG.add(compProcedural);window.compProcedural=compProcedural;
 
   compProcedural.add(box(0.38,0.025,0.34,0x282d34,0,0.795-1.18,0.01));
   compProcedural.add(cyl(0.075,0.085,0.05,0x323842,0,0.83-1.18,0.01,16,0.6));
@@ -1292,11 +1294,11 @@ function buildRoom(){
   gH.material.transparent=true;gH.material.opacity=0;scene.add(hot(gH,"decoy","지구본"));
 
   /* --- 감독교사 (안정적인 인체 비율 & 앤티크 암체어) --- */
-  var tG=new THREE.Group();tG.position.set(3.1,0,-3.42);teacherGroup=tG;
+  var tG=new THREE.Group();tG.position.set(3.1,0,-3.42);teacherGroup=tG;window.teacherGroup=tG;
   tG.add(put(shadowDecal(0.85,0.85,0.42,0,0),0,0.002,0.06));
 
   /* 앤티크 원목 의자 (3D 에셋 로드 시 대체 가능한 그룹) */
-  var tChairProcedural=new THREE.Group();tG.add(tChairProcedural);window.tChairProcedural=tChairProcedural;
+  tChairProcedural=new THREE.Group();tG.add(tChairProcedural);window.tChairProcedural=tChairProcedural;
   var woodCh=0x5c422c, padCol=0x261e18;
   tChairProcedural.add(box(0.52,0.05,0.50,woodCh,0,0.42,0.06));
   tChairProcedural.add(box(0.48,0.04,0.46,padCol,0,0.46,0.06));
@@ -1322,7 +1324,7 @@ function buildRoom(){
   fb.rotation.z=Math.PI/2;tChairProcedural.add(fb);
 
   /* 인체: 묵직한 네이비 수트 & 단정한 감독교사 착석 자세 (3D 에셋 로드 시 대체 가능한 그룹) */
-  var tMannequinProcedural=new THREE.Group();tG.add(tMannequinProcedural);window.tMannequinProcedural=tMannequinProcedural;
+  tMannequinProcedural=new THREE.Group();tG.add(tMannequinProcedural);window.tMannequinProcedural=tMannequinProcedural;
   var coat=0x2c3542, skin=0xdcbb9d, trous=0x222832, shoe=0x18181a, hairCol=0x383028;
   var pelvis=ball(0.145,trous,0,0.53,0.10);pelvis.scale.set(1.3,0.82,1.0);tMannequinProcedural.add(pelvis);
   var torso=cyl(0.165,0.20,0.44,coat,0,0.79,0.055,20,0.82);torso.rotation.x=-0.09;tMannequinProcedural.add(torso);
@@ -1418,8 +1420,8 @@ function buildRoom(){
   var rivetMat=new THREE.MeshStandardMaterial({color:0xb0b5b8,roughness:0.35,metalness:0.85});
   var legCol=0x2e3532, rubCol=0x151618, trayCol=0x262b29;
 
-  var desksProcedural=new THREE.Group();scene.add(desksProcedural);window.desksProcedural=desksProcedural;
-  var studentFurnitureG=new THREE.Group();scene.add(studentFurnitureG);window.studentFurnitureG=studentFurnitureG;
+  desksProcedural=new THREE.Group();scene.add(desksProcedural);window.desksProcedural=desksProcedural;
+  studentFurnitureG=new THREE.Group();scene.add(studentFurnitureG);window.studentFurnitureG=studentFurnitureG;
 
   for(var r=0;r<2;r++)for(var c=0;c<3;c++){
     var x=(c-1)*2.3, z=-0.5+r*1.85;
@@ -1519,8 +1521,10 @@ function buildRoom(){
       g.font="500 30px sans-serif";g.globalAlpha=.8;g.fillText("수학 I",24,130);
       g.globalAlpha=.35;g.strokeStyle="#eaf2f8";g.lineWidth=3;g.strokeRect(16,16,w-32,h-32);
     },384,256)});
+  mathBookG=new THREE.Group();mathBookG.position.set(0.22,0.745,1.35);scene.add(mathBookG);window.mathBookG=mathBookG;
+  mathBookProcedural=new THREE.Group();mathBookG.add(mathBookProcedural);window.mathBookProcedural=mathBookProcedural;
   var mb=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.035,0.19),bookMat);
-  mb.position.set(0.22,0.745,1.35);mb.rotation.y=0.18;
+  mb.rotation.y=0.18;mathBookProcedural.add(mb);
   mathBookObj=mb;scene.add(hot(mb,"mathbook","책"));
   scene.add(box(0.26,0.035,0.19,0x7a4a3a,-2.30,0.745,-0.50));
   scene.add(box(0.26,0.035,0.19,0x46704f, 2.30,0.745,-0.50));
@@ -1753,9 +1757,9 @@ function buildRoom(){
   scene.add(hot(cph,"clock","벽시계"));
 
   /* 소화기 (Chapter 5 Clue - PBR 광택 도장 & 압력게이지 & 경고 라벨) */
-  scene.add(shadowDecal(0.50,0.50,0.38,4.45,3.40));
-  var ext=new THREE.Group();ext.position.set(4.45,0,3.40);extinguisherGroup=ext;
-  var extProcedural=new THREE.Group();ext.add(extProcedural);window.extProcedural=extProcedural;
+  extinguisherGroup=new THREE.Group();extinguisherGroup.position.set(4.45,0,3.40);window.extinguisherGroup=extinguisherGroup;
+  extProcedural=new THREE.Group();extinguisherGroup.add(extProcedural);window.extProcedural=extProcedural;
+  var ext=extinguisherGroup;
   
   var extLabelPbr=pbrTex(function(g,w,h){
     g.fillStyle="#b81d13";g.fillRect(0,0,w,h);
@@ -1872,7 +1876,8 @@ function buildRoom(){
   scene.add(lockerUnit);
 
   /* 클래식 테디베어 인형 (PBR 플러시 펠트 퍼 텍스처 & 앰버 글래스 버튼 눈, 교실 전방을 향해 180도 착석) */
-  var doll=new THREE.Group();doll.position.set(-2.6,1.05,3.70);doll.rotation.y=Math.PI - 0.15;dollGroup=doll;
+  dollGroup=new THREE.Group();dollGroup.position.set(-2.6,1.05,3.70);dollGroup.rotation.y=Math.PI - 0.15;window.dollGroup=dollGroup;
+  var doll=dollGroup;
   doll.add(put(shadowDecal(0.40,0.36,0.48,0,0),0,0.005,0));
 
   var plushPbr=pbrTex(function(g,w,h){
@@ -1912,7 +1917,7 @@ function buildRoom(){
     metalness:0.0
   });
 
-  var dollProcedural=new THREE.Group();doll.add(dollProcedural);window.dollProcedural=dollProcedural;
+  dollProcedural=new THREE.Group();dollGroup.add(dollProcedural);window.dollProcedural=dollProcedural;
 
   var db=new THREE.Mesh(new THREE.SphereGeometry(0.12,20,16),furMat);
   db.position.y=0.12;db.scale.set(1.08,1.20,1.02);dollProcedural.add(db);
@@ -1988,8 +1993,9 @@ function buildRoom(){
 
   /* 미끼 오브제 (화분, 쓰레기통, 분필함, 우산꽂이, 라디에이터 등) */
   scene.add(shadowDecal(0.60,0.60,0.36,-4.3,-1.9));
-  var pot=new THREE.Group();pot.position.set(-4.3,0,-1.9);window.plantG=pot;
-  var plantProcedural=new THREE.Group();pot.add(plantProcedural);window.plantProcedural=plantProcedural;
+  plantG=new THREE.Group();plantG.position.set(-4.3,0,-1.9);window.plantG=plantG;
+  plantProcedural=new THREE.Group();plantG.add(plantProcedural);window.plantProcedural=plantProcedural;
+  var pot=plantG;
   plantProcedural.add(cyl(0.18,0.16,0.035,0x8b4c2c,0,0.018,0,20,0.85));
   plantProcedural.add(cyl(0.165,0.12,0.28,0xa25b36,0,0.16,0,20,0.82));
   plantProcedural.add(cyl(0.178,0.178,0.035,0xb0653d,0,0.29,0,20,0.8));
@@ -2007,8 +2013,9 @@ function buildRoom(){
   scene.add(hot(potH,"decoy:plant","화분"));
 
   scene.add(shadowDecal(0.48,0.48,0.32,1.6,-3.5));
-  var binG=new THREE.Group();binG.position.set(1.6,0,-3.5);window.trashG=binG;
-  var trashProcedural=new THREE.Group();binG.add(trashProcedural);window.trashProcedural=trashProcedural;
+  trashG=new THREE.Group();trashG.position.set(1.6,0,-3.5);window.trashG=trashG;
+  trashProcedural=new THREE.Group();trashG.add(trashProcedural);window.trashProcedural=trashProcedural;
+  var binG=trashG;
   trashProcedural.add(cyl(0.17,0.13,0.40,0x404852,0,0.20,0,20,0.5));
   var binRim=new THREE.Mesh(new THREE.TorusGeometry(0.172,0.011,8,24),
     new THREE.MeshStandardMaterial({color:0x636e7c,roughness:0.4,metalness:0.5}));
@@ -2504,8 +2511,9 @@ function loop(t){
   if(window.clockSecondHand){
     clockSecondHand.rotation.z=-now*(Math.PI/30);
   }
-  if(window.teacherMixer){
-    window.teacherMixer.update(dt);
+  var tMixer = teacherMixer || window.teacherMixer;
+  if(tMixer){
+    tMixer.update(dt);
   }
   var dir=new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch),Math.sin(pitch),Math.cos(yaw)*Math.cos(pitch));
   camera.lookAt(camera.position.clone().add(dir));
@@ -3068,7 +3076,8 @@ function loadClassroom3DAssets(){
   }
 
   /* 1. 감독교사 (business_man.glb - Rig|sitting_idle 완벽 착석 애니메이션) & 앤티크 암체어 */
-  if(window.teacherGroup){
+  var tGrp = teacherGroup || window.teacherGroup;
+  if(tGrp){
     tryLoad("armchair/ArmChair_01.gltf", function(gltf){
       if(gltf && gltf.scene){
         var chair = gltf.scene;
@@ -3081,8 +3090,9 @@ function loadClassroom3DAssets(){
             node.receiveShadow = true;
           }
         });
-        if(window.tChairProcedural) window.tChairProcedural.visible = false;
-        teacherGroup.add(chair);
+        var cProc = tChairProcedural || window.tChairProcedural;
+        if(cProc) cProc.visible = false;
+        tGrp.add(chair);
       }
     });
 
@@ -3103,23 +3113,30 @@ function loadClassroom3DAssets(){
           var clip = THREE.AnimationClip.findByName(gltf.animations, "Rig|sitting_idle") || gltf.animations[0];
           if(clip){
             mixer.clipAction(clip).play();
+            teacherMixer = mixer;
             window.teacherMixer = mixer;
           }
         }
-        if(window.tMannequinProcedural) window.tMannequinProcedural.visible = false;
-        teacherGroup.add(char);
+        var mProc = tMannequinProcedural || window.tMannequinProcedural;
+        if(mProc) mProc.visible = false;
+        tGrp.add(char);
       }
     });
   }
 
   /* 2. 테디베어 곰인형 (teddy_bear.glb - 사물함 위 착석 & 정면 응시) */
-  if(window.dollGroup){
+  var dGrp = dollGroup || window.dollGroup;
+  if(dGrp){
     tryLoad("teddy/teddy_bear.glb", function(gltf){
       if(gltf && gltf.scene){
         var bear = gltf.scene;
-        bear.scale.set(0.46, 0.46, 0.46);
-        bear.position.set(0, 0.01, 0);
-        bear.rotation.y = Math.PI;
+        var box = new THREE.Box3().setFromObject(bear);
+        var center = box.getCenter(new THREE.Vector3());
+        bear.position.x -= center.x;
+        bear.position.z -= center.z;
+        bear.position.y -= box.min.y;
+        bear.scale.set(0.48, 0.48, 0.48);
+        bear.rotation.y = 0;
         bear.traverse(function(node){
           if(node.isMesh){
             node.castShadow = true;
@@ -3127,33 +3144,38 @@ function loadClassroom3DAssets(){
             if(node.material && node.material.map) node.material.map.encoding = THREE.sRGBEncoding;
           }
         });
-        if(window.dollProcedural) window.dollProcedural.visible = false;
-        dollGroup.add(bear);
+        var dProc = dollProcedural || window.dollProcedural;
+        if(dProc) dProc.visible = false;
+        dGrp.add(bear);
       }
     });
   }
 
   /* 3. 한국형 분말 소화기 (korean_fire_extinguisher_01.gltf) */
-  if(window.extinguisherGroup){
+  var eGrp = extinguisherGroup || window.extinguisherGroup;
+  if(eGrp){
     tryLoad("extinguisher/korean_fire_extinguisher_01.gltf", function(gltf){
       if(gltf && gltf.scene){
         var extModel = gltf.scene;
+        var box = new THREE.Box3().setFromObject(extModel);
+        extModel.position.y -= box.min.y;
         extModel.scale.set(0.78, 0.78, 0.78);
-        extModel.position.set(0, 0, 0);
         extModel.traverse(function(node){
           if(node.isMesh){
             node.castShadow = true;
             node.receiveShadow = true;
           }
         });
-        if(window.extProcedural) window.extProcedural.visible = false;
-        extinguisherGroup.add(extModel);
+        var eProc = extProcedural || window.extProcedural;
+        if(eProc) eProc.visible = false;
+        eGrp.add(extModel);
       }
     });
   }
 
   /* 4. 학생 책상 & 의자 6세트 (SchoolDesk_01.gltf & SchoolChair_01.gltf) */
-  if(window.studentFurnitureG){
+  var sFurn = studentFurnitureG || window.studentFurnitureG;
+  if(sFurn){
     tryLoad("desk/SchoolDesk_01.gltf", function(gltfDesk){
       tryLoad("chair/SchoolChair_01.gltf", function(gltfChair){
         if(gltfDesk && gltfDesk.scene && gltfChair && gltfChair.scene){
@@ -3164,73 +3186,99 @@ function loadClassroom3DAssets(){
               d.scale.set(0.92, 0.82, 0.88);
               d.position.set(x, 0, z);
               d.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-              studentFurnitureG.add(d);
+              sFurn.add(d);
 
               var ch = gltfChair.scene.clone();
               ch.scale.set(0.85, 0.85, 0.85);
               ch.position.set(x, 0, z + 0.38);
               ch.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-              studentFurnitureG.add(ch);
+              sFurn.add(ch);
             }
           }
-          if(window.desksProcedural) window.desksProcedural.visible = false;
+          var dProc = desksProcedural || window.desksProcedural;
+          if(dProc) dProc.visible = false;
         }
       });
     });
   }
 
   /* 5. 창가 화분 (potted_plant_01.gltf) */
-  if(window.plantG){
+  var pGrp = plantG || window.plantG;
+  if(pGrp){
     tryLoad("plant/potted_plant_01.gltf", function(gltf){
       if(gltf && gltf.scene){
         var plant = gltf.scene;
-        plant.scale.set(0.55, 0.55, 0.55);
-        plant.position.set(0, -0.22, 0);
+        var box = new THREE.Box3().setFromObject(plant);
+        plant.position.y -= box.min.y;
+        plant.scale.set(0.52, 0.52, 0.52);
+        plant.position.y -= 0.10;
         plant.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-        if(window.plantProcedural) window.plantProcedural.visible = false;
-        plantG.add(plant);
+        var pProc = plantProcedural || window.plantProcedural;
+        if(pProc) pProc.visible = false;
+        pGrp.add(plant);
       }
     });
   }
 
-  /* 6. 쓰레기통 (metal_trash_can.gltf) */
-  if(window.trashG){
+  /* 6. 쓰레기통 (metal_trash_can.gltf - 단일 원통형 통으로 분리 및 축소) */
+  var trGrp = trashG || window.trashG;
+  if(trGrp){
     tryLoad("trashcan/metal_trash_can.gltf", function(gltf){
       if(gltf && gltf.scene){
         var tc = gltf.scene;
-        tc.scale.set(3.2, 3.2, 3.2);
-        tc.position.set(0, 0.05, 0);
+        // metal_trash_can.gltf는 clean/rust 2통이 나란히 있는 에셋이므로
+        // 중복되는 clean 캔 및 부속을 제거하여 1개의 깔끔한 단일 쓰레기통만 유지
+        ["metal_trash_can", "metal_trash_can_lid", "metal_trash_can_handle_left", "metal_trash_can_handle_right"].forEach(function(n){
+          var obj = tc.getObjectByName(n);
+          if(obj && obj.parent) obj.parent.remove(obj);
+        });
+        var box = new THREE.Box3().setFromObject(tc);
+        var center = box.getCenter(new THREE.Vector3());
+        tc.position.x -= center.x;
+        tc.position.z -= center.z;
+        tc.position.y -= box.min.y;
+        tc.scale.set(0.48, 0.48, 0.48); // 실측 약 42cm 높이의 단정한 쓰레기통
         tc.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-        if(window.trashProcedural) window.trashProcedural.visible = false;
-        trashG.add(tc);
+        var trProc = trashProcedural || window.trashProcedural;
+        if(trProc) trProc.visible = false;
+        trGrp.add(tc);
       }
     });
   }
 
   /* 7. 고서적 / 수학책 (book_encyclopedia_set_01.gltf) */
-  if(window.mathBookG){
+  var bkGrp = mathBookG || window.mathBookG;
+  if(bkGrp){
     tryLoad("books/book_encyclopedia_set_01.gltf", function(gltf){
       if(gltf && gltf.scene){
         var bk = gltf.scene;
         bk.scale.set(1.35, 1.35, 1.35);
         bk.position.set(0, 0.01, 0);
         bk.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-        if(window.mathBookProcedural) window.mathBookProcedural.visible = false;
-        mathBookG.add(bk);
+        var bkProc = mathBookProcedural || window.mathBookProcedural;
+        if(bkProc) bkProc.visible = false;
+        bkGrp.add(bk);
       }
     });
   }
 
   /* 8. 교탁 위 CRT 모니터 (computer.glb) */
-  if(window.computerG){
+  var cComp = computerG || window.computerG;
+  if(cComp){
     tryLoad("computer/computer.glb", function(gltf){
       if(gltf && gltf.scene){
         var comp = gltf.scene;
-        comp.scale.set(0.13, 0.13, 0.13);
-        comp.position.set(0, -0.36, -0.08);
+        var box = new THREE.Box3().setFromObject(comp);
+        var center = box.getCenter(new THREE.Vector3());
+        comp.position.x -= center.x;
+        comp.position.z -= center.z;
+        comp.position.y -= box.min.y;
+        comp.scale.set(0.12, 0.12, 0.12);
+        comp.position.set(0, -0.38, -0.06);
         comp.traverse(function(n){ if(n.isMesh){ n.castShadow = true; n.receiveShadow = true; } });
-        if(window.compProcedural) window.compProcedural.visible = false;
-        computerG.add(comp);
+        var cpProc = compProcedural || window.compProcedural;
+        if(cpProc) cpProc.visible = false;
+        cComp.add(comp);
       }
     });
   }
