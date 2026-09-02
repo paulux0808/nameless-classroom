@@ -1123,36 +1123,53 @@ function buildRoom(){
   wall(D,H,-W/2,H/2,0,Math.PI/2);
   wall(D,H,W/2,H/2,0,-Math.PI/2);
 
-  /* --- 칠판 (흑록색 슬레이트 무광 석판 PBR & 알루미늄 프레임 & 분필 트레이 & 3D 분필/지우개) --- */
+  /* --- 칠판 (흑록색 슬레이트 무광 법랑 칠판면 & 부드러운 분필 지우개 자국 & 정갈한 분필 글씨) --- */
   var boardPbr=pbrTex(function(g,w,h){
-    g.fillStyle="#1b3027";g.fillRect(0,0,w,h);
-    /* 천연 슬레이트 미세 텍스처 */
-    g.fillStyle="rgba(255,255,255,0.03)";
-    for(var bi=0;bi<260;bi++){
-      g.fillRect(Math.random()*w,Math.random()*h,Math.random()*180+20,Math.random()*3+1);
+    // Deep authentic classroom chalkboard dark green
+    g.fillStyle="#162920";g.fillRect(0,0,w,h);
+
+    // Subtle natural chalk eraser haze & cloudy wipes (자연스러운 지우개 분말 구름 자국)
+    for(var a=0;a<20;a++){
+      var ax=Math.random()*w,ay=h*(0.15+Math.random()*0.7),ar=100+Math.random()*220;
+      var radG=g.createRadialGradient(ax,ay,20,ax,ay,ar);
+      radG.addColorStop(0,"rgba(225,238,230,0.045)");
+      radG.addColorStop(0.5,"rgba(215,230,222,0.02)");
+      radG.addColorStop(1,"rgba(215,230,222,0)");
+      g.fillStyle=radG;g.beginPath();g.arc(ax,ay,ar,0,Math.PI*2);g.fill();
     }
-    /* 부드러운 분필 지우개 쓸어내린 자국 */
-    g.globalAlpha=0.045;
-    for(var a=0;a<14;a++){
-      var ax=Math.random()*w,ay=h*(0.25+Math.random()*0.65),ar=90+Math.random()*190;
-      var arg=g.createRadialGradient(ax,ay,0,ax,ay,ar);
-      arg.addColorStop(0,"rgba(235,245,240,0.95)");arg.addColorStop(1,"rgba(235,245,240,0)");
-      g.fillStyle=arg;g.beginPath();g.arc(ax,ay,ar,0,7);g.fill();
+
+    // Soft broad vertical eraser passes (세로로 쓸어내린 미세 분필 흔적)
+    for(var vi=0;vi<8;vi++){
+      var vx=Math.random()*w,vw=60+Math.random()*120;
+      var vGrad=g.createLinearGradient(vx,0,vx+vw,0);
+      vGrad.addColorStop(0,"rgba(220,235,225,0)");
+      vGrad.addColorStop(0.5,"rgba(220,235,225,0.015)");
+      vGrad.addColorStop(1,"rgba(220,235,225,0)");
+      g.fillStyle=vGrad;g.fillRect(vx,0,vw,h);
     }
-    g.globalAlpha=1;
-    g.fillStyle="#eaf2ec";g.font="600 42px serif";
+
+    // Microscopic chalk powder dust (미세 분필 가루 입자)
+    g.fillStyle="rgba(240,250,245,0.025)";
+    for(var pi=0;pi<3500;pi++){
+      g.fillRect(Math.random()*w,Math.random()*h,1.5,1.5);
+    }
+
+    // Authentic Chalk Calligraphy (선명하고 정갈한 백색 분필 손글씨)
+    g.fillStyle="#f2f8f4";
+    g.font="600 44px 'Batang', 'Gowun Batang', serif";
     g.fillText("이 교실을 그대로 두어라.",70,120);
-    g.font="500 30px serif";g.globalAlpha=0.85;
+    g.font="500 31px 'Batang', 'Gowun Batang', serif";
+    g.fillStyle="rgba(242,248,244,0.92)";
     g.fillText("내가 누구였는지 알아내는 사람에게",70,195);
     g.fillText("내 이름으로 만든 장학금 전부를 주겠다.",70,255);
-  },1024,384, 2.2, 0.76, 0.32);
+  },1024,384, 0.04, 0.85, 0.08);
 
   var bb=plane(5.2,1.45,new THREE.MeshStandardMaterial({
     map:boardPbr.map,
     normalMap:boardPbr.normalMap,
     roughnessMap:boardPbr.roughnessMap,
-    roughness:0.75,
-    metalness:0.02
+    roughness:0.86,
+    metalness:0.01
   }),0,1.60,-3.96);
   scene.add(bb);
 
@@ -1330,19 +1347,153 @@ function buildRoom(){
   calendarBaseObj=box(0.30,0.02,0.14,0xb08a5c,0.62,0.82,-2.88);scene.add(calendarBaseObj);
 
   /* 지구본 (교탁 위 소품) */
+  /* --- 지구본 (정밀 세계지도 텍스처 & 앤티크 황동 자오선 아크 & 원목 스탠드) --- */
   var globeG=new THREE.Group();globeG.position.set(-0.62,0.80,-2.88);
-  globeG.add(cyl(0.085,0.095,0.02,0x4c331d,0,0.01,0,20,0.65));
-  globeG.add(cyl(0.014,0.014,0.08,0xcda44d,0,0.06,0,10,0.35));
-  var GR=0.095;
-  var mer=new THREE.Mesh(new THREE.TorusGeometry(GR+0.012,0.006,8,26,Math.PI*1.15),
-    new THREE.MeshStandardMaterial({color:0xd4a84e,roughness:0.35,metalness:0.65}));
-  mer.position.y=0.11;mer.rotation.y=Math.PI/2;mer.rotation.z=-0.41;globeG.add(mer);
-  globeG.add(cyl(0.004,0.004,0.022,0xd4a84e,0,0.215,0,8,0.3));
-  var earth=ball(GR,0x386f9b,0,0.11,0,0.65);
-  earth.rotation.z=0.41;earth.rotation.y=-0.6;globeG.add(earth);
+  var GR=0.098;
+
+  // 1. World Map Texture (1024 x 512)
+  var earthMapTex=tex(function(g,w,h){
+    // Deep ocean blue with turquoise coastal tint
+    var oceanGrad=g.createRadialGradient(w*0.5,h*0.5,50,w*0.5,h*0.5,w*0.6);
+    oceanGrad.addColorStop(0,"#1c4a70");
+    oceanGrad.addColorStop(1,"#143552");
+    g.fillStyle=oceanGrad;g.fillRect(0,0,w,h);
+
+    // Graticule (위도 / 경도 보조선)
+    g.strokeStyle="rgba(255,255,255,0.08)";g.lineWidth=1;
+    for(var lat=1;lat<6;lat++){
+      var ly=h*lat/6;
+      g.beginPath();g.moveTo(0,ly);g.lineTo(w,ly);g.stroke();
+    }
+    for(var lon=0;lon<12;lon++){
+      var lx=w*lon/12;
+      g.beginPath();g.moveTo(lx,0);g.lineTo(lx,h);g.stroke();
+    }
+    // Equator (적도 - 골드 라인)
+    g.strokeStyle="rgba(225,188,90,0.35)";g.lineWidth=1.8;
+    g.beginPath();g.moveTo(0,h*0.5);g.lineTo(w,h*0.5);g.stroke();
+    // Tropics (회귀선 - 점선)
+    g.setLineDash([4,4]);
+    g.strokeStyle="rgba(225,188,90,0.22)";
+    g.beginPath();g.moveTo(0,h*(0.5-0.13));g.lineTo(w,h*(0.5-0.13));g.stroke();
+    g.beginPath();g.moveTo(0,h*(0.5+0.13));g.lineTo(w,h*(0.5+0.13));g.stroke();
+    g.setLineDash([]);
+
+    function drawLand(pts, fillCol, coastCol){
+      g.strokeStyle=coastCol||"rgba(56,150,195,0.35)";g.lineWidth=6;g.lineJoin="round";
+      g.beginPath();
+      for(var i=0;i<pts.length;i++){
+        var p=pts[i];
+        if(i===0)g.moveTo(p[0]*w,p[1]*h);else g.lineTo(p[0]*w,p[1]*h);
+      }
+      g.closePath();g.stroke();
+      g.fillStyle=fillCol||"#437748";g.fill();
+    }
+
+    // 1) Eurasia
+    drawLand([
+      [0.47,0.28],[0.49,0.21],[0.53,0.18],[0.58,0.15],[0.63,0.14],[0.70,0.14],[0.78,0.13],
+      [0.86,0.13],[0.94,0.14],[0.98,0.17],[0.97,0.26],[0.93,0.32],[0.87,0.36],[0.83,0.44],
+      [0.81,0.52],[0.77,0.56],[0.74,0.47],[0.72,0.58],[0.69,0.44],[0.63,0.40],[0.58,0.37],
+      [0.55,0.43],[0.51,0.38],[0.48,0.41],[0.46,0.36],[0.47,0.28]
+    ],"#447545");
+    drawLand([[0.57,0.38],[0.64,0.39],[0.67,0.46],[0.62,0.49],[0.58,0.45]],"#c2974a"); // Middle East
+    drawLand([[0.72,0.26],[0.82,0.25],[0.85,0.32],[0.75,0.33]],"#bfa052"); // Gobi
+    drawLand([[0.85,0.34],[0.865,0.35],[0.86,0.40],[0.845,0.37]],"#39683d"); // Korea
+    drawLand([[0.88,0.33],[0.91,0.37],[0.90,0.42],[0.87,0.39]],"#3b6c40"); // Japan
+
+    // 2) Africa
+    drawLand([
+      [0.46,0.39],[0.56,0.39],[0.62,0.44],[0.65,0.48],[0.62,0.58],[0.59,0.68],[0.56,0.73],
+      [0.53,0.73],[0.50,0.65],[0.49,0.55],[0.44,0.50],[0.45,0.43],[0.46,0.39]
+    ],"#3d683f");
+    drawLand([[0.46,0.40],[0.58,0.40],[0.61,0.46],[0.50,0.50],[0.45,0.46]],"#c99a4e"); // Sahara
+
+    // 3) North America
+    drawLand([
+      [0.05,0.18],[0.14,0.17],[0.22,0.15],[0.31,0.14],[0.34,0.22],[0.31,0.31],[0.27,0.38],
+      [0.24,0.48],[0.21,0.46],[0.18,0.39],[0.14,0.38],[0.10,0.28],[0.04,0.25],[0.05,0.18]
+    ],"#4a784c");
+    drawLand([[0.36,0.08],[0.43,0.08],[0.44,0.18],[0.38,0.22],[0.34,0.16]],"#dcebf2","#a8cde0"); // Greenland
+
+    // 4) South America
+    drawLand([
+      [0.26,0.45],[0.34,0.46],[0.41,0.54],[0.39,0.68],[0.34,0.80],[0.31,0.82],[0.29,0.75],
+      [0.27,0.58],[0.26,0.45]
+    ],"#326336");
+
+    // 5) Australia & Oceania
+    drawLand([
+      [0.82,0.64],[0.89,0.60],[0.94,0.63],[0.93,0.74],[0.85,0.73],[0.82,0.64]
+    ],"#ba7438");
+    drawLand([[0.95,0.75],[0.97,0.76],[0.96,0.82],[0.94,0.80]],"#3f6e43"); // New Zealand
+
+    // 6) Antarctica
+    drawLand([
+      [0.0,0.88],[0.2,0.86],[0.4,0.89],[0.6,0.87],[0.8,0.88],[1.0,0.86],
+      [1.0,1.0],[0.0,1.0]
+    ],"#e4f0f7","#bed9eb");
+
+    // Title cartouche in South Pacific
+    g.fillStyle="rgba(242,234,214,0.85)";
+    g.fillRect(100,320,130,46);
+    g.strokeStyle="#b8934a";g.lineWidth=2;
+    g.strokeRect(102,322,126,42);
+    g.fillStyle="#3d2c16";g.font="bold 12px serif";g.textAlign="center";
+    g.fillText("TERRESTRIAL GLOBE",165,340);
+    g.font="italic 10px serif";
+    g.fillText("1:40,000,000",165,355);
+  }, 1024, 512);
+
+  // 2. Hardware: Turned Mahogany Wood & Polished Brass
+  var baseWood=new THREE.MeshStandardMaterial({color:0x462714,roughness:0.55,metalness:0.1});
+  var brassMat=new THREE.MeshStandardMaterial({color:0xdfb552,roughness:0.25,metalness:0.85});
+
+  // Base tiered plinth
+  var baseFoot=new THREE.Mesh(new THREE.CylinderGeometry(0.092,0.096,0.016,28),baseWood);baseFoot.position.y=0.008;globeG.add(baseFoot);
+  var baseT2=new THREE.Mesh(new THREE.CylinderGeometry(0.076,0.086,0.018,28),baseWood);baseT2.position.y=0.024;globeG.add(baseT2);
+  var collar=new THREE.Mesh(new THREE.CylinderGeometry(0.026,0.038,0.012,20),brassMat);collar.position.y=0.038;globeG.add(collar);
+
+  // Turned Center Spindle
+  var stem=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.016,0.055,16),brassMat);stem.position.y=0.068;globeG.add(stem);
+  var stemBall=new THREE.Mesh(new THREE.SphereGeometry(0.017,16,12),brassMat);stemBall.position.y=0.100;globeG.add(stemBall);
+
+  // 3. Brass Semi-Meridian Arm (자오선 환)
+  var meridianG=new THREE.Group();meridianG.position.set(0,0.11,0);
+  var merGeom=new THREE.TorusGeometry(GR+0.014,0.005,12,48,Math.PI*1.08);
+  var merRing=new THREE.Mesh(merGeom,brassMat);
+  merRing.rotation.y=Math.PI/2;merRing.rotation.z=-0.41;merRing.position.y=-0.005;
+  meridianG.add(merRing);
+
+  // North & South Pole Pins
+  var polePinN=new THREE.Mesh(new THREE.CylinderGeometry(0.0035,0.0035,0.03,8),brassMat);
+  polePinN.position.set(-Math.sin(0.41)*(GR+0.008),Math.cos(0.41)*(GR+0.008),0);
+  polePinN.rotation.z=-0.41;meridianG.add(polePinN);
+  var finialN=new THREE.Mesh(new THREE.SphereGeometry(0.008,12,10),brassMat);
+  finialN.position.set(-Math.sin(0.41)*(GR+0.022),Math.cos(0.41)*(GR+0.022),0);
+  meridianG.add(finialN);
+
+  globeG.add(meridianG);
+
+  // 4. Earth Sphere with 23.5° Axial Tilt & Spin
+  var earthPivot=new THREE.Group();earthPivot.position.set(0,0.11,0);
+  earthPivot.rotation.z=-0.41; // 23.5도 지구 자전축 기울기
+
+  var earthMat=new THREE.MeshStandardMaterial({
+    map:earthMapTex,
+    roughness:0.42,
+    metalness:0.04
+  });
+  var earthMesh=new THREE.Mesh(new THREE.SphereGeometry(GR,36,28),earthMat);
+  earthPivot.add(earthMesh);
+  globeG.add(earthPivot);
+
+  window.earthMesh=earthMesh;
+  window.globeSpinVel=0.003;
+
   scene.add(globeG);
-  var gH=box(0.26,0.30,0.26,0xffffff,-0.62,0.92,-2.88);
-  gH.material.transparent=true;gH.material.opacity=0;scene.add(hot(gH,"decoy","지구본"));
+  var gH=box(0.28,0.34,0.28,0xffffff,-0.62,0.92,-2.88);
+  gH.material.transparent=true;gH.material.opacity=0;scene.add(hot(gH,"decoy:globe","지구본"));
 
   /* --- 감독교사 (안정적인 인체 비율 & 앤티크 암체어) --- */
   var tG=new THREE.Group();tG.position.set(3.1,0,-3.42);teacherGroup=tG;window.teacherGroup=tG;
@@ -2576,6 +2727,10 @@ function loop(t){
   if(window.clockSecondHand){
     clockSecondHand.rotation.z=-now*(Math.PI/30);
   }
+  if(window.earthMesh){
+    if(window.globeSpinVel && window.globeSpinVel > 0.003) window.globeSpinVel *= 0.96;
+    window.earthMesh.rotation.y += (window.globeSpinVel || 0.002);
+  }
   var tMixer = teacherMixer || window.teacherMixer;
   if(tMixer){
     tMixer.update(dt);
@@ -2964,7 +3119,7 @@ var DECOY={
   trophy:"오래된 트로피다. 이름을 새긴 자리가 긁혀 지워져 있다.",
   books:"누군가 두고 간 책 무더기다. 이름이 적힌 페이지는 찢겨 있다.",
   plant:"화분이다. 물을 준 사람이 없어 잎 끝이 말라 있다.",
-  globe:"지구본이다. 돌려 보아도 걸리는 곳이 없다.",
+  globe:"정밀하게 제작된 클래식 원목 지구본이다. 세계 각국의 대륙과 자오선이 정교하게 각인되어 있다.",
   bin:"쓰레기통이다. 비어 있다.",
   umb:"우산꽂이다. 주인 없는 우산 두 자루가 남아 있다.",
   chalk:"분필함이다. 짧은 분필 몇 개와 지우개가 놓여 있다.",
@@ -2975,7 +3130,11 @@ function interact(id){
   if(id==="exitdoor"){showExitDoor();return;}
   if(S.done){ if(id==="computer")showEnding(); return; }
   if(id.indexOf("decoy")===0){
-    toast(DECOY[id.split(":")[1]]||"특별한 것이 없다.");return;
+    var k=id.split(":")[1];
+    if(k==="globe"){
+      window.globeSpinVel = 0.28;
+    }
+    toast(DECOY[k]||"특별한 것이 없다.");return;
   }
   if(id.indexOf("reward:")===0){openRewardDiary(+id.split(":")[1]);return;}
   if(S.ch>8){ if(id==="computer")showAssembly(); else toast("마지막 조각을 교탁에서 맞추세요."); return; }
