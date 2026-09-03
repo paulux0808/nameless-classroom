@@ -1,0 +1,48 @@
+name: Import Stage 2 GLB assets
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/import-stage2-assets.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-stage2-assets
+  cancel-in-progress: false
+
+jobs:
+  import-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download and package Stage 2 assets
+        run: node tools/import-stage2-assets.mjs
+
+      - name: Validate every GLB
+        run: node tools/validate-stage2-assets.mjs
+
+      - name: Commit generated assets
+        run: |
+          git add assets/models/stage2
+          if git diff --cached --quiet; then
+            echo "Stage 2 assets are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "feat(assets): add Stage 2 Chapter 1-6 GLB library"
+          git pull --rebase origin main
+          git push origin HEAD:main
