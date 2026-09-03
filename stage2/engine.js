@@ -160,7 +160,16 @@
     scene.add(deskLamp);
   }
 
-  /* ── 모델 로드 ─────────────────────────────────────────────────────── */
+  /* ── 모델 로드 ───────────────────────────────────────────────────────
+     NPC 모델은 수 MB라 소품보다 오래 걸린다. 같은 카운터에 넣지 않으면
+     "6/6" 에서 멈춘 것처럼 보인다. 총량에 NPC 를 포함해 센다. */
+  var _loadDone = 0, _loadTotal = 0;
+  function loadStep() {
+    _loadDone++;
+    var d = $("#load-detail");
+    if (d) d.textContent = "오브젝트 배치 중 (" + _loadDone + "/" + _loadTotal + ")";
+  }
+
   function loadModels(done) {
     var list = chapter.models || [];
     if (!list.length || !THREE.GLTFLoader) { done(); return; }
@@ -169,8 +178,7 @@
 
     function step() {
       settled++;
-      var d = $("#load-detail");
-      if (d) d.textContent = "오브젝트 배치 중 (" + settled + "/" + list.length + ")";
+      loadStep();
       if (settled === list.length) done();
     }
 
@@ -246,6 +254,8 @@
   function loadNPC(done) {
     var spec = chapter.npcModel;
     if (!spec || !THREE.GLTFLoader) { done(); return; }
+    var d = $("#load-detail");
+    if (d) d.textContent = "인물을 부르는 중… (" + (_loadDone + 1) + "/" + _loadTotal + ")";
     new THREE.GLTFLoader().load(MODEL_BASE + spec.path, function (gltf) {
       npc = placeModel(gltf.scene, {
         id: "npc", pos: spec.pos, rot: spec.rot,
@@ -267,9 +277,11 @@
       var c = box.getCenter(new THREE.Vector3());
       var hit = invisibleHit(0.8, box.max.y - box.min.y, 0.8, [c.x, c.y, c.z]);
       scene.add(hot(hit, "npc", chapter.npc));
+      loadStep();
       done();
     }, undefined, function () {
       console.warn("NPC 모델 로드 실패:", spec.path);
+      loadStep();
       done();
     });
   }
@@ -811,6 +823,9 @@
       ? Object.assign({}, chapter.docs, chapter.revisedDocs || {})
       : chapter.docs;
     save();
+
+    _loadDone = 0;
+    _loadTotal = (chapter.models || []).length + (chapter.npcModel ? 1 : 0);
 
     buildScene();
     buildHotspots();
