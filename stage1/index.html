@@ -148,6 +148,8 @@ button{cursor:pointer;touch-action:manipulation}
 }
 #modal .card{width:100%;max-width:100%;height:100%;max-height:calc(100dvh - 32px - var(--sa-t) - var(--sa-b));pointer-events:auto;
   background:linear-gradient(165deg,rgba(34,26,17,0.98),rgba(18,14,8,0.98));box-shadow:-20px 0 60px rgba(0,0,0,0.65)}
+/* 조립 화면은 내용 높이에 맞추되 화면을 넘기지 않는다 */
+#modal.assembly-modal .card{height:auto}
 
 /* 터미널 컴패니언: 화면 왼쪽 절반 차지 (오른쪽 50vw는 모달 영역) */
 #terminal-companion{position:fixed;z-index:59;left:calc(var(--sa-l) + 14px);right:calc(50vw + var(--sa-r) + 14px);
@@ -179,14 +181,25 @@ button{cursor:pointer;touch-action:manipulation}
 .terminal-aid-ref p{margin:10px 0 0;font-size:19px}
 .terminal-aid-ref video{width:100%;max-height:45vh;object-fit:contain;background:#050403;border-radius:8px}
 
-.card{width:min(960px,100%);max-height:92vh;max-height:92dvh;overflow:auto;
-  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:1px solid var(--line);
+/* 카드가 통째로 스크롤하면 머리글이 같이 밀리고, 내용이 더 있다는 신호도
+   없다. 머리글은 고정하고 본문만 스크롤시킨다. */
+.card{width:min(960px,100%);max-height:92vh;max-height:92dvh;
+  display:flex;flex-direction:column;overflow:hidden;
+  overscroll-behavior:contain;border:1px solid var(--line);
   border-radius:16px;background:linear-gradient(165deg,#241c12,#140f09);box-shadow:var(--shadow)}
-.card-head{position:sticky;top:0;z-index:2;display:flex;gap:18px;justify-content:space-between;align-items:center;
+.card-head{flex:none;z-index:2;display:flex;gap:18px;justify-content:space-between;align-items:center;
   padding:20px 30px;border-bottom:1px solid var(--line);background:rgba(18,13,7,0.98)}
 .card-head h2{margin:0;font-size:28px;font-family:var(--font-ui);font-weight:800;letter-spacing:.02em;color:#f6ede0}
 .card-head .sub{color:var(--text-dim);font-size:18px;letter-spacing:.12em}
-.card-body{padding:30px 36px}
+/* 본문이 스크롤 주체. 위아래 그림자는 순수 CSS로, 실제로 넘칠 때만 뜬다
+   (local 배경은 내용과 함께 스크롤하며 가장자리 그라디언트를 덮는다). */
+.card-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding:30px 36px;
+  background:
+    linear-gradient(#1b1510 30%, rgba(27,21,16,0)) top / 100% 30px no-repeat local,
+    linear-gradient(rgba(20,15,9,0), #140f09 72%) bottom / 100% 30px no-repeat local,
+    radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.55), rgba(0,0,0,0)) top / 100% 12px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.55), rgba(0,0,0,0)) bottom / 100% 12px no-repeat scroll}
 .eyebrow{font-size:16px;letter-spacing:.25em;color:var(--brass);font-weight:900}
 
 /* 일기장 / 자료 서식 (폰트 2배 & 여백/요소 1.6배) */
@@ -280,20 +293,28 @@ button{cursor:pointer;touch-action:manipulation}
 .mc.void{visibility:hidden}
 .maproutes{margin:16px 0 0;padding-left:24px;font-size:18px;line-height:1.75}
 
-.sgrid{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:nowrap;
-  background:#ede2ca;padding:18px 16px;border-radius:10px;box-shadow:inset 0 0 0 1px #ccbfa0;overflow:hidden}
+/* 퍼즐 자료다. 잘리면 풀 수가 없다.
+   좁으면 줄바꿈하고, 그래도 모자라면 가로 스크롤을 연다.
+   타일 크기는 --tile 하나로 묶어 화면 폭에 따라 줄인다. */
+.sgrid{--tile:80px;
+  display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;
+  background:#ede2ca;padding:18px 16px;border-radius:10px;box-shadow:inset 0 0 0 1px #ccbfa0;
+  overflow-x:auto;overscroll-behavior-x:contain}
 .stile{background:#fff;border:2px solid #1d1913;display:grid;flex:none}
-.stile.v{grid-template-rows:1fr 1fr;width:80px;height:160px}
-.stile.h{grid-template-columns:1fr 1fr;width:160px;height:80px}
+.stile.v{grid-template-rows:1fr 1fr;width:var(--tile);height:calc(var(--tile) * 2)}
+.stile.h{grid-template-columns:1fr 1fr;width:calc(var(--tile) * 2);height:var(--tile)}
 .scell{display:grid;place-items:center;border:1px solid #1d1913}
-.scell span{position:relative;display:grid;place-items:center;width:64px;height:64px}
+.scell span{position:relative;display:grid;place-items:center;
+  width:calc(var(--tile) * 0.8);height:calc(var(--tile) * 0.8)}
 .mk{position:absolute;top:-1px;left:50%;margin-left:-10px;width:20px;height:6px;background:#1d1913;border-radius:1px}
-.scell svg{width:54px;height:54px;display:block}
+.scell svg{width:calc(var(--tile) * 0.675);height:calc(var(--tile) * 0.675);display:block}
 
 /* 조립 뷰어 (Chapter 7 - 1.6배) */
-.stack{display:grid;gap:18px;padding:16px 0 8px;padding-left:42px}
+/* 사선 배치라 padding-left + 단마다 margin-left 가 쌓여 컨테이너를 넘친다.
+   넘치는 만큼은 스크롤로 열되, 기본 폭 안에 들어오도록 여백을 줄인다. */
+.stack{display:grid;gap:18px;padding:16px 0 8px;padding-left:24px;min-width:0}
 .srow{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end}
-.bar{position:relative;transition:margin .4s ease}
+.bar{position:relative;transition:margin .4s ease;min-width:0}
 .bar .face{height:46px;padding:0 24px;display:flex;gap:14px;align-items:center;font-size:18px;
   color:#fff3e0;white-space:nowrap;overflow:hidden;
   background:linear-gradient(160deg,#c69a62,#a97f4d 60%,#946c40);
@@ -317,15 +338,32 @@ button{cursor:pointer;touch-action:manipulation}
 #modal.assembly-modal{width:min(1280px,94vw);max-width:min(1280px,94vw);
   inset:0;margin:0 auto;display:grid;place-items:center}
 #modal.assembly-modal .card{height:auto;max-height:calc(100dvh - 32px - var(--sa-t) - var(--sa-b))}
-.assembly-layout{display:grid;grid-template-columns:minmax(360px,1fr) minmax(440px,1.2fr);gap:24px;align-items:start}
+.assembly-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;
+  align-items:start;min-width:0}
+/* 좁으면 위아래로 쌓는다 — 나란히 두면 양쪽 다 못 읽는다 */
+@media(max-width:1000px){
+  .assembly-layout{grid-template-columns:minmax(0,1fr)}
+  .assembly-diary .paper{max-height:32vh}
+}
 .assembly-diary .paper{padding:28px 32px;font-size:22px;line-height:1.85;max-height:calc(100dvh - 160px);overflow:auto}
-.assembly-stackview{perspective:1000px;padding:8px 6px 16px;overflow:hidden}
+.assembly-stackview{perspective:1000px;padding:8px 6px 16px;
+  overflow-x:auto;overflow-y:visible;min-width:0;overscroll-behavior-x:contain}
 .assembly-stackview .stack{padding-left:14px;transform:rotateX(5deg);transform-origin:50% 0}
 .assembly-stackview .bar .face{transform:skewX(-18deg)}
 .assembly-stackview .bar .face > *{transform:skewX(18deg)}
 
 /* 인트로 / 엔딩 */
-#intro .card{width:min(720px,100%);padding:40px}
+/* 짧은 화면(가로 모드 폰, 720p 노트북)에서 시작 버튼이 접히는 아래로
+   밀려나 "게임이 시작이 안 된다"가 됐다. 본문만 스크롤시키고
+   버튼 줄은 카드 바닥에 붙여 항상 보이게 한다. */
+#intro .card{width:min(720px,100%);max-height:calc(100dvh - 32px - var(--sa-t) - var(--sa-b));
+  display:flex;flex-direction:column;overflow:hidden;padding:0}
+#intro .intro-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;
+  padding:40px 40px 8px}
+#intro .intro-actions{flex:none;display:flex;gap:12px;flex-wrap:wrap;
+  padding:16px 40px calc(16px + var(--sa-b));border-top:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(20,15,9,0.92),rgba(20,15,9,0.99))}
+#intro .intro-actions .btn{flex:1 1 auto;min-width:150px}
 #intro h1{margin:14px 0 16px;font-family:var(--font-ui);font-weight:900;font-size:clamp(28px,6vw,48px);line-height:1.15;
   color:#f6ede0;letter-spacing:-.01em}
 #intro h1::after{content:"";display:block;width:72px;height:3px;margin:16px 0 0;
@@ -349,7 +387,9 @@ button{cursor:pointer;touch-action:manipulation}
 .ending-credit-section p{margin:0;font-family:var(--font-hand);font-size:clamp(17px,1.5vw,var(--fs-body));line-height:1.95;color:#ded5c3}
 /* 출구 코드는 반드시 봐야 하는 정보다. 크레딧을 어디까지 읽었든
    항상 보이도록 스크롤 컨테이너 바닥에 붙인다. */
-.ending-exit-card{position:sticky;bottom:0;z-index:3;margin:14px -60px 0;padding:16px 60px 20px;
+/* 좌우로 넓히되 컨테이너를 넘지 않게 한다. 음수 마진으로 밀면
+   .ending-credit-inner 가 가로로 넘쳐 글자가 잘린다. */
+.ending-exit-card{position:sticky;bottom:0;z-index:3;margin:14px 0 0;padding:16px 20px 20px;
   max-width:none;border-top:1px solid rgba(210,164,76,0.55);
   background:#0d0a06;   /* 불투명 — 뒤 크레딧이 비치면 코드가 안 읽힌다 */
   box-shadow:0 -18px 30px rgba(5,4,2,0.9)}
@@ -452,6 +492,70 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
 #stage-transition{position:fixed;inset:0;z-index:260;background:#000;opacity:0;pointer-events:none;transition:opacity 1.05s ease}
 #stage-transition.on{opacity:1;pointer-events:auto}
 
+/* ── 짧은 화면 압축 ──────────────────────────────────────────────────
+   폭이 아니라 높이가 모자란 경우다. 가로로 눕힌 폰(375~430px 높이)과
+   720p 노트북에서 정답 패드·확인 버튼이 접히는 아래로 밀려나
+   "화면에 다 안 보인다"가 됐다. 높이 기준으로 따로 조인다.
+   폭 조건을 걸지 않으므로 어떤 기기든 높이가 부족하면 적용된다. */
+@media(max-height:560px){
+  .card{max-height:calc(100dvh - 16px - var(--sa-t) - var(--sa-b))}
+  .card-head{padding:8px 14px}
+  .card-head h2{font-size:16px}
+  .card-head .sub{font-size:11px}
+  .card-body{padding:10px 14px}
+  #modal{padding:8px}
+  #modal .card{max-height:calc(100dvh - 16px - var(--sa-t) - var(--sa-b))}
+
+  .term{padding:10px 12px}
+  .term .l{font-size:11.5px;letter-spacing:.05em}
+  .term .rule{margin-top:5px;font-size:10.5px}
+  .term .cue{margin-top:8px;padding:8px 12px;font-size:15px}
+  .term:has(.answer-ui){padding:9px 11px}
+
+  .answer-ui{margin-top:6px;gap:5px}
+  .answer-display{min-height:30px;padding:4px 9px;font-size:15px;letter-spacing:.1em}
+  .answer-display.empty{font-size:11px}
+  .answer-keys{gap:4px}
+  .answer-key,.answer-tool{min-height:30px;font-size:12px}
+  .answer-tools{gap:4px}
+  .row{gap:6px;margin-top:4px!important}
+  .btn{padding:7px 13px;font-size:12.5px}
+  .btn-p{padding:8px 16px;font-size:13px}
+  .btn-s{padding:6px 12px;font-size:12px}
+
+  .paper{padding:12px 14px;font-size:14px;line-height:1.65}
+  .paper .date{font-size:12.5px;margin:0 0 9px}
+  .paper p{margin:0 0 9px}
+  .paper .note{margin:11px 0;padding:9px 12px;font-size:13px}
+  .item>summary{padding:7px 11px;font-size:13px}
+  .item .in,.item dl,.item p{font-size:12.5px;line-height:1.55}
+  .item .in{padding:8px 11px}
+  .mc{min-height:40px;font-size:clamp(9px,1.1vw,12px)}
+  .maproutes{font-size:12px;margin-top:9px}
+  .sgrid{--tile:52px;gap:7px;padding:9px 10px}
+
+  /* 조립 화면 — 마지막 퍼즐이라 반드시 다 보여야 한다 */
+  #modal.assembly-modal .card{max-height:calc(100dvh - 16px)}
+  .assembly-diary .paper{max-height:26vh}
+  .stack{gap:7px;padding-left:14px}
+  .bar .face{height:30px;padding:0 13px;font-size:12.5px}
+  .bar .face .n{width:20px;height:20px;font-size:11px}
+  .bar .band{height:18px}
+  .srow{gap:9px}
+  .srow .mv button{width:32px;height:32px;font-size:14px}
+
+  #intro .intro-scroll{padding:14px 18px 6px}
+  #intro .intro-actions{padding:9px 18px calc(9px + var(--sa-b))}
+  #intro h1{font-size:clamp(19px,4.4vw,27px);margin:0 0 8px}
+  #intro h1::after{margin:8px 0 0;height:2px;width:52px}
+  #intro .will{margin:10px 0;padding:10px 13px;font-size:12.5px;line-height:1.65}
+  #intro p{font-size:12.5px;line-height:1.6;margin:7px 0}
+  #intro .mini,#intro .answer-rule{font-size:11px}
+
+  #dialogue-none{}
+  #toast{padding:9px 20px;font-size:13px;bottom:calc(var(--sa-b) + 12px)}
+}
+
 /* 좁은 가로 화면(작은 폰 landscape) 압축 —
    미디어 쿼리는 특정도를 올려주지 않으므로 기본 규칙보다 뒤에 두어야 한다. */
 @media(max-width:1100px) and (min-width:701px){
@@ -520,6 +624,7 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
 
 <div class="sheetwrap" id="intro">
   <div class="card">
+    <div class="intro-scroll">
     <h1>이름 없는 교실</h1>
     <p>한 사람이 이름을 남기지 않고 세상을 떠났습니다. 유언장에는 재산의 사용처 대신 이런 문장만 적혀 있었습니다.</p>
     <div class="will">
@@ -532,7 +637,8 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
     <p>당신은 그 도전에 응한 사람입니다. 지금, 그가 쓰던 교실 문 앞에 서 있습니다. 안에는 첫 번째 일기 한 장이 놓여 있습니다.</p>
     <p class="mini">화면을 끌어 둘러보고, 빛나는 지점을 눌러 조사하세요. 암호는 교탁의 컴퓨터에 입력합니다.</p>
     <p class="answer-rule">정답은 숫자 또는 영어만 입력합니다. 대소문자는 구분하지 않으며 띄어쓰기는 하지 않습니다.</p>
-    <div class="row" style="margin-top:22px">
+    </div>
+    <div class="intro-actions">
       <button class="btn btn-p" id="go-new">교실에 들어간다</button>
       <button class="btn" id="go-cont">이어서 하기</button>
     </div>
