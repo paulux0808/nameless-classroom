@@ -74,44 +74,10 @@ test("findLeaks는 단어 경계를 지킨다", () => {
   assert.ok(L.findLeaks("the bomb casing", 0).includes("bomb"));
 });
 
-test("CH01 대사와 문서에 스포일러 누출이 없다", () => {
+test("CH01 대사와 보고서에 스포일러 누출이 없다", () => {
   const blob = JSON.stringify(ch01);
   assert.deepEqual(L.findLeaks(blob, L.SPOILER.CHAPTERS), [],
     "CH01 데이터에 CH1~8에서 금지된 표현이 들어 있다");
-});
-
-test("CH01의 요구 모순이 실제로 성립하고, 수정본에서 해소된다", () => {
-  assert.deepEqual(L.auditChapter(ch01), []);
-  for (const r of ch01.rules) {
-    assert.ok(L.ruleHolds(r, ch01.docs), `${r.id} 가 원본에서 성립하지 않는다`);
-  }
-  const merged = { ...ch01.docs, ...ch01.revisedDocs };
-  for (const r of ch01.rules) {
-    assert.ok(!L.ruleHolds(r, merged), `${r.id} 가 수정본에서도 남아 있다`);
-  }
-});
-
-test("auditChapter는 잘못된 챕터 데이터를 잡아낸다", () => {
-  const broken = {
-    docs: { a: { fields: { v: "1" } }, b: { fields: { v: "1" } } },
-    rules: [{ id: "x", kind: "mismatch", left: "a.fields.v", right: "b.fields.v" }],
-    required: ["x", "없는규칙"]
-  };
-  const problems = L.auditChapter(broken);
-  assert.ok(problems.some(p => p.includes("모순이 성립하지 않는")), "같은 값인데 mismatch를 요구");
-  assert.ok(problems.some(p => p.includes("없는 규칙")), "존재하지 않는 규칙 참조");
-});
-
-test("ruleHolds — 날짜 기반 규칙", () => {
-  const docs = {
-    cal: { fields: { doneOn: "1944-03-01" } },
-    ref: { fields: { replacedOn: "1944-03-20" } },
-    std: { fields: { revisedOn: "1944-02-01" } }
-  };
-  assert.ok(L.ruleHolds({ kind: "superseded", usedAt: "cal.fields.doneOn",
-    replacedAt: "ref.fields.replacedOn" }, docs), "교정 후 기준기가 교체되면 무효");
-  assert.ok(!L.ruleHolds({ kind: "stale", appliedAt: "cal.fields.doneOn",
-    revisedAt: "std.fields.revisedOn" }, docs), "개정이 적용보다 앞서면 문제 없음");
 });
 
 test("저장 상태 검증 — 손상된 값은 복구하고 못 고치면 폐기", () => {
@@ -150,107 +116,218 @@ test("damp는 프레임 시간에 독립이다", () => {
   assert.ok(Math.abs(a - b) < 1e-12);
 });
 
-/* 규칙에서 짝을 끌어온다. 챕터 데이터를 다시 손봐도 테스트가 깨지지 않는다. */
-const pairOf = id => L.rulePair(ch01.rules.find(r => r.id === id));
+/* ── 보고서 모델 ─────────────────────────────────────────────────────── */
 
-test("두 필드를 대조하면 해당 모순이 드러난다", () => {
-  const [a, b] = pairOf("chain_break");
-  const r = L.applyCompare(ch01, [], a, b);
-  assert.equal(r.rule.id, "chain_break");
-  assert.ok(r.isNew);
-  assert.deepEqual(r.found, ["chain_break"]);
+test("CH01 감사 — 퍼즐이 실제로 성립한다", () => {
+  assert.deepEqual(L.auditChapter(ch01), []);
 });
 
-test("대조 순서는 상관없다", () => {
-  const [a, b] = pairOf("chain_break");
-  assert.equal(L.matchRule(ch01.rules, a, b, ch01.docs).id,
-               L.matchRule(ch01.rules, b, a, ch01.docs).id);
+test("원본에서는 두 진술이 갈리고, 수정본에서는 갈리지 않는다", () => {
+  for (const id of L.requiredClaims(ch01)) {
+    assert.ok(L.claimBroken(ch01.reports, id), `${id} 가 원본에서 갈리지 않는다`);
+    assert.ok(!L.claimBroken(ch01.revisedReports, id), `${id} 가 수정본에서도 갈린다`);
+  }
 });
 
-test("무관한 두 필드를 짚으면 아무것도 드러나지 않는다", () => {
-  const r = L.applyCompare(ch01, [], "card01.fields.batch", "card02.fields.batch");
-  assert.equal(r.rule, null);
-  assert.deepEqual(r.found, []);
+test("어긋난 장은 데이터에서 유도되고 선언과 일치한다", () => {
+  assert.equal(L.oddReportFrom(ch01, ch01.reports), ch01.oddReport);
+  for (const id of L.requiredClaims(ch01)) {
+    assert.equal(L.oddOf(ch01.reports, id), ch01.oddReport,
+      `${id} 가 다른 장을 가리킨다 — 어긋남이 한 장에 모이지 않는다`);
+  }
 });
 
-test("같은 모순을 두 번 찾아도 한 번만 센다", () => {
-  const [a, b] = pairOf("chain_break");
-  let s = L.applyCompare(ch01, [], a, b);
-  assert.ok(s.isNew);
-  s = L.applyCompare(ch01, s.found, b, a);
-  assert.ok(!s.isNew, "중복 발견");
-  assert.deepEqual(s.found, ["chain_break"]);
+test("1차와 3차는 같은 말을, 2차만 다른 말을 한다", () => {
+  for (const id of L.requiredClaims(ch01)) {
+    const v = Object.fromEntries(
+      L.claimValues(ch01.reports, id).map(x => [x.report, x.value]));
+    assert.equal(v.r1, v.r3, `${id}: 1차와 3차가 갈린다`);
+    assert.notEqual(v.r2, v.r1, `${id}: 2차가 같은 말을 한다`);
+  }
 });
 
-test("수정본에서는 같은 대조가 모순을 드러내지 않는다", () => {
-  const merged = { ...ch01.docs, ...ch01.revisedDocs };
-  const [a, b] = pairOf("chain_break");
-  const r = L.applyCompare(ch01, [], a, b, merged);
-  assert.equal(r.rule, null, "수정본에서도 모순이 잡히면 재검증이 무의미하다");
+test("표현이 다른 것과 뜻이 다른 것은 다르다 — 나머지 문단은 문제가 아니다", () => {
+  /* 착수 시각도 정전 시각도 서명 형식도 셋 다 다르다. 회차가 다르니
+     그건 달라도 된다. 그런 문단을 찍으면 근거로 세지 않아야 한다. */
+  const decoys = ch01.reports[0].body.filter(p => !p.claim).map(p => p.id);
+  assert.ok(decoys.length >= 3, "오답 유도 문단이 너무 적다");
+  for (const id of decoys) {
+    const r = L.applyMark(ch01, [], [], id, ch01.reports);
+    assert.ok(r.offClaim, `${id} 를 찍으면 근거로 세어진다`);
+    assert.deepEqual(r.found, []);
+  }
 });
 
-test("모순은 라벨이 아니라 값을 따라가야 나온다", () => {
-  /* 이전 판은 카드 하나만 "수정본(출처 미상)" 이라 적혀 있어 읽지 않아도
-     답이 보였다. 어떤 필드도 그 자체로 답을 알려주면 안 된다. */
-  const blob = JSON.stringify(ch01.docs);
-  for (const giveaway of ["미상", "불명", "오류", "잘못", "틀림", "이상", "확인 필요"]) {
+test("텍스트만 보고는 못 푼다 — 어느 문단도 스스로 답을 알려주지 않는다", () => {
+  const blob = JSON.stringify(ch01.reports);
+  for (const giveaway of ["미상", "불명", "오류", "잘못", "틀림", "이상하", "확인 필요"]) {
     assert.ok(!blob.includes(giveaway), `자료에 "${giveaway}" 가 있으면 답이 보인다`);
   }
 });
 
-test("재검증 — 수정본에서 이어졌음을 확인할 수 있다", () => {
-  const rev = { ...ch01.docs, ...ch01.revisedDocs };
-  const [a, b] = L.rulePair(ch01.rules.find(r => r.id === "chain_break"));
-  const r = L.applyVerify(ch01, [], a, b, rev);
-  assert.equal(r.rule.id, "chain_break");
-  assert.ok(r.isNew);
-  assert.ok(!r.stillBroken);
-  assert.deepEqual(r.verified, ["chain_break"]);
+test("어긋난 장 지목 — 맞는 장만 통과한다", () => {
+  assert.ok(L.checkOdd(ch01, "r2"));
+  assert.ok(!L.checkOdd(ch01, "r1"));
+  assert.ok(!L.checkOdd(ch01, "r3"));
+  assert.ok(!L.checkOdd(ch01, null));
 });
 
-test("재검증 — 아직 안 고쳐졌으면 확인되지 않는다", () => {
-  const [a, b] = L.rulePair(ch01.rules.find(r => r.id === "chain_break"));
-  const r = L.applyVerify(ch01, [], a, b, ch01.docs);
-  assert.ok(r.stillBroken, "원본에서는 아직 끊겨 있어야 한다");
+test("근거는 세 장 모두에서 찍어야 한 가지로 센다", () => {
+  const claim = ch01.claims[0];
+  const paras = L.claimParas(ch01.reports, claim.id).map(x => x.para.id);
+  assert.equal(paras.length, 3);
+
+  let marks = [], found = [];
+  for (let i = 0; i < paras.length; i++) {
+    const r = L.applyMark(ch01, marks, found, paras[i], ch01.reports);
+    assert.ok(r.isNew);
+    marks = r.marks; found = r.found;
+    if (i < paras.length - 1) {
+      assert.deepEqual(found, [], "한두 장만 찍고도 근거로 세어진다");
+      assert.equal(L.marksLeft(ch01.reports, claim.id, marks), paras.length - 1 - i);
+    }
+  }
+  assert.deepEqual(found, [claim.id]);
+  assert.equal(L.marksLeft(ch01.reports, claim.id, marks), 0);
+});
+
+test("같은 문단을 두 번 찍어도 한 번만 센다", () => {
+  const id = L.claimParas(ch01.reports, ch01.claims[0].id)[0].para.id;
+  let r = L.applyMark(ch01, [], [], id, ch01.reports);
+  assert.ok(r.isNew);
+  r = L.applyMark(ch01, r.marks, r.found, id, ch01.reports);
+  assert.ok(!r.isNew);
+  assert.equal(r.marks.length, 1);
+});
+
+test("재검증 — 수정본에서만 확인이 통과한다", () => {
+  const id = ch01.claims[0].id;
+  const bad = L.applyClaimVerify(ch01, [], id, ch01.reports);
+  assert.ok(bad.stillBroken, "원본에서 확인이 통과하면 재검증이 무의미하다");
+  assert.deepEqual(bad.verified, []);
+
+  const ok = L.applyClaimVerify(ch01, [], id, ch01.revisedReports);
+  assert.ok(!ok.stillBroken);
+  assert.ok(ok.isNew);
+  assert.deepEqual(ok.verified, [id]);
+});
+
+test("재검증 — 없는 자리는 확인 대상이 아니다", () => {
+  const r = L.applyClaimVerify(ch01, [], "없는claim", ch01.revisedReports);
+  assert.equal(r.claim, null);
   assert.deepEqual(r.verified, []);
 });
 
-test("재검증 — 무관한 짝은 확인 대상이 아니다", () => {
-  const rev = { ...ch01.docs, ...ch01.revisedDocs };
-  const r = L.applyVerify(ch01, [], "card01.fields.batch", "card02.fields.batch", rev);
-  assert.equal(r.rule, null);
+test("국면에 따라 책상에 놓인 묶음이 바뀐다", () => {
+  const { PHASE } = L;
+  assert.equal(L.reportsFor(ch01, PHASE.SUBMITTED), ch01.reports);
+  assert.equal(L.reportsFor(ch01, PHASE.INSPECTING), ch01.reports);
+  assert.equal(L.reportsFor(ch01, PHASE.CONTRADICTION), ch01.reports);
+  assert.equal(L.reportsFor(ch01, PHASE.REVISED), ch01.revisedReports);
+  assert.equal(L.reportsFor(ch01, PHASE.VERIFIED), ch01.revisedReports);
+  assert.equal(L.reportsFor(ch01, PHASE.APPROVED), ch01.revisedReports);
 });
 
-test("CH01 전 구간 — 조사에서 승인까지 국면이 끊기지 않는다", () => {
-  const { PHASE } = L;
-  let phase = PHASE.SUBMITTED, found = [], verified = [];
+test("비교 짝은 모든 조합을 덮는다", () => {
+  const ids = ch01.reports.map(r => r.id);
+  const seen = new Set(ch01.comparePairs.map(p => [...p].sort().join("-")));
+  for (let i = 0; i < ids.length; i++)
+    for (let j = i + 1; j < ids.length; j++)
+      assert.ok(seen.has([ids[i], ids[j]].sort().join("-")),
+        `${ids[i]}·${ids[j]} 를 맞대어 볼 수 없다`);
+});
 
-  // 조사: 세 모순을 대조로 찾는다
-  for (const rule of ch01.rules) {
-    const [a, b] = L.rulePair(rule);
-    const r = L.applyCompare(ch01, found, a, b, ch01.docs);
-    assert.ok(r.isNew, `${rule.id} 를 대조로 찾을 수 없다`);
-    found = r.found;
-    phase = L.nextPhase(phase, ch01.required, found);
+test("auditChapter는 잘못된 챕터 데이터를 잡아낸다", () => {
+  const same = v => ({ id: "s", claim: "c", value: v, text: "같다" });
+  const broken = {
+    number: 1,
+    reports: [
+      { id: "a", body: [{ ...same("1"), id: "a1" }] },
+      { id: "b", body: [{ ...same("1"), id: "b1" }] }
+    ],
+    claims: [{ id: "c", label: "값" }],
+    required: ["c", "없는claim"],
+    comparePairs: [["a", "없는장"]]
+  };
+  const problems = L.auditChapter(broken);
+  assert.ok(problems.some(p => p.includes("갈리지 않는 claim")), "같은 값인데 갈린다고 요구");
+  assert.ok(problems.some(p => p.includes("없는 claim")), "존재하지 않는 claim 참조");
+  assert.ok(problems.some(p => p.includes("비교 짝")), "없는 장을 비교 짝으로");
+});
+
+test("auditChapter는 수정본에 남은 어긋남을 잡아낸다", () => {
+  const still = JSON.parse(JSON.stringify(ch01));
+  /* 수정본에서 2차만 다시 개정 B 로 돌려놓는다 */
+  const r2 = still.revisedReports.find(r => r.id === "r2");
+  r2.body.find(p => p.claim === "std").value = "개정 B";
+  const problems = L.auditChapter(still);
+  assert.ok(problems.some(p => p.includes("수정본에서도 갈리는")), problems.join(" / "));
+});
+
+test("auditChapter는 스포일러 누출을 부팅 전에 잡는다", () => {
+  const leaky = JSON.parse(JSON.stringify(ch01));
+  leaky.lines.probing = ["오펜하이머 박사님께 올리겠습니다."];
+  assert.ok(L.auditChapter(leaky).some(p => p.includes("잠긴 표현")));
+});
+
+test("CH01 전 구간 — 지목에서 승인까지 국면이 끊기지 않는다", () => {
+  const { PHASE } = L;
+  const req = L.requiredClaims(ch01);
+  let phase = PHASE.SUBMITTED, marks = [], found = [], verified = [];
+
+  // 1. 어긋난 장을 짚는다 → 조사 시작
+  assert.ok(L.checkOdd(ch01, ch01.oddReport));
+  phase = PHASE.INSPECTING;
+  assert.equal(L.nextPhase(phase, req, found), PHASE.INSPECTING,
+    "근거를 아직 못 찍었는데 국면이 되돌아간다");
+
+  // 2. 두 자리 × 세 장 = 여섯 번 찍는다
+  const reps = L.reportsFor(ch01, phase);
+  for (const id of req) {
+    for (const { para } of L.claimParas(reps, id)) {
+      const r = L.applyMark(ch01, marks, found, para.id, reps);
+      assert.ok(r.isNew, `${para.id} 를 찍을 수 없다`);
+      marks = r.marks; found = r.found;
+      phase = L.nextPhase(phase, req, found);
+    }
   }
+  assert.equal(marks.length, 6, "찍힌 자리는 여섯이어야 한다");
   assert.equal(phase, PHASE.CONTRADICTION);
   assert.equal(L.activeStamp(phase), "REJECTED");
 
-  // 반려 → 수정본
+  // 3. 반려 → 나갔다 돌아옴 → 수정본
   phase = PHASE.REJECTED;
-  assert.equal(L.activeStamp(phase), null);
+  assert.equal(L.activeStamp(phase), null, "반려 직후에는 아무 도장도 못 찍는다");
   phase = PHASE.REVISED;
-  const rev = { ...ch01.docs, ...ch01.revisedDocs };
+  const rev = L.reportsFor(ch01, phase);
+  assert.equal(rev, ch01.revisedReports);
 
-  // 재검증: 같은 자리를 다시 짚어 이어짐을 확인
-  for (const rule of ch01.rules) {
-    const [a, b] = L.rulePair(rule);
-    const r = L.applyVerify(ch01, verified, a, b, rev);
-    assert.ok(r.isNew, `${rule.id} 를 재검증할 수 없다 — 여기서 막힌다`);
+  // 4. 자리마다 세 장을 맞대어 확인
+  for (const id of req) {
+    const r = L.applyClaimVerify(ch01, verified, id, rev);
+    assert.ok(r.isNew, `${id} 를 재검증할 수 없다 — 여기서 막힌다`);
     verified = r.verified;
-    phase = L.nextPhase(phase, ch01.required, verified);
+    phase = L.nextPhase(phase, req, verified);
   }
   assert.equal(phase, PHASE.VERIFIED, "재검증을 마쳐도 VERIFIED 로 가지 못한다");
   assert.equal(L.activeStamp(phase), "APPROVED");
   assert.equal(L.progressFor(1), 8);
+});
+
+test("저장 상태는 지목·찍기·대면을 함께 실어 나른다", () => {
+  const s = L.normalizeState({
+    started: true, chapter: 1, phase: "inspecting",
+    odd: "r2", confronted: true, marks: ["r1_std", "r2_std"],
+    found: [], verified: [], approved: [], spoiler: 0,
+    seenResults: false, done: false
+  });
+  assert.ok(s, "정상 저장본이 폐기됐다");
+  assert.equal(s.odd, "r2");
+  assert.equal(s.confronted, true);
+  assert.deepEqual(s.marks, ["r1_std", "r2_std"]);
+
+  const junk = L.repairState({ odd: 7, confronted: "yes", marks: ["a", 3, null] });
+  assert.equal(junk.odd, null, "문자열이 아닌 지목은 버린다");
+  assert.equal(junk.confronted, true, "불리언으로 강제");
+  assert.deepEqual(junk.marks, ["a"], "문자열이 아닌 표시 제거");
 });

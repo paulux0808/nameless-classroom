@@ -93,21 +93,67 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 p.hint{margin:0 0 18px;color:var(--dim);font-size:var(--fs-meta);line-height:1.7}
 p.hint b{color:#9fc6ea}
 
-/* ── 문서 ────────────────────────────────────────────────────────────── */
-.doc-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.doc{background:var(--paper);color:var(--ink);border-radius:10px;padding:16px 18px;
-  box-shadow:0 10px 26px rgba(0,0,0,.45)}
-.doc h3{margin:0 0 12px;font-size:var(--fs-body);font-weight:800;letter-spacing:.02em;
-  padding-bottom:8px;border-bottom:1.5px solid rgba(40,32,20,.25)}
-.doc dl{display:grid;grid-template-columns:auto 1fr;gap:7px 12px;margin:0;
-  font-size:var(--fs-label);align-items:center}
-.doc dt{color:#6b6152;font-weight:600;white-space:nowrap}
-.doc dd{margin:0;justify-self:stretch}
-.field{width:100%;text-align:left;padding:5px 9px;border-radius:6px;border:1px solid transparent;
-  background:rgba(40,32,20,.07);font-family:var(--font-mono);font-size:var(--fs-label);
-  color:var(--ink);min-height:0;transition:all .12s}
-.field:hover{background:rgba(40,32,20,.15);border-color:rgba(40,32,20,.3)}
-.field.picked{background:#9fc6ea;border-color:#4b7ba8;color:#0d1218;font-weight:700}
+/* ── 보고서 열람 ─────────────────────────────────────────────────────
+   보고서는 표가 아니라 글이다. 종이답게 크게, 문장으로 읽히게 한다.
+   한 장 / 두 장 반반 / 세 장 나란히 — 세 가지로 편다. */
+.viewbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:0 0 16px;
+  padding-bottom:14px;border-bottom:1px solid var(--line)}
+.vlabel{font-size:var(--fs-label);letter-spacing:.14em;color:var(--dim);
+  margin-left:12px;white-space:nowrap}
+.vlabel:first-child{margin-left:0}
+.vtab{padding:8px 15px;border-radius:8px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);font-size:var(--fs-label);font-weight:700;
+  letter-spacing:.04em;min-height:36px;white-space:nowrap}
+.vtab:hover:not(:disabled){background:rgba(255,255,255,.11);border-color:var(--line-hi)}
+.vtab.on{background:#9fc6ea;border-color:#9fc6ea;color:#0d1218}
+.vtab:disabled{opacity:.32;cursor:not-allowed}
+
+.pages{display:grid;gap:16px;align-items:start}
+.pages.one{grid-template-columns:minmax(0,1fr);justify-items:center}
+.pages.one .page{width:min(660px,100%)}
+.pages.pair{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pages.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+
+.page{background:var(--paper);color:var(--ink);border-radius:8px;
+  padding:26px 28px 22px;box-shadow:0 14px 34px rgba(0,0,0,.5);
+  border-top:5px solid #cfc4a8;min-width:0}
+.page.flagged{box-shadow:0 0 0 3px var(--stamp-red),0 14px 34px rgba(0,0,0,.5)}
+.page-head{margin:0 0 16px;padding-bottom:12px;
+  border-bottom:2px solid rgba(40,32,20,.28)}
+.page-no{display:inline-block;padding:3px 12px;border-radius:4px;margin-bottom:9px;
+  background:rgba(40,32,20,.14);font-family:var(--font-mono);font-weight:800;
+  font-size:var(--fs-label);letter-spacing:.16em}
+.page-head h3{margin:0;font-size:var(--fs-body);font-weight:800;letter-spacing:.01em}
+.page-meta{margin:6px 0 0;font-family:var(--font-mono);font-size:var(--fs-label);
+  color:#6b6152}
+
+/* 문단이 이 챕터의 조사 대상이다. 읽히는 크기여야 한다. */
+.para{margin:0 0 14px;padding:9px 12px;border-radius:6px;border:1px solid transparent;
+  font-size:var(--fs-body);line-height:1.85;word-break:keep-all}
+.para.markable{cursor:pointer;transition:background .12s,border-color .12s}
+.para.markable:hover{background:rgba(40,32,20,.09);border-color:rgba(40,32,20,.3)}
+/* 찍은 자리 — 도장 자국처럼 남는다. 정답을 미리 색칠하지 않기 위해
+   찍기 전에는 어떤 문단도 다르게 보이지 않는다. */
+.para.marked{position:relative;background:rgba(177,53,44,.1);
+  border-color:rgba(177,53,44,.5);padding-right:52px}
+.para.marked::after{content:"✕";position:absolute;right:9px;top:50%;
+  transform:translateY(-50%) rotate(-14deg);width:34px;height:34px;display:grid;
+  place-items:center;border:2.5px solid var(--stamp-red);border-radius:50%;
+  color:var(--stamp-red);font-weight:900;font-size:15px;opacity:.85}
+
+.flag-btn{display:block;width:100%;margin-top:6px;padding:11px 14px;border-radius:7px;
+  border:1.5px dashed rgba(40,32,20,.4);background:rgba(40,32,20,.05);
+  color:#5a5245;font-size:var(--fs-label);font-weight:700;min-height:var(--tap)}
+.flag-btn:hover{background:rgba(177,53,44,.12);border-color:var(--stamp-red);
+  color:var(--stamp-red)}
+.flag-note{margin:6px 0 0;padding:9px 12px;border-radius:6px;
+  background:rgba(177,53,44,.12);color:var(--stamp-red);
+  font-size:var(--fs-label);font-weight:700;text-align:center}
+
+.verify-btn{display:block;margin-top:10px;padding:9px 16px;border-radius:7px;
+  border:1px solid var(--line-hi);background:rgba(159,198,234,.12);
+  font-size:var(--fs-label);font-weight:700;min-height:var(--tap)}
+.verify-btn:hover{background:rgba(159,198,234,.24)}
 
 /* ── 확인 목록 ───────────────────────────────────────────────────────── */
 .findings{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
@@ -118,8 +164,9 @@ p.hint b{color:#9fc6ea}
   border:1px solid var(--line);background:rgba(255,255,255,.03)}
 .findings li.pending{color:var(--dim);font-style:italic}
 .findings li.got{border-color:rgba(111,191,149,.45);background:rgba(111,191,149,.09)}
-.findings li.got b{display:block;color:var(--ok)}
-.findings li.got span{display:block;margin-top:5px;color:var(--dim);font-size:var(--fs-label)}
+.findings li b{display:block}
+.findings li.got b{color:var(--ok)}
+.findings li span{display:block;margin-top:5px;color:var(--dim);font-size:var(--fs-label)}
 .findings p.ready{margin:16px 0 0;padding:13px 17px;border-radius:8px;
   border:1px dashed var(--line-hi);background:rgba(159,198,234,.08);
   font-size:var(--fs-meta);color:#c9dcf0}
@@ -217,8 +264,13 @@ body.touch.portrait #rotate{display:grid}
   #progress{min-width:150px}
   .sheet-body{padding:14px 16px}
   .sheet-head{padding:12px 16px}
-  .doc-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:11px}
-  .doc{padding:11px 13px}
+  .page{padding:16px 17px 14px}
+  .para{padding:7px 9px;margin-bottom:10px;line-height:1.75}
+  .viewbar{gap:5px;margin-bottom:12px;padding-bottom:10px}
+  /* 좁은 화면에서 그룹 이름까지 넣으면 탭 줄이 화면을 다 먹어 정작 보고서가
+     화면 밖으로 밀린다. 탭 글자만으로 충분히 읽힌다. */
+  .vlabel{display:none}
+  .vtab{padding:6px 12px;min-height:36px}
   #dialogue{padding:14px 18px;bottom:calc(var(--sa-b) + 14vh)}
   .stamp-btn{padding:18px;font-size:22px}
 }
@@ -227,4 +279,36 @@ body.touch.portrait #rotate{display:grid}
   #bar-fill{transition:width .3s linear!important}
   /* 스크롤 표시는 연출이 아니라 정보다. 움직임만 끄고 표시는 남긴다. */
   .scroll-edge{transition:opacity .2s linear!important}
+}
+
+/* 세 장 나란히는 폭이 있어야 읽힌다. 좁으면 세로로 쌓아 스크롤로 본다 —
+   가로로 찌그러진 세 칸은 나란히 놓은 값을 잃는다. */
+@media(max-width:820px){
+  .pages.three{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:560px){
+  .pages.pair{grid-template-columns:minmax(0,1fr)}
+}
+
+/* 세로가 짧은 화면(가로로 돌린 폰, 짧은 노트북)에서는 머리말·안내·탭이
+   화면을 다 먹고 보고서가 스크롤 아래로 밀린다. 읽을 자리를 먼저 준다. */
+@media(max-height:560px){
+  #sheet{padding:8px}
+  .sheet-card{max-height:calc(100dvh - 16px)}
+  .sheet-head{padding:9px 14px}
+  .sheet-head h2{font-size:15px}
+  .sheet-head .sub{display:none}
+  .sheet-body{padding:10px 14px}
+  p.hint{margin:0 0 8px;font-size:12px;line-height:1.55}
+  .viewbar{margin-bottom:8px;padding-bottom:8px;gap:4px}
+  .vlabel{display:none}
+  .vtab{padding:5px 10px;min-height:32px}
+  .pages{gap:10px}
+  .page{padding:12px 13px 10px;border-top-width:3px}
+  .page-head{margin-bottom:9px;padding-bottom:7px}
+  .page-no{margin-bottom:5px;padding:2px 8px}
+  .para{margin-bottom:8px;padding:6px 8px;line-height:1.7}
+  .findings{margin-top:14px;padding-top:12px}
+  #dialogue{padding:11px 16px;bottom:calc(var(--sa-b) + 10px)}
+  #dialogue .line{font-size:14px;line-height:1.5}
 }

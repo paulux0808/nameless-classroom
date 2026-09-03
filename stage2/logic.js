@@ -142,11 +142,14 @@
     return (required || []).every(function (r) { return !!have[r]; });
   }
 
-  /* 조사 결과로부터 다음 국면을 계산한다. 국면은 되돌아가지 않는다. */
+  /* 조사 결과로부터 다음 국면을 계산한다. 국면은 되돌아가지 않는다.
+     조사는 어긋난 장을 고르는 것으로도 시작되므로(근거는 아직 0개),
+     이미 INSPECTING 이면 found 가 비어 있어도 내려가지 않는다. */
   function nextPhase(phase, required, found) {
     var done = allFound(required, found);
     if (phase === PHASE.SUBMITTED || phase === PHASE.INSPECTING) {
       if (done) return PHASE.CONTRADICTION;
+      if (phase === PHASE.INSPECTING) return PHASE.INSPECTING;
       return (found && found.length) ? PHASE.INSPECTING : PHASE.SUBMITTED;
     }
     if (phase === PHASE.REVISED) return done ? PHASE.VERIFIED : PHASE.REVISED;
@@ -155,136 +158,258 @@
 
   function phaseIndex(phase) { return PHASE_ORDER.indexOf(phase); }
 
-  /* ── 문서 대조 ─────────────────────────────────────────────────────────
-     챕터가 문서와 모순 규칙을 데이터로 준다. 엔진은 규칙을 해석만 한다.
+  /* ── 보고서 대조 ───────────────────────────────────────────────────────
+     04_DOCUMENT_OBJECTS §11(정답 색칠 금지) / §34(False Lead).
 
-     규칙 종류:
-       chain      a.output 과 b.input 이 이어지지 않는다
-       stale      기준 문서의 개정일이 적용 시점보다 늦다
-       mismatch   두 문서의 같은 필드 값이 다르다
-       superseded 참조 대상이 이후 교체되어 무효가 되었다 */
-  function docField(docs, ref) {
-    var parts = String(ref).split(".");
-    var v = docs;
-    for (var i = 0; i < parts.length; i++) {
-      if (v == null) return undefined;
-      v = v[parts[i]];
-    }
-    /* 'cardB.output' 처럼 fields를 생략한 참조도 받아준다. */
-    if (v === undefined && parts.length === 2) {
-      var doc = docs[parts[0]];
-      if (doc && doc.fields) return doc.fields[parts[1]];
-    }
-    return v;
+     한 챕터는 같은 시험을 여러 번 돌린 보고서를 여러 장 받는다. 각 장은
+     문단(paragraph)으로 이루어지고, 몇몇 문단에는 claim 이 붙어 있다.
+     같은 claim 을 단 문단끼리는 같은 값을 말해야 한다 — 한 장만 다른 값을
+     말하면 그것이 어긋난 장이다.
+
+       reports        원본 (어긋난 장이 섞여 있다)
+       revisedReports 수정본 (모든 claim 이 같은 값을 말한다)
+       claims         짚어야 할 진술. id 는 문단의 claim 과 같다
+       oddReport      어긋난 장의 id (감사에서 실제 데이터와 대조한다)
+
+     문단 텍스트는 셋 다 표현이 다르다. 표현이 다른 것과 뜻이 다른 것을
+     가르는 게 이 퍼즐이다 — 값(value)만이 뜻이고 텍스트는 위장이다. */
+
+  /* 이 국면에서 책상에 놓여 있는 보고서 묶음 */
+  function reportsFor(chapter, phase) {
+    var revised = phase === PHASE.REJECTED || phase === PHASE.REVISED ||
+                  phase === PHASE.VERIFIED || phase === PHASE.APPROVED;
+    var fixed = chapter.revisedReports;
+    return (revised && fixed && fixed.length) ? fixed : (chapter.reports || []);
   }
 
-  /* 규칙이 실제로 성립하는지(= 모순이 존재하는지) 판정한다.
-     챕터 데이터가 잘못돼 모순이 없는 규칙을 요구하면 테스트가 잡는다. */
-  function ruleHolds(rule, docs) {
-    var a, b;
-    switch (rule.kind) {
-      case "chain":
-        a = docField(docs, rule.from);
-        b = docField(docs, rule.to);
-        return a !== undefined && b !== undefined && String(a) !== String(b);
-      case "mismatch":
-        a = docField(docs, rule.left);
-        b = docField(docs, rule.right);
-        return a !== undefined && b !== undefined && String(a) !== String(b);
-      case "stale":
-        a = Date.parse(docField(docs, rule.appliedAt));
-        b = Date.parse(docField(docs, rule.revisedAt));
-        return isFinite(a) && isFinite(b) && b > a;
-      case "superseded":
-        a = Date.parse(docField(docs, rule.usedAt));
-        b = Date.parse(docField(docs, rule.replacedAt));
-        return isFinite(a) && isFinite(b) && b > a;
-      default:
-        return false;
-    }
+  function reportById(reports, id) {
+    for (var i = 0; i < (reports || []).length; i++)
+      if (reports[i].id === id) return reports[i];
+    return null;
   }
 
-  /* 규칙이 참조하는 두 필드를 돌려준다. 종류마다 필드 이름이 다르다. */
-  function rulePair(rule) {
-    if (rule.kind === "chain") return [rule.from, rule.to];
-    if (rule.kind === "mismatch") return [rule.left, rule.right];
-    if (rule.kind === "stale") return [rule.appliedAt, rule.revisedAt];
-    if (rule.kind === "superseded") return [rule.usedAt, rule.replacedAt];
-    return [];
-  }
-
-  /* 플레이어가 두 필드를 짚어 대조했을 때, 그것이 어떤 모순을 드러내는가.
-     순서는 상관없다. 모순이 실제로 성립할 때만 규칙을 돌려준다. */
-  function matchRule(rules, refA, refB, docs) {
-    for (var i = 0; i < (rules || []).length; i++) {
-      var r = rules[i], p = rulePair(r);
-      if (p.length !== 2) continue;
-      var hit = (p[0] === refA && p[1] === refB) || (p[0] === refB && p[1] === refA);
-      if (hit && ruleHolds(r, docs)) return r;
+  /* 문단 id 로 { report, para } 를 찾는다 */
+  function paraById(reports, paraId) {
+    for (var i = 0; i < (reports || []).length; i++) {
+      var body = reports[i].body || [];
+      for (var j = 0; j < body.length; j++)
+        if (body[j].id === paraId) return { report: reports[i], para: body[j] };
     }
     return null;
   }
 
-  /* 대조 1회를 처리한다. 이미 찾은 것은 다시 세지 않는다.
-     { found:[...], rule, isNew } 를 돌려준다. */
-  function applyCompare(chapter, found, refA, refB, docs) {
-    var rule = matchRule(chapter.rules, refA, refB, docs || chapter.docs);
-    var list = (found || []).slice();
-    if (!rule) return { found: list, rule: null, isNew: false };
-    if (list.indexOf(rule.id) >= 0) return { found: list, rule: rule, isNew: false };
-    list.push(rule.id);
-    return { found: list, rule: rule, isNew: true };
+  /* 같은 claim 을 단 문단들을 장 순서대로 */
+  function claimParas(reports, claimId) {
+    var out = [];
+    (reports || []).forEach(function (r) {
+      (r.body || []).forEach(function (p) {
+        if (p.claim === claimId) out.push({ report: r, para: p });
+      });
+    });
+    return out;
   }
 
-  /* 재검증 — 반려 후 수정본에서 "이제 이어지는가" 를 확인하는 동작.
-     조사와 같은 행위(두 필드 대조)지만 의미가 반대다. 모순을 찾는 게
-     아니라, 끊겼던 자리가 이어졌음을 확인한다. */
-  function verifyPair(rules, refA, refB, docs) {
-    for (var i = 0; i < (rules || []).length; i++) {
-      var r = rules[i], p = rulePair(r);
-      if (p.length !== 2) continue;
-      var hit = (p[0] === refA && p[1] === refB) || (p[0] === refB && p[1] === refA);
-      if (!hit) continue;
-      /* 짝은 맞다. 이제 모순이 남아 있는지가 관건이다. */
-      return { rule: r, resolved: !ruleHolds(r, docs) };
-    }
+  /* 그 문단들이 실제로 말하는 값. 텍스트가 아니라 이것으로 판정한다. */
+  function claimValues(reports, claimId) {
+    return claimParas(reports, claimId).map(function (x) {
+      return { report: x.report.id, para: x.para.id, value: String(x.para.value) };
+    });
+  }
+
+  /* 값이 갈리면 어긋난 것이다 */
+  function claimBroken(reports, claimId) {
+    var vals = claimValues(reports, claimId);
+    if (vals.length < 2) return false;
+    for (var i = 1; i < vals.length; i++)
+      if (vals[i].value !== vals[0].value) return true;
+    return false;
+  }
+
+  /* 다수와 다른 값을 말하는 한 장. 소수가 하나가 아니면 null. */
+  function oddOf(reports, claimId) {
+    var vals = claimValues(reports, claimId);
+    var count = {};
+    vals.forEach(function (v) { count[v.value] = (count[v.value] || 0) + 1; });
+    var minority = Object.keys(count).filter(function (k) { return count[k] === 1; });
+    var majority = Object.keys(count).filter(function (k) { return count[k] > 1; });
+    if (minority.length !== 1 || majority.length !== 1) return null;
+    for (var i = 0; i < vals.length; i++)
+      if (vals[i].value === minority[0]) return vals[i].report;
     return null;
   }
 
-  /* 재검증 1회. { verified:[...], rule, isNew, stillBroken } */
-  function applyVerify(chapter, verified, refA, refB, docs) {
-    var m = verifyPair(chapter.rules, refA, refB, docs || chapter.docs);
+  /* 모든 어긋난 claim 이 같은 한 장을 가리키는가 — 그 장의 id */
+  function oddReportFrom(chapter, reports) {
+    var ids = requiredClaims(chapter), odd = null;
+    for (var i = 0; i < ids.length; i++) {
+      var o = oddOf(reports, ids[i]);
+      if (!o) return null;
+      if (odd === null) odd = o;
+      else if (odd !== o) return null;
+    }
+    return odd;
+  }
+
+  function requiredClaims(chapter) {
+    if (chapter.required && chapter.required.length) return chapter.required.slice();
+    return (chapter.claims || []).map(function (c) { return c.id; });
+  }
+
+  function claimById(chapter, id) {
+    var cs = chapter.claims || [];
+    for (var i = 0; i < cs.length; i++) if (cs[i].id === id) return cs[i];
+    return null;
+  }
+
+  /* 어긋난 장을 옳게 골랐는가 */
+  function checkOdd(chapter, reportId) {
+    return !!reportId && reportId === chapter.oddReport;
+  }
+
+  /* ── 근거 찍기 ─────────────────────────────────────────────────────────
+     리처드가 세 장을 나란히 펼친 뒤, 플레이어는 어긋난 진술을 세 장 모두에서
+     짚는다. 한 claim 의 문단을 전부 짚어야 그 claim 이 드러난 것으로 센다 —
+     한 장만 짚고 "저 장이 이상하다" 라고 하는 건 근거가 아니다.
+
+     { marks, found, claim, isNew, complete, offClaim } */
+  function applyMark(chapter, marks, found, paraId, reports) {
+    var list = (marks || []).slice(), got = (found || []).slice();
+    var hit = paraById(reports, paraId);
+    var claim = hit && hit.para.claim ? claimById(chapter, hit.para.claim) : null;
+    if (!claim) return { marks: list, found: got, claim: null, isNew: false,
+                         complete: false, offClaim: true };
+    if (list.indexOf(paraId) >= 0)
+      return { marks: list, found: got, claim: claim, isNew: false,
+               complete: got.indexOf(claim.id) >= 0, offClaim: false };
+    list.push(paraId);
+
+    var need = claimParas(reports, claim.id).map(function (x) { return x.para.id; });
+    var full = need.every(function (id) { return list.indexOf(id) >= 0; });
+    if (full && got.indexOf(claim.id) < 0) got.push(claim.id);
+    return { marks: list, found: got, claim: claim, isNew: true,
+             complete: full, offClaim: false };
+  }
+
+  /* 한 claim 에서 아직 짚지 않은 문단 수 */
+  function marksLeft(reports, claimId, marks) {
+    var need = claimParas(reports, claimId).map(function (x) { return x.para.id; });
+    return need.filter(function (id) { return (marks || []).indexOf(id) < 0; }).length;
+  }
+
+  /* ── 재검증 ────────────────────────────────────────────────────────────
+     반려한 자리가 수정본에서 실제로 같아졌는지 확인한다. 조사와 같은 대상,
+     반대의 판정 — 갈려 있으면 아직 못 넘긴다. */
+  function applyClaimVerify(chapter, verified, claimId, reports) {
     var list = (verified || []).slice();
-    if (!m) return { verified: list, rule: null, isNew: false, stillBroken: false };
-    if (!m.resolved)
-      return { verified: list, rule: m.rule, isNew: false, stillBroken: true };
-    if (list.indexOf(m.rule.id) >= 0)
-      return { verified: list, rule: m.rule, isNew: false, stillBroken: false };
-    list.push(m.rule.id);
-    return { verified: list, rule: m.rule, isNew: true, stillBroken: false };
+    var claim = claimById(chapter, claimId);
+    if (!claim) return { verified: list, claim: null, isNew: false, stillBroken: false };
+    if (claimBroken(reports, claimId))
+      return { verified: list, claim: claim, isNew: false, stillBroken: true };
+    if (list.indexOf(claimId) >= 0)
+      return { verified: list, claim: claim, isNew: false, stillBroken: false };
+    list.push(claimId);
+    return { verified: list, claim: claim, isNew: true, stillBroken: false };
   }
 
-  /* 챕터 데이터 정합성 — 요구된 finding이 실제 모순으로 성립하는가 */
+  /* ── 챕터 데이터 감사 ──────────────────────────────────────────────────
+     퍼즐이 실제로 성립하는지 켜지기 전에 검사한다. 데이터가 어긋나 있으면
+     플레이어에게는 "풀 수 없는 퍼즐"로만 보이므로 부팅을 막는다. */
   function auditChapter(chapter) {
     var problems = [];
-    var docs = chapter.docs || {};
-    var rules = chapter.rules || [];
-    var byId = {};
-    rules.forEach(function (r) {
-      if (byId[r.id]) problems.push("중복 규칙 id: " + r.id);
-      byId[r.id] = r;
+    var reports = chapter.reports || [];
+    var claims = chapter.claims || [];
+    var need = requiredClaims(chapter);
+
+    if (reports.length < 2) problems.push("보고서가 2장 미만이다");
+
+    /* 문단 id 는 챕터 전체에서 유일해야 한다 — 찍기가 id 로 오간다 */
+    var seen = {};
+    reports.forEach(function (r) {
+      (r.body || []).forEach(function (p) {
+        if (seen[p.id]) problems.push("문단 id 중복: " + p.id);
+        seen[p.id] = true;
+      });
     });
-    (chapter.required || []).forEach(function (id) {
-      if (!byId[id]) { problems.push("required가 없는 규칙을 가리킴: " + id); return; }
-      if (!ruleHolds(byId[id], docs)) problems.push("모순이 성립하지 않는 규칙: " + id);
+
+    var claimIds = {};
+    claims.forEach(function (c) {
+      if (claimIds[c.id]) problems.push("claim id 중복: " + c.id);
+      claimIds[c.id] = true;
     });
-    /* 수정본에서는 모든 요구 모순이 해소돼야 한다 */
-    var fixed = chapter.revisedDocs || {};
-    if (Object.keys(fixed).length) {
-      var merged = Object.assign({}, docs, fixed);
-      (chapter.required || []).forEach(function (id) {
-        if (byId[id] && ruleHolds(byId[id], merged))
-          problems.push("수정본에서도 모순이 남음: " + id);
+    need.forEach(function (id) {
+      if (!claimIds[id]) problems.push("required 가 없는 claim 을 가리킴: " + id);
+    });
+
+    /* 각 claim 은 모든 장에 정확히 한 문단씩 있어야 나란히 비교된다 */
+    claims.forEach(function (c) {
+      var ps = claimParas(reports, c.id);
+      if (ps.length !== reports.length)
+        problems.push("claim '" + c.id + "' 의 문단이 " + ps.length + "개다 (장 수 " +
+                      reports.length + ")");
+      ps.forEach(function (x) {
+        if (x.para.value === undefined)
+          problems.push("문단 " + x.para.id + " 에 value 가 없다");
+      });
+    });
+
+    /* 원본에서는 required claim 이 전부 갈려 있어야 한다 */
+    need.forEach(function (id) {
+      if (!claimBroken(reports, id)) problems.push("원본에서 갈리지 않는 claim: " + id);
+    });
+
+    /* 어긋난 장은 하나여야 하고, 선언한 것과 같아야 한다 */
+    var derived = oddReportFrom(chapter, reports);
+    if (!derived) problems.push("어긋난 장이 하나로 모이지 않는다");
+    else if (chapter.oddReport && derived !== chapter.oddReport)
+      problems.push("oddReport 가 데이터와 다르다: 선언 " + chapter.oddReport +
+                    " / 실제 " + derived);
+
+    /* 수정본이 있으면 같은 문단 구성으로 모든 claim 이 붙어야 한다 */
+    var fixed = chapter.revisedReports || [];
+    if (fixed.length) {
+      if (fixed.length !== reports.length) problems.push("수정본 장 수가 다르다");
+      reports.forEach(function (r) {
+        var f = reportById(fixed, r.id);
+        if (!f) { problems.push("수정본에 없는 장: " + r.id); return; }
+        (r.body || []).forEach(function (p) {
+          var q = (f.body || []).filter(function (x) { return x.id === p.id; })[0];
+          if (!q) problems.push("수정본에 없는 문단: " + p.id);
+          else if (q.claim !== p.claim)
+            problems.push("수정본에서 claim 이 바뀐 문단: " + p.id);
+        });
+      });
+      need.forEach(function (id) {
+        if (claimBroken(fixed, id)) problems.push("수정본에서도 갈리는 claim: " + id);
+      });
+    }
+
+    /* 비교 짝이 실재하는 장을 가리키는가 */
+    (chapter.comparePairs || []).forEach(function (pair) {
+      if (!Array.isArray(pair) || pair.length !== 2) {
+        problems.push("비교 짝의 형식이 잘못됐다"); return;
+      }
+      pair.forEach(function (id) {
+        if (!reportById(reports, id)) problems.push("비교 짝이 없는 장을 가리킴: " + id);
+      });
+    });
+
+    /* 스포일러 — CH1~8 의 어떤 텍스트도 잠긴 표현을 담지 않는다 */
+    if (chapter.number <= 8) {
+      var texts = [];
+      [reports, fixed].forEach(function (set) {
+        set.forEach(function (r) {
+          texts.push(r.title, r.head);
+          (r.body || []).forEach(function (p) { texts.push(p.text); });
+        });
+      });
+      claims.forEach(function (c) { texts.push(c.question, c.wrong, c.ok, c.label); });
+      Object.keys(chapter.lines || {}).forEach(function (k) {
+        (chapter.lines[k] || []).forEach(function (t) { texts.push(t); });
+      });
+      texts.forEach(function (t) {
+        findLeaks(t, SPOILER.CHAPTERS).forEach(function (term) {
+          problems.push("잠긴 표현 노출: " + term);
+        });
       });
     }
     return problems;
@@ -299,8 +424,11 @@
       started: false,
       chapter: 1,
       phase: PHASE.SUBMITTED,
-      found: [],        /* 조사에서 찾아낸 모순 */
-      verified: [],     /* 수정본에서 이어졌음을 확인한 자리 */
+      odd: null,        /* 어긋난 장으로 지목한 보고서 id */
+      confronted: false,/* 세 장을 나란히 펼치는 대화를 지났는가 */
+      marks: [],        /* 찍어 둔 문단 id */
+      found: [],        /* 세 장 모두에서 근거를 찍은 claim */
+      verified: [],     /* 수정본에서 같아졌음을 확인한 claim */
       approved: [],
       spoiler: SPOILER.CHAPTERS,
       seenResults: false,
@@ -313,9 +441,12 @@
     if (!Number.isInteger(s.chapter) || s.chapter < CHAPTER_MIN || s.chapter > CHAPTER_MAX) return false;
     if (PHASE_ORDER.indexOf(s.phase) < 0) return false;
     if (!Array.isArray(s.found) || !Array.isArray(s.approved)) return false;
-    if (!Array.isArray(s.verified)) return false;
+    if (!Array.isArray(s.verified) || !Array.isArray(s.marks)) return false;
     if (s.found.some(function (f) { return typeof f !== "string"; })) return false;
     if (s.verified.some(function (f) { return typeof f !== "string"; })) return false;
+    if (s.marks.some(function (f) { return typeof f !== "string"; })) return false;
+    if (s.odd !== null && typeof s.odd !== "string") return false;
+    if (typeof s.confronted !== "boolean") return false;
     if (s.approved.some(function (n) { return !Number.isInteger(n) || n < 1 || n > 8; })) return false;
     if (new Set(s.approved).size !== s.approved.length) return false;
     if (!Number.isInteger(s.spoiler) || s.spoiler < 0 || s.spoiler > 2) return false;
@@ -333,6 +464,9 @@
     s.found = s.found.filter(function (f) { return typeof f === "string"; });
     if (!Array.isArray(s.verified)) s.verified = [];
     s.verified = s.verified.filter(function (f) { return typeof f === "string"; });
+    if (!Array.isArray(s.marks)) s.marks = [];
+    s.marks = s.marks.filter(function (f) { return typeof f === "string"; });
+    if (typeof s.odd !== "string") s.odd = null;
     if (!Array.isArray(s.approved)) s.approved = [];
     var seen = {};
     s.approved = s.approved.filter(function (n) {
@@ -343,7 +477,7 @@
     /* 스포일러 레벨은 진행에서 유도한다. 저장본이 앞서 나가면 되돌린다. */
     var earned = s.done ? SPOILER.IDENTITY : (s.seenResults ? SPOILER.RESULTS : SPOILER.CHAPTERS);
     if (s.spoiler > earned) s.spoiler = earned;
-    ["started", "done", "seenResults"].forEach(function (k) { s[k] = !!s[k]; });
+    ["started", "done", "seenResults", "confronted"].forEach(function (k) { s[k] = !!s[k]; });
     return s;
   }
 
@@ -366,9 +500,12 @@
     PHASE: PHASE, PHASE_ORDER: PHASE_ORDER, phaseIndex: phaseIndex,
     activeStamp: activeStamp, canStamp: canStamp,
     allFound: allFound, nextPhase: nextPhase,
-    docField: docField, ruleHolds: ruleHolds, auditChapter: auditChapter,
-    rulePair: rulePair, matchRule: matchRule, applyCompare: applyCompare,
-    verifyPair: verifyPair, applyVerify: applyVerify,
+    auditChapter: auditChapter,
+    reportsFor: reportsFor, reportById: reportById, paraById: paraById,
+    claimParas: claimParas, claimValues: claimValues, claimBroken: claimBroken,
+    oddOf: oddOf, oddReportFrom: oddReportFrom,
+    requiredClaims: requiredClaims, claimById: claimById, checkOdd: checkOdd,
+    applyMark: applyMark, marksLeft: marksLeft, applyClaimVerify: applyClaimVerify,
     freshState: freshState, isValidState: isValidState,
     repairState: repairState, normalizeState: normalizeState,
     damp: damp
