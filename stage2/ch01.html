@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>NAMELESS Ⅱ — CHAPTER 01</title>
+
+<!-- ============================================================
+     챕터 파일은 껍데기다. 씬·대사·퍼즐은 chapters/ch01.js 에,
+     공용 동작은 engine.js 와 logic.js 에 있다.
+     엔진을 고쳐야 하면 엔진을 고친다. 여기서 포크하지 않는다.
+     ============================================================ -->
+<link rel="stylesheet" href="chapter.css">
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+<div id="grade" aria-hidden="true"></div>
+<div id="reticle" aria-hidden="true"></div>
+<div id="label" aria-hidden="true"></div>
+
+<div id="hud">
+  <div class="hud-row">
+    <div class="tag"><b id="hud-ch">CHAPTER 01</b><span id="hud-title">—</span><span class="npc" id="hud-npc"></span></div>
+    <div id="progress">
+      <div id="bar"><div id="bar-fill"></div></div>
+      <span id="bar-pct">0%</span>
+    </div>
+  </div>
+  <div id="objective"></div>
+</div>
+
+<div id="sheet" class="hidden" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <div>
+        <h2 id="sheet-title">—</h2>
+        <div class="sub" id="sheet-sub"></div>
+      </div>
+      <button class="btn" id="sheet-close" data-close>닫기</button>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</div>
+
+<div id="dialogue" class="hidden"></div>
+<div id="toast"></div>
+
+<div id="joy"><div id="joyk"></div></div>
+<button id="act" aria-label="조사">조사</button>
+<div id="rotate"><div><b>⟳</b>기기를 가로로 돌려주세요</div></div>
+
+<div id="loading">
+  <div>연구시설을 여는 중…</div>
+  <div id="load-detail"></div>
+</div>
+
+<script src="../assets/vendor/three.min.js"></script>
+<script src="../assets/vendor/GLTFLoader.js"></script>
+<script src="logic.js"></script>
+<script src="engine.js"></script>
+<script src="chapters/ch01.js"></script>
+<script>
+(function(){
+  function orient(){
+    if(!(("ontouchstart" in window)||navigator.maxTouchPoints>0))return;
+    document.body.classList.toggle("portrait", innerHeight>innerWidth);
+  }
+  addEventListener("resize",orient); orient();
+
+  if(window.N2Engine && window.N2_CHAPTERS && window.N2_CHAPTERS.ch01){
+    N2Engine.boot(window.N2_CHAPTERS.ch01);
+  }else{
+    document.getElementById("loading").textContent="런타임을 불러오지 못했습니다.";
+  }
+})();
+</script>
+</body>
+</html>

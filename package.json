@@ -7,5 +7,8 @@
     "test": "npm run test:stage1 && npm run test:stage2",
     "test:stage1": "node --test \"stage1/tests/*.test.mjs\"",
     "test:stage2": "node --test \"stage2/tests/*.test.mjs\""
+  },
+  "devDependencies": {
+    "playwright": "^1.49.1"
   }
 }

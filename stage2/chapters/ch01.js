@@ -21,6 +21,13 @@
     title: "계산 사슬",
     subtitle: "첫 번째 반려",
 
+    /* 필드 표시 이름. 화면에는 이 이름이 나간다. */
+    labels: {
+      batch: "묶음", run: "회차", transcribedOn: "전사일", source: "출처",
+      input: "INPUT", output: "OUTPUT",
+      finalValue: "최종값", submittedOn: "제출일", by: "제출자"
+    },
+
     /* 제출된 자료 — 플레이어가 책상에서 열어보는 것들 */
     docs: {
       cardA: {
@@ -111,26 +118,30 @@
     },
 
     /* 씬 배치 — 실제 모델을 쓴다. 도형으로 만들지 않는다. */
+    /* 배율이 아니라 실치수(m)를 적는다. 엔진이 바운딩박스를 재서 맞추므로
+       에셋을 다른 모델로 바꿔 끼워도 배치가 무너지지 않는다.
+       ※ 아래는 stage1의 교실 소품을 임시로 돌려 쓰는 중이다.
+          1943년 연구시설 에셋으로 교체 예정 — docs/ASSETS.md 참고. */
     models: [
       { id: "desk",  path: "metal_office_desk/metal_office_desk.gltf",
-        pos: [0, 0, 0.5],       rot: [0, Math.PI, 0],        scale: 1.15 },
+        pos: [0, 0, 0.5],      rot: [0, Math.PI, 0],         fitHeight: 0.76 },
       { id: "chair", path: "WoodenChair_01/WoodenChair_01.gltf",
-        pos: [0, 0, -0.2],      rot: [0, 0, 0],              scale: 1.1 },
+        pos: [0, 0, -0.45],    rot: [0, 0, 0],               fitHeight: 0.95 },
       { id: "lamp",  path: "desk_lamp_arm_01/desk_lamp_arm_01.gltf",
-        pos: [-0.65, 0.86, 0.45], rot: [0, Math.PI * 0.4, 0], scale: 1.0 },
+        pos: [-0.62, 0.76, 0.42], rot: [0, Math.PI * 0.4, 0], fitHeight: 0.44 },
       { id: "board", path: "standing_chalkboard_01/standing_chalkboard_01.gltf",
-        pos: [-2.8, 0, -1.8],   rot: [0, Math.PI * 0.28, 0], scale: 1.0 },
+        pos: [-2.6, 0, -1.9],  rot: [0, Math.PI * 0.28, 0],  fitHeight: 1.65 },
       { id: "shelf", path: "wooden_bookshelf_worn/wooden_bookshelf_worn.gltf",
-        pos: [-2.6, 0, 4.2],    rot: [0, Math.PI, 0],        scale: 1.0 },
+        pos: [-2.7, 0, 3.6],   rot: [0, Math.PI, 0],         fitHeight: 1.85 },
       { id: "radio", path: "vintage_radio_transceiver/vintage_radio_transceiver.gltf",
-        pos: [3.2, 0.85, 2.0],  rot: [0, -Math.PI * 0.35, 0], scale: 1.0 }
+        pos: [2.9, 0.76, 1.6], rot: [0, -Math.PI * 0.35, 0], fitHeight: 0.30 }
     ],
 
     /* 책상 위 상호작용 지점 */
     anchors: {
-      incomingSlot: [0.42, 0.78, 0.02],
-      stampPad:     [-0.34, 0.78, 0.10],
-      npcStand:     [0.0, 0, -1.15]
+      incomingSlot: [0.40, 0.80, 0.28],
+      stampPad:     [-0.34, 0.80, 0.30],
+      npcStand:     [0.0, 0, -0.9]
     },
 
     nextChapter: "ch02"

@@ -176,6 +176,38 @@
     }
   }
 
+  /* 규칙이 참조하는 두 필드를 돌려준다. 종류마다 필드 이름이 다르다. */
+  function rulePair(rule) {
+    if (rule.kind === "chain") return [rule.from, rule.to];
+    if (rule.kind === "mismatch") return [rule.left, rule.right];
+    if (rule.kind === "stale") return [rule.appliedAt, rule.revisedAt];
+    if (rule.kind === "superseded") return [rule.usedAt, rule.replacedAt];
+    return [];
+  }
+
+  /* 플레이어가 두 필드를 짚어 대조했을 때, 그것이 어떤 모순을 드러내는가.
+     순서는 상관없다. 모순이 실제로 성립할 때만 규칙을 돌려준다. */
+  function matchRule(rules, refA, refB, docs) {
+    for (var i = 0; i < (rules || []).length; i++) {
+      var r = rules[i], p = rulePair(r);
+      if (p.length !== 2) continue;
+      var hit = (p[0] === refA && p[1] === refB) || (p[0] === refB && p[1] === refA);
+      if (hit && ruleHolds(r, docs)) return r;
+    }
+    return null;
+  }
+
+  /* 대조 1회를 처리한다. 이미 찾은 것은 다시 세지 않는다.
+     { found:[...], rule, isNew } 를 돌려준다. */
+  function applyCompare(chapter, found, refA, refB, docs) {
+    var rule = matchRule(chapter.rules, refA, refB, docs || chapter.docs);
+    var list = (found || []).slice();
+    if (!rule) return { found: list, rule: null, isNew: false };
+    if (list.indexOf(rule.id) >= 0) return { found: list, rule: rule, isNew: false };
+    list.push(rule.id);
+    return { found: list, rule: rule, isNew: true };
+  }
+
   /* 챕터 데이터 정합성 — 요구된 finding이 실제 모순으로 성립하는가 */
   function auditChapter(chapter) {
     var problems = [];
@@ -274,6 +306,7 @@
     activeStamp: activeStamp, canStamp: canStamp,
     allFound: allFound, nextPhase: nextPhase,
     docField: docField, ruleHolds: ruleHolds, auditChapter: auditChapter,
+    rulePair: rulePair, matchRule: matchRule, applyCompare: applyCompare,
     freshState: freshState, isValidState: isValidState,
     repairState: repairState, normalizeState: normalizeState,
     damp: damp

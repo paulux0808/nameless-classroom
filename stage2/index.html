@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NAMELESS Ⅱ</title>
+<link rel="stylesheet" href="chapter.css">
+<style>
+html,body{overflow:auto}
+body{display:grid;place-items:center;min-height:100dvh;padding:40px 20px;
+  background:radial-gradient(120% 90% at 50% 22%,#161b22,#07090c 72%)}
+.hub{width:min(880px,100%)}
+.kicker{font-size:var(--fs-label);letter-spacing:.32em;color:#7d8ea3;margin-bottom:14px}
+h1{margin:0 0 8px;font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:.04em}
+.lede{margin:0 0 34px;color:var(--dim);font-size:var(--fs-meta);line-height:1.85;max-width:60ch}
+.chapters{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
+.ch{display:flex;flex-direction:column;gap:6px;padding:18px 20px;border-radius:12px;text-align:left;
+  border:1px solid var(--line);background:rgba(255,255,255,.03);transition:all .15s}
+.ch:hover:not(:disabled){background:rgba(255,255,255,.08);border-color:var(--line-hi);
+  transform:translateY(-2px)}
+.ch:disabled{opacity:.38;cursor:not-allowed}
+.ch .n{font-family:var(--font-mono);font-size:var(--fs-label);letter-spacing:.16em;color:#9fc6ea}
+.ch .t{font-size:var(--fs-body);font-weight:700}
+.ch .who{font-size:var(--fs-label);color:var(--dim);letter-spacing:.1em}
+.ch .soon{font-size:var(--fs-label);color:#66707d;font-style:italic}
+.gate{margin-top:30px;padding:18px 22px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(255,255,255,.03);font-size:var(--fs-meta);line-height:1.75;color:var(--dim)}
+.gate b{color:#9fc6ea}
+</style>
+</head>
+<body>
+<main class="hub">
+  <div class="kicker">NAMELESS Ⅱ</div>
+  <h1>이름 없는 박사</h1>
+  <p class="lede">
+    당신의 일은 연구를 빠르게 끝내는 것이 아니라,
+    잘못된 결과가 다음 단계로 넘어가지 못하게 막는 것입니다.
+  </p>
+
+  <div class="chapters" id="chapters"></div>
+
+  <div class="gate" id="gate"></div>
+</main>
+
+<script src="logic.js"></script>
+<script>
+(function(){
+  /* CH1~8 동안은 인물의 성(姓)도 사건명도 쓰지 않는다. 큐시트 §2.1 */
+  var CHAPTERS=[
+    {n:1, id:"ch01", npc:"RICHARD", title:"계산 사슬",       ready:true },
+    {n:2, id:"ch02", npc:"ENRICO",  title:"기준과 조건",     ready:false},
+    {n:3, id:"ch03", npc:"LUIS",    title:"교정",           ready:false},
+    {n:4, id:"ch04", npc:"JOHN",    title:"동시성",          ready:false},
+    {n:5, id:"ch05", npc:"GEORGE",  title:"재료 시험",       ready:false},
+    {n:6, id:"ch06", npc:"EMILIO",  title:"시료 이상",       ready:false},
+    {n:7, id:"ch07", npc:"KENNETH", title:"사고 기록",       ready:false},
+    {n:8, id:"ch08", npc:"HANS",    title:"최종 검토",       ready:false},
+    {n:9, id:"ch09", npc:"",        title:"RESULTS",        ready:false},
+    {n:10,id:"ch10", npc:"",        title:"HOME",           ready:false}
+  ];
+
+  var saved=null;
+  try{ saved=N2.normalizeState(JSON.parse(localStorage.getItem("nameless2-v1"))); }catch(e){}
+  var approved=saved?saved.approved.length:0;
+
+  var host=document.getElementById("chapters");
+  CHAPTERS.forEach(function(c){
+    var b=document.createElement("button");
+    b.className="ch"; b.type="button"; b.disabled=!c.ready;
+    b.innerHTML='<span class="n">CH '+String(c.n).padStart(2,"0")+'</span>'+
+                '<span class="t">'+c.title+'</span>'+
+                (c.npc?'<span class="who">'+c.npc+'</span>':'')+
+                (c.ready?'':'<span class="soon">준비 중</span>');
+    if(c.ready) b.onclick=function(){ location.href=c.id+".html"; };
+    host.appendChild(b);
+  });
+
+  var pct=N2.progressFor(approved);
+  document.getElementById("gate").innerHTML=
+    '연구 진행도 <b>'+pct+'%</b> · 승인한 챕터 '+approved+'개'+
+    (saved&&saved.started?'':' — 아직 시작하지 않았습니다.');
+})();
+</script>
+</body>
+</html>

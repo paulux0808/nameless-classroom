@@ -149,3 +149,70 @@ test("damp는 프레임 시간에 독립이다", () => {
   b *= 1 - L.damp(0.2, 1 / 120);
   assert.ok(Math.abs(a - b) < 1e-12);
 });
+
+test("두 필드를 대조하면 해당 모순이 드러난다", () => {
+  const r = L.applyCompare(ch01, [], "cardB.fields.output", "cardC.fields.input");
+  assert.equal(r.rule.id, "chain_bc");
+  assert.ok(r.isNew);
+  assert.deepEqual(r.found, ["chain_bc"]);
+});
+
+test("대조 순서는 상관없다", () => {
+  const a = L.matchRule(ch01.rules, "cardB.fields.output", "cardC.fields.input", ch01.docs);
+  const b = L.matchRule(ch01.rules, "cardC.fields.input", "cardB.fields.output", ch01.docs);
+  assert.equal(a.id, b.id);
+});
+
+test("무관한 두 필드를 짚으면 아무것도 드러나지 않는다", () => {
+  const r = L.applyCompare(ch01, [], "cardA.fields.batch", "cardB.fields.batch");
+  assert.equal(r.rule, null);
+  assert.deepEqual(r.found, []);
+});
+
+test("같은 모순을 두 번 찾아도 한 번만 센다", () => {
+  let s = L.applyCompare(ch01, [], "cardB.fields.output", "cardC.fields.input");
+  assert.ok(s.isNew);
+  s = L.applyCompare(ch01, s.found, "cardC.fields.input", "cardB.fields.output");
+  assert.ok(!s.isNew, "중복 발견");
+  assert.deepEqual(s.found, ["chain_bc"]);
+});
+
+test("수정본에서는 같은 대조가 모순을 드러내지 않는다", () => {
+  const merged = { ...ch01.docs, ...ch01.revisedDocs };
+  const r = L.applyCompare(ch01, [], "cardB.fields.output", "cardC.fields.input", merged);
+  assert.equal(r.rule, null, "수정본에서도 모순이 잡히면 재검증이 무의미하다");
+});
+
+test("CH01 전체 플레이 경로 — 제출부터 승인까지", () => {
+  const { PHASE } = L;
+  let phase = PHASE.SUBMITTED, found = [];
+  assert.equal(L.activeStamp(phase), null);
+
+  for (const [a, b] of [
+    ["cardB.fields.output", "cardC.fields.input"],
+    ["summary.fields.batch", "cardC.fields.batch"],
+    ["cardA.fields.source", "cardC.fields.source"]
+  ]) {
+    found = L.applyCompare(ch01, found, a, b).found;
+    phase = L.nextPhase(phase, ch01.required, found);
+  }
+  assert.equal(phase, PHASE.CONTRADICTION);
+  assert.equal(L.activeStamp(phase), "REJECTED");
+
+  phase = PHASE.REJECTED;
+  assert.equal(L.activeStamp(phase), null);
+
+  // 수정본 재제출 → 재검증
+  phase = PHASE.REVISED;
+  const merged = { ...ch01.docs, ...ch01.revisedDocs };
+  let recheck = [];
+  for (const r of ch01.rules) {
+    if (!L.ruleHolds(r, merged)) recheck.push(r.id);   // 해소 확인
+  }
+  assert.deepEqual(recheck.sort(), ch01.required.slice().sort());
+  phase = L.nextPhase(phase, ch01.required, recheck);
+  assert.equal(phase, PHASE.VERIFIED);
+  assert.equal(L.activeStamp(phase), "APPROVED");
+
+  assert.equal(L.progressFor(1), 8, "CH1 승인 후 진행도 8%");
+});
