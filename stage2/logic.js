@@ -31,23 +31,43 @@
      레벨 0 = CH1~8, 1 = CH9(RESULTS), 2 = CH10(정체 공개). */
   var SPOILER = { CHAPTERS: 0, RESULTS: 1, IDENTITY: 2 };
 
+/* 게임은 한국어로 쓴다. 누출이 실제로 날 언어를 검사하지 않으면
+     차단 목록이 있으나 마나다. 한글 표기를 함께 막는다. */
   var LOCKED_TERMS = [
-    "manhattan project", "manhattan",
+    /* 사건·계획 */
+    "manhattan project", "manhattan", "맨해튼", "맨하탄", "맨해탄",
     "atomic bomb", "nuclear bomb", "atomic", "nuclear", "bomb",
+    "원자폭탄", "핵폭탄", "원자탄", "원폭", "핵무기",
     "little boy", "fat man", "trinity",
-    "hiroshima", "nagasaki",
-    "oppenheimer", "feynman", "fermi", "alvarez",
-    "von neumann", "neumann", "kistiakowsky", "segre", "segrè",
-    "bainbridge", "bethe"
+    "리틀보이", "리틀 보이", "팻맨", "팻 맨", "트리니티",
+    "hiroshima", "nagasaki", "히로시마", "나가사키",
+    /* 인물 성(姓) — CH1~8 동안 이름만 쓴다 */
+    "oppenheimer", "오펜하이머",
+    "feynman", "파인만",
+    "fermi", "페르미",
+    "alvarez", "알바레즈", "알바레스",
+    "von neumann", "neumann", "노이만",
+    "kistiakowsky", "키스티아코프스키",
+    "segre", "segrè", "세그레",
+    "bainbridge", "베인브리지",
+    "bethe", "베테"
   ];
 
   /* 레벨별로 풀리는 표현. 그 외에는 계속 잠긴다. */
   var UNLOCKED_AT = {
-    1: ["little boy", "fat man", "hiroshima", "nagasaki"],
-    2: ["manhattan project", "manhattan", "atomic bomb", "nuclear bomb",
-        "atomic", "nuclear", "bomb", "trinity", "oppenheimer",
-        "feynman", "fermi", "alvarez", "von neumann", "neumann",
-        "kistiakowsky", "segre", "segrè", "bainbridge", "bethe"]
+    /* CH9 RESULTS — 결과가 드러난다. 지명과 무기명까지만 */
+    1: ["little boy", "fat man", "hiroshima", "nagasaki",
+        "리틀보이", "리틀 보이", "팻맨", "팻 맨", "히로시마", "나가사키"],
+    /* CH10 HOME — 정체가 드러난다. 나머지 전부 */
+    2: ["manhattan project", "manhattan", "맨해튼", "맨하탄", "맨해탄",
+        "atomic bomb", "nuclear bomb", "atomic", "nuclear", "bomb",
+        "원자폭탄", "핵폭탄", "원자탄", "원폭", "핵무기",
+        "trinity", "트리니티",
+        "oppenheimer", "오펜하이머", "feynman", "파인만", "fermi", "페르미",
+        "alvarez", "알바레즈", "알바레스",
+        "von neumann", "neumann", "노이만",
+        "kistiakowsky", "키스티아코프스키", "segre", "segrè", "세그레",
+        "bainbridge", "베인브리지", "bethe", "베테"]
   };
 
   function unlockedTerms(level) {
@@ -73,9 +93,17 @@
     var hits = [];
     LOCKED_TERMS.forEach(function (term) {
       if (allowed.indexOf(term) >= 0) return;
-      /* 단어 경계 기준. 'bomb'가 'bombardment' 안에서 걸리지 않게 한다. */
-      var re = new RegExp("(^|[^a-z])" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z]|$)", "i");
-      if (re.test(lower) && hits.indexOf(term) < 0) hits.push(term);
+      var hit;
+      if (/[\uac00-\ud7a3]/.test(term)) {
+        /* 한글은 대소문자도 어미 변화도 없고 표기가 고유하다.
+           '파인만이', '페르미와' 처럼 조사가 붙으므로 부분 일치로 본다. */
+        hit = lower.indexOf(term) >= 0;
+      } else {
+        /* 로마자는 단어 경계로. 'bomb'가 'bombardment' 안에서 걸리지 않게. */
+        var re = new RegExp("(^|[^a-z])" + term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-z]|$)", "i");
+        hit = re.test(lower);
+      }
+      if (hit && hits.indexOf(term) < 0) hits.push(term);
     });
     return hits;
   }

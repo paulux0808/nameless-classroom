@@ -22,6 +22,7 @@
   var EYE = 1.62, SPEED = 2.6, lastT = 0;
   var BLOCKS = [];
   var docsNow = {};              /* 현재 유효한 문서(원본 또는 수정본) */
+  var npc = null, npcMixer = null, npcClips = {}, npcAction = null;
   var picked = null;             /* 대조를 위해 먼저 짚은 필드 */
   var _dir = null, _look = null;
   var _hoverAt = 0;
@@ -198,7 +199,15 @@
     var size = box.getSize(new THREE.Vector3());
 
     var s = item.scale === undefined ? 1 : item.scale;
-    if (item.fitHeight && size.y > 1e-6) s = item.fitHeight / size.y;
+    /* 리깅된 캐릭터는 바인드 포즈 기준 바운딩박스가 실제 실루엣과 다르다
+       (팔을 벌린 자세라 폭이 키보다 크게 잡힌다). fitHeight 를 쓰면 몇 배로
+       부푼다. 종횡비로 넘겨짚으면 책상 같은 가구를 오판하므로
+       SkinnedMesh 가 있는지로 정확히 가른다. */
+    var rigged = false;
+    obj.traverse(function (n) { if (n.isSkinnedMesh) rigged = true; });
+    if (item.fitHeight && size.y > 1e-6 && !rigged) s = item.fitHeight / size.y;
+    else if (item.fitHeight && rigged)
+      console.warn("[MODEL] " + item.id + ": 리깅 모델은 fitHeight 대신 scale 을 쓴다.");
     if (item.fitWidth && size.x > 1e-6) {
       var sw = item.fitWidth / size.x;
       s = item.fitHeight ? Math.min(s, sw) : sw;
@@ -231,6 +240,48 @@
     return obj;
   }
 
+  /* ── NPC ──────────────────────────────────────────────────────────────
+     챕터가 npcModel 로 모델과 클립 이름을 준다. 엔진은 서 있기/말하기만
+     구분한다 — 스펙(02_DIALOGUE_NPC)의 제스처 계층은 이후에 얹는다. */
+  function loadNPC(done) {
+    var spec = chapter.npcModel;
+    if (!spec || !THREE.GLTFLoader) { done(); return; }
+    new THREE.GLTFLoader().load(MODEL_BASE + spec.path, function (gltf) {
+      npc = placeModel(gltf.scene, {
+        id: "npc", pos: spec.pos, rot: spec.rot,
+        fitHeight: spec.fitHeight, scale: spec.scale,
+        align: spec.align || "floor", center: spec.center
+      });
+      scene.add(npc);
+
+      if (gltf.animations && gltf.animations.length) {
+        npcMixer = new THREE.AnimationMixer(npc);
+        Object.keys(spec.clips || {}).forEach(function (role) {
+          var clip = THREE.AnimationClip.findByName(gltf.animations, spec.clips[role]);
+          if (clip) npcClips[role] = npcMixer.clipAction(clip);
+        });
+        playNPC("idle");
+      }
+      /* 히트박스를 모델 위치로 옮긴다 */
+      var box = new THREE.Box3().setFromObject(npc);
+      var c = box.getCenter(new THREE.Vector3());
+      var hit = invisibleHit(0.8, box.max.y - box.min.y, 0.8, [c.x, c.y, c.z]);
+      scene.add(hot(hit, "npc", chapter.npc));
+      done();
+    }, undefined, function () {
+      console.warn("NPC 모델 로드 실패:", spec.path);
+      done();
+    });
+  }
+
+  function playNPC(role) {
+    var next = npcClips[role] || npcClips.idle;
+    if (!next || next === npcAction) return;
+    next.reset().fadeIn(0.25).play();
+    if (npcAction) npcAction.fadeOut(0.25);
+    npcAction = next;
+  }
+
   /* ── 상호작용 지점 ─────────────────────────────────────────────────── */
   function hot(mesh, id, name) {
     mesh.userData.hot = { id: id, name: name };
@@ -254,7 +305,9 @@
     if (a.stampPad) {
       scene.add(hot(invisibleHit(0.3, 0.14, 0.3, a.stampPad), "stamp", "도장"));
     }
-    if (a.npcStand) {
+    /* NPC 히트박스는 모델을 올린 뒤 loadNPC() 가 실제 위치에 만든다.
+       모델이 없는 챕터만 앵커 자리에 임시로 둔다. */
+    if (a.npcStand && !chapter.npcModel) {
       var p = [a.npcStand[0], 1.0, a.npcStand[2]];
       scene.add(hot(invisibleHit(0.7, 1.9, 0.7, p), "npc", chapter.npc));
     }
@@ -431,11 +484,13 @@
     var i = 0;
     box.classList.add("blocking");
     box.classList.remove("hidden");
+    playNPC("talk");
 
     function step() {
       if (i >= lines.length) {
         box.classList.add("hidden");
         box.classList.remove("blocking");
+        playNPC("idle");
         if (done) done();
         return;
       }
@@ -716,6 +771,7 @@
     lastT = now;
 
     moveStep(dt);
+    if (npcMixer) npcMixer.update(dt);
     if (IS_TOUCH && !inputBlocked()) hoverThrottled(innerWidth / 2, innerHeight / 2);
 
     _dir.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
@@ -763,8 +819,11 @@
     loop();
 
     loadModels(function () {
-      $("#loading").classList.add("hidden");
-      if (S.phase === L.PHASE.SUBMITTED) say(chapter.lines.submission);
+      loadNPC(function () {
+        $("#loading").classList.add("hidden");
+        refreshScrollHints();
+        if (S.phase === L.PHASE.SUBMITTED) say(chapter.lines.submission);
+      });
     });
   }
 

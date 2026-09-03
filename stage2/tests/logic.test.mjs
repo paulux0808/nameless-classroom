@@ -216,3 +216,33 @@ test("CH01 전체 플레이 경로 — 제출부터 승인까지", () => {
 
   assert.equal(L.progressFor(1), 8, "CH1 승인 후 진행도 8%");
 });
+
+test("한글 표기도 차단한다 — 게임이 한국어로 쓰이기 때문", () => {
+  const { SPOILER } = L;
+  for (const t of ["파인만", "페르미", "오펜하이머", "히로시마", "원자폭탄", "맨해튼"]) {
+    assert.ok(!L.termAllowed(t, SPOILER.CHAPTERS), `${t} 가 CH1~8 에서 노출된다`);
+  }
+});
+
+test("한글은 조사가 붙어도 잡는다", () => {
+  assert.ok(L.findLeaks("파인만이 제출한 계산 카드", 0).includes("파인만"));
+  assert.ok(L.findLeaks("엔리코 페르미와 대화", 0).includes("페르미"));
+  assert.ok(L.findLeaks("리처드 파인만과 대화", 0).length > 0,
+    "구버전에 실제로 있던 문자열이 잡혀야 한다");
+  assert.deepEqual(L.findLeaks("계산 결과를 확인해 주십시오.", 0), []);
+});
+
+test("한글 표기도 레벨에 따라 풀린다", () => {
+  const { SPOILER } = L;
+  assert.ok(!L.termAllowed("히로시마", SPOILER.CHAPTERS));
+  assert.ok(L.termAllowed("히로시마", SPOILER.RESULTS), "CH9 에서 지명은 풀린다");
+  assert.ok(!L.termAllowed("오펜하이머", SPOILER.RESULTS), "정체는 CH10 까지 잠긴다");
+  assert.ok(L.termAllowed("오펜하이머", SPOILER.IDENTITY));
+});
+
+test("표시 이름과 호칭은 언제나 허용", () => {
+  for (const t of ["RICHARD", "ENRICO", "LUIS", "JOHN", "GEORGE",
+                   "EMILIO", "KENNETH", "HANS", "박사님", "책임자님"]) {
+    assert.ok(L.termAllowed(t, 0), `${t} 가 막히면 안 된다`);
+  }
+});

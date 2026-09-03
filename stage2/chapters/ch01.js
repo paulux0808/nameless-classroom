@@ -137,6 +137,21 @@
         pos: [2.9, 0.76, 1.6], rot: [0, -Math.PI * 0.35, 0], fitHeight: 0.30 }
     ],
 
+    /* RICHARD — 책상 건너편에 서서 결과를 기다린다.
+       ※ 임시 배우다. teacher.glb 는 현대 정장이라 1943년 복장이 아니다.
+          docs/ASSETS.md 의 NPC 항목 참고. 클립 이름만 맞춰 두면
+          모델을 갈아 끼워도 그대로 동작한다. */
+    npcModel: {
+      path: "teacher/teacher.glb",
+      /* 리깅 모델이라 fitHeight 가 아니라 배율을 직접 준다.
+         이 모델은 배율 1 에서 대략 사람 키다.
+         ※ teacher.glb 는 stage1 에서 가져온 임시 배우다. 서 있는 idle 이
+            바인드 포즈에 가까워 팔을 벌린 자세로 보인다. 1940년대 복장의
+            제대로 된 캐릭터로 교체하면 해소된다 — docs/ASSETS.md 참고. */
+      pos: [0, 0, -1.05], rot: [0, 0, 0], scale: 1.0, align: "none",
+      clips: { idle: "Rig|idle", talk: "Rig|cycle_talking" }
+    },
+
     /* 책상 위 상호작용 지점 */
     anchors: {
       incomingSlot: [0.40, 0.80, 0.28],
