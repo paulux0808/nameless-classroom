@@ -544,7 +544,8 @@ body.touch.portrait #rotate{display:grid}
 #loading{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:#05080c;color:var(--text-dim);font-size:13px;letter-spacing:.1em}
 #whiteout{position:fixed;inset:0;z-index:180;background:#fff;opacity:0;pointer-events:none;transition:opacity 1.15s ease}
 #whiteout.on{opacity:1}
-body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.ending #fs{opacity:0;pointer-events:none}
+body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.ending #fs,
+body.ending #reticle,body.ending #label{opacity:0;pointer-events:none}
 #stage-transition{position:fixed;inset:0;z-index:260;background:#000;opacity:0;pointer-events:none;transition:opacity 1.05s ease}
 #stage-transition.on{opacity:1;pointer-events:auto}
 
@@ -3142,7 +3143,15 @@ function updateExitSequence(now,dt){
   if(t>=3.10&&!s.white){s.white=true;$("#whiteout").classList.add("on");}
   if(t>=4.45){
     s.shown=true;camera.position.set(3.40,EYE,4.82);yaw=Math.PI;pitch=0;
-    showEnding();setTimeout(function(){$("#whiteout").classList.remove("on");},120);
+    /* 화이트아웃이 덮고 있는 동안 교실 안으로 되돌린다. 문 밖(z=4.82)은
+       ROOM 범위 밖이라 그대로 두면 모달을 닫는 순간 갇힌다. */
+    exitSequence=null;
+    if(doorPivot)doorPivot.rotation.y=Math.PI/2;
+    gotoSpot(0);
+    /* 모달이 뜨면 sceneIsIdle()이 렌더를 멈춘다. 되돌린 시점을 한 프레임
+       이상 그린 뒤에 띄워야 화이트아웃이 걷힐 때 교실 안이 보인다. */
+    setTimeout(showStageClear,60);
+    setTimeout(function(){$("#whiteout").classList.remove("on");},420);
   }
 }
 var _dir=null,_look=null;
@@ -3573,8 +3582,10 @@ function showExitDoor(){
     var submit=el("button","btn btn-p","문 열기");submit.style.marginTop="12px";b.appendChild(submit);
     submit.onclick=function(){
       if(pad.value()!=="0808"){toast("코드가 맞지 않습니다.","bad");pad.clear();return;}
-      S.done=true;save();if(doorPivot)doorPivot.rotation.y=Math.PI/2;closeModal();renderHUD();
-      setTimeout(showStageClear,220);
+      S.done=true;save();closeModal();renderHUD();
+      /* 문을 즉시 열어젖히는 대신 퇴장 연출에 넘긴다. 문이 열리고 걸어
+         나가 화이트아웃되면 연출 끝에서 스테이지 완료로 이어진다. */
+      beginExitSequence();
     };
   });
 }
