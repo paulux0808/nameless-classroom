@@ -1,0 +1,9 @@
+{
+  "name": "nameless-classroom",
+  "private": true,
+  "version": "1.0.0",
+  "description": "NAMELESS — 브라우저에서 실행되는 내러티브 퍼즐 게임",
+  "scripts": {
+    "test": "node --test \"stage1/tests/*.test.mjs\""
+  }
+}
