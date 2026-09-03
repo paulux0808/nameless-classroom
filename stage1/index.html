@@ -1013,8 +1013,10 @@ function placeEdge(host, side, on, rect, thick){
 
 var _edgeSeq = 0;
 function markScrollables(){
+  var live = {};
   $$(".scrolls").forEach(function(host){
     if(!host._edgeKey) host._edgeKey = "s" + (++_edgeSeq);
+    live[host._edgeKey] = true;
     if(!host._scrollBound){
       host._scrollBound = true;
       host.addEventListener("scroll", function(){ markScrollables(); }, {passive:true});
@@ -1033,10 +1035,12 @@ function markScrollables(){
     placeEdge(host, "left",   canX && host.scrollLeft > 1,       r, 30);
     placeEdge(host, "right",  canX && host.scrollLeft < ox - 1,  r, 30);
   });
-  /* 사라진 컨테이너의 오버레이는 숨긴다 */
+  /* DOM에서 사라진 컨테이너(터미널 옆 패널·엔딩 화면)의 오버레이는 위
+     순회에 잡히지 않아 placeEdge가 불리지 않는다. 켜진 채로 남으므로
+     여기서 끈다. 이전 조건(document에 .scrolls가 하나도 없으면)은 늘
+     거짓이라 아무것도 정리하지 못했다. */
   Object.keys(_edges).forEach(function(k){
-    var d = _edges[k];
-    if(!document.querySelector(".scrolls")) d.classList.remove("on");
+    if(!live[k.split(":")[0]]) _edges[k].classList.remove("on");
   });
 }
 /* 내용·크기가 바뀌면 다시 잰다. 폰트나 이미지 때문에 늦게 넘치는 경우가
@@ -2024,13 +2028,19 @@ function buildRoom(){
     desksProcedural.add(cyl(0.011,0.011,0.36,legCol,x+0.14,0.60,z+0.51,8,0.45));
   }
   /* 앞줄 왼쪽 책상 밑면에 붙은 포스트잇 — 숙여야 보인다 */
-  var postMat=new THREE.MeshStandardMaterial({map:tex(function(g,w,h){
+  var postTex=tex(function(g,w,h){
       g.fillStyle="#f2e56a";g.fillRect(0,0,w,h);
       g.strokeStyle="rgba(120,110,30,.5)";g.lineWidth=3;g.strokeRect(2,2,w-4,h-4);
       g.strokeStyle="rgba(60,55,20,.55)";g.lineWidth=4;
       for(var i=0;i<4;i++){g.beginPath();g.moveTo(18,34+i*26);
         g.lineTo(w-18-(i===3?40:0),34+i*26);g.stroke();}
-    },160,140), side: THREE.DoubleSide});
+    },160,140);
+  /* 책상 밑면이라 조명이 거의 닿지 않는다. 숙였을 때 바로 알아볼 수
+     있도록 종이 자체를 은은하게 발광시킨다. 같은 텍스처를 발광 맵으로
+     쓰므로 적어 놓은 줄은 어둡게 남고 종이 바탕만 밝아진다. */
+  var postMat=new THREE.MeshStandardMaterial({
+      map:postTex, emissive:0xffffff, emissiveMap:postTex, emissiveIntensity:0.32,
+      roughness:0.9, side: THREE.DoubleSide});
   var post=new THREE.Mesh(new THREE.PlaneGeometry(0.18,0.15),postMat);
   post.rotation.x=-Math.PI/2;postitObj=post;
   scene.add(hot(post,"postit","쪽지"));
@@ -4055,6 +4065,10 @@ function boot(){
 function start(){
   $("#intro").classList.add("hidden");
   $("#hud").classList.remove("hidden");
+  /* 인트로 카드에 붙어 있던 스크롤 표시(하단 ▾ 칩)를 걷는다. 다시 재는
+     계기가 resize·scroll 뿐이라, 이걸 빼면 교실에 들어간 뒤에도 3D 화면
+     위에 화살표만 떠 있게 된다. */
+  hideAllEdges();refreshScrollHints();
   gotoSpot(0);renderHUD();
 }
 </script>
