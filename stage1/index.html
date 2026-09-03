@@ -2626,6 +2626,220 @@ function buildRoom(){
     g.globalAlpha=1;
   }
 
+  /* ── 배경 소품 ────────────────────────────────────────────────────────
+     진행에는 관계없는 물건들. DECOY 에 대사만 있고 실제 물건이 교실에
+     없어서, 적어 둔 스무 줄 중 여섯 줄만 나오고 있었다. 벽면·바닥 소품을
+     세워 나머지도 닿게 한다. 단서 지점과 겹치지 않는 자리만 쓴다.
+     hotOnly()는 이미 세워진 물건(사물함·게시판)에 조사 판정만 붙인다. */
+  function hotOnly(w,h,d,x,y,z,id,label){
+    var m=box(w,h,d,0xffffff,x,y,z);
+    m.material.transparent=true;m.material.opacity=0;
+    scene.add(hot(m,"decoy:"+id,label));return m;
+  }
+
+  /* 급훈 액자 — 칠판 위 왼쪽. 벽시계(x=0, 리빌 시 0.78)와 겹치지 않는다 */
+  plaque(1.24,0.34,-1.58,2.62,-3.90,0,"motto","급훈 액자",function(g,w,h){
+    g.fillStyle="#2b2116";g.fillRect(0,0,w,h);
+    g.fillStyle="#f3ead6";g.fillRect(11,11,w-22,h-22);
+    g.fillStyle="#b99a5e";g.fillRect(20,19,w-40,3);g.fillRect(20,h-22,w-40,3);
+    g.fillStyle="#241c12";g.textAlign="center";g.textBaseline="middle";
+    g.font="800 58px 'Gothic A1',sans-serif";
+    g.fillText("스스로 생각하라",w/2,h/2+2);
+  },512,140);
+
+  /* 시간표 — 칠판 오른쪽 벽. 담당 교사 칸은 비어 있다 */
+  plaque(0.78,0.98,4.05,1.62,-3.90,0,"timetable","시간표",function(g,w,h){
+    paperBase(g,w,h,"#efe7d2");
+    g.fillStyle="#3a2f20";g.textAlign="center";g.textBaseline="middle";
+    g.font="700 25px 'Gothic A1',sans-serif";g.fillText("시 간 표",w/2,27);
+    var x0=17,y0=46,cw=(w-34)/6,rh=(h-62)/8;
+    g.strokeStyle="#8d7f63";g.lineWidth=2;
+    for(var r=0;r<=8;r++){g.beginPath();g.moveTo(x0,y0+r*rh);g.lineTo(w-17,y0+r*rh);g.stroke();}
+    for(var c=0;c<=6;c++){g.beginPath();g.moveTo(x0+c*cw,y0);g.lineTo(x0+c*cw,y0+8*rh);g.stroke();}
+    g.font="600 15px 'Gothic A1',sans-serif";g.fillStyle="#5b4c37";
+    ["","월","화","수","목","금"].forEach(function(d,i){g.fillText(d,x0+cw*(i+0.5),y0+rh*0.5);});
+    for(var r2=1;r2<8;r2++)g.fillText(String(r2),x0+cw*0.5,y0+rh*(r2+0.5));
+    g.fillStyle="rgba(90,78,58,.34)";
+    for(var r3=1;r3<8;r3++)for(var c3=1;c3<6;c3++){
+      if((r3*7+c3*5)%5===0)continue;                     /* 비어 있는 칸 */
+      g.fillRect(x0+cw*c3+7,y0+rh*(r3+0.42),cw-14,4);
+    }
+  },300,376);
+
+  /* 온습도계 — 칠판 왼쪽 벽. 바늘이 오래전에 멈춰 있다 */
+  plaque(0.19,0.19,-3.52,1.66,-3.90,0,"thermo","온습도계",function(g,w,h){
+    g.fillStyle="#e7e2d5";g.fillRect(0,0,w,h);
+    g.fillStyle="#c9c2b1";g.fillRect(0,0,w,7);g.fillRect(0,h-7,w,7);
+    var cx=w/2,cy=h/2,R=w*0.40;
+    g.fillStyle="#faf6ea";g.beginPath();g.arc(cx,cy,R,0,7);g.fill();
+    g.strokeStyle="#3a332a";g.lineWidth=3;g.stroke();
+    g.strokeStyle="#7d7261";g.lineWidth=2;
+    for(var a=0;a<36;a++){var t=a/36*Math.PI*2;
+      g.beginPath();
+      g.moveTo(cx+Math.cos(t)*(R-5),cy+Math.sin(t)*(R-5));
+      g.lineTo(cx+Math.cos(t)*(R-(a%3?9:14)),cy+Math.sin(t)*(R-(a%3?9:14)));g.stroke();}
+    g.fillStyle="#7d7261";g.textAlign="center";g.textBaseline="middle";
+    g.font="700 15px Arial,sans-serif";g.fillText("℃ / %",cx,cy+R*0.52);
+    g.strokeStyle="#a33224";g.lineWidth=4;g.lineCap="round";
+    g.beginPath();g.moveTo(cx,cy);
+    g.lineTo(cx+Math.cos(-2.30)*(R-18),cy+Math.sin(-2.30)*(R-18));g.stroke();
+    g.fillStyle="#3a332a";g.beginPath();g.arc(cx,cy,5,0,7);g.fill();
+  },160,160);
+
+  /* 교내 방송 스피커 — 칠판 벽 왼쪽 위 모서리 */
+  var spkG=new THREE.Group();spkG.position.set(-4.05,2.66,-3.86);
+  spkG.add(box(0.34,0.26,0.15,0x6f5b42,0,0,0));
+  spkG.add(box(0.37,0.032,0.17,0x50402c,0,0.146,0));
+  spkG.add(box(0.37,0.032,0.17,0x50402c,0,-0.146,0));
+  spkG.add(plane(0.27,0.19,new THREE.MeshStandardMaterial({roughness:0.95,
+    map:tex(function(g,w,h){
+      g.fillStyle="#3a3229";g.fillRect(0,0,w,h);
+      g.fillStyle="rgba(16,13,9,.85)";
+      for(var y=5;y<h-3;y+=8)for(var x=5;x<w-3;x+=8)g.fillRect(x,y,4,4);
+    },128,96)}),0,0,0.076));
+  scene.add(spkG);
+  hotOnly(0.42,0.34,0.22,-4.05,2.66,-3.84,"speaker","방송 스피커");
+
+  /* 조명 스위치 — 뒷벽, 문 왼쪽 */
+  plaque(0.16,0.22,2.52,1.28,3.92,Math.PI,"switches","조명 스위치",function(g,w,h){
+    g.fillStyle="#e3ded1";g.fillRect(0,0,w,h);
+    g.fillStyle="rgba(120,112,96,.45)";g.fillRect(0,0,w,4);g.fillRect(0,h-4,w,4);
+    for(var i=0;i<3;i++){
+      var y=22+i*46;
+      g.fillStyle="#b9b2a1";g.fillRect(26,y,w-52,38);
+      g.fillStyle="#f6f2e7";g.fillRect(29,y+3,w-58,i===1?20:32);
+      g.fillStyle="rgba(60,55,44,.30)";g.fillRect(29,y+(i===1?23:35),w-58,3);
+    }
+  },128,176);
+
+  /* 콘센트 — 뒷벽 걸레받이 위. 아무것도 꽂혀 있지 않다 */
+  plaque(0.13,0.09,0.62,0.34,3.92,Math.PI,"outlet","콘센트",function(g,w,h){
+    g.fillStyle="#e6e1d4";g.fillRect(0,0,w,h);
+    g.fillStyle="rgba(120,112,96,.40)";g.fillRect(0,0,w,3);g.fillRect(0,h-3,w,3);
+    [0.30,0.70].forEach(function(fx){
+      g.fillStyle="#cdc6b4";g.beginPath();g.arc(w*fx,h/2,20,0,7);g.fill();
+      g.fillStyle="#2c2820";
+      g.beginPath();g.arc(w*fx-7,h/2,3.4,0,7);g.fill();
+      g.beginPath();g.arc(w*fx+7,h/2,3.4,0,7);g.fill();
+    });
+  },128,88);
+
+  /* 안내문 — 뒷벽, 문 왼쪽. 글씨가 바래 읽히지 않는다 */
+  plaque(0.46,0.64,1.30,1.74,3.92,Math.PI,"notice","안내문",function(g,w,h){
+    paperBase(g,w,h,"#e9e2cf");
+    g.strokeStyle="rgba(120,105,74,.35)";g.lineWidth=2;g.strokeRect(9,9,w-18,h-18);
+    g.fillStyle="rgba(70,60,42,.30)";g.fillRect(28,30,w-56,13);
+    /* 아래로 갈수록 바래 읽히지 않는다 — 띠가 아니라 한 장의 농도 변화로 */
+    for(var i=0;i<13;i++){
+      var fade=Math.max(0.05,0.26-i*0.019);
+      g.fillStyle="rgba(70,60,42,"+fade.toFixed(3)+")";
+      g.fillRect(28,62+i*19,(w-56)*(0.45+((i*37)%48)/100),5);
+    }
+    var wash=g.createLinearGradient(0,h*0.30,0,h);
+    wash.addColorStop(0,"rgba(226,216,190,0)");wash.addColorStop(1,"rgba(226,216,190,.55)");
+    g.fillStyle=wash;g.fillRect(0,0,w,h);
+    g.fillStyle="rgba(90,78,56,.45)";                  /* 압정 */
+    [[w*0.5,16]].forEach(function(pn){
+      g.beginPath();g.arc(pn[0],pn[1],5,0,7);g.fill();});
+  },230,320);
+
+  /* 게시판 — 이미 뒤쪽 벽에 걸려 있다. 인형·화분 위쪽만 판정을 준다 */
+  var bbHot=plane(2.40,0.54,new THREE.MeshBasicMaterial({transparent:true,opacity:0}),
+    -1.2,2.22,3.90);
+  bbHot.rotation.y=Math.PI;scene.add(hot(bbHot,"decoy:notice2","게시판"));
+
+  /* 사물함 — 이미 서 있다. 문짝 높이(0.12~0.98)만 잡아 그 위의 곰인형·
+     화분·백과사전 판정을 가리지 않는다 */
+  hotOnly(3.10,0.86,0.10,-2.2,0.55,3.50,"locker","사물함");
+
+  /* 트로피 — 사물함 위, 곰인형과 화분 사이 */
+  var trBrass=new THREE.MeshStandardMaterial({color:0xc8a04a,roughness:0.30,metalness:0.74});
+  var trWood=new THREE.MeshStandardMaterial({color:0x3b2917,roughness:0.70});
+  var trG=new THREE.Group();trG.position.set(-1.85,1.068,3.70);
+  trG.add(put(new THREE.Mesh(new THREE.BoxGeometry(0.125,0.036,0.105),trWood),0,0.018,0));
+  trG.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.030,0.042,0.014,16),trBrass),0,0.043,0));
+  trG.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.017,0.062,12),trBrass),0,0.081,0));
+  trG.add(put(new THREE.Mesh(new THREE.CylinderGeometry(0.050,0.026,0.082,18,1,true),trBrass),0,0.153,0));
+  trG.add(put(new THREE.Mesh(new THREE.SphereGeometry(0.026,14,10),trBrass),0,0.116,0));
+  [-1,1].forEach(function(sd){
+    var hd=new THREE.Mesh(new THREE.TorusGeometry(0.024,0.005,7,16),trBrass);
+    hd.position.set(sd*0.052,0.158,0);hd.rotation.y=Math.PI/2;trG.add(hd);
+  });
+  /* 이름을 새긴 자리가 긁혀 지워져 있다 */
+  trG.add(put(plane(0.086,0.020,new THREE.MeshStandardMaterial({roughness:0.55,
+    map:tex(function(g,w,h){
+      g.fillStyle="#b99a55";g.fillRect(0,0,w,h);
+      g.fillStyle="rgba(255,246,214,.55)";
+      for(var i=0;i<70;i++)g.fillRect(Math.random()*w,Math.random()*h,7,2);
+    },128,32)}),0,0,0),0,0.020,0.054));
+  scene.add(trG);
+  hotOnly(0.18,0.26,0.16,-1.85,1.19,3.70,"trophy","트로피");
+
+  /* 책 무더기 — 뒷줄 오른쪽 책상 위. 이름이 적힌 페이지는 찢겨 있다 */
+  var bkG=new THREE.Group();bkG.position.set(2.30,0.732,1.35);
+  var bkY=0;
+  [[0.215,0.152,0.035,0x6d3f34, 0.000, 0.000, 0.07],
+   [0.195,0.140,0.030,0x37506b, 0.016, 0.013,-0.15],
+   [0.172,0.128,0.026,0x4a5f3a,-0.013,-0.011, 0.24]].forEach(function(b){
+    var cov=box(b[0],b[2],b[1],b[3],b[4],bkY+b[2]/2,b[5]);cov.rotation.y=b[6];bkG.add(cov);
+    var pg=box(b[0]*0.93,b[2]*0.60,b[1]*0.93,0xe6dcc4,b[4],bkY+b[2]/2,b[5]);
+    pg.rotation.y=b[6];bkG.add(pg);
+    bkY+=b[2];
+  });
+  scene.add(bkG);
+  hotOnly(0.30,0.20,0.26,2.30,0.82,1.35,"books","책 무더기");
+
+  /* 쌓아 둔 의자 — 뒷벽 앞, 걸을 수 있는 범위(z<=3.5) 바깥에 세운다 */
+  var chairsG=new THREE.Group();chairsG.position.set(2.15,0,3.72);
+  chairsG.add(shadowDecal(0.62,0.60,0.36,0,0));
+  for(var si=0;si<4;si++){
+    var sg=new THREE.Group();
+    sg.position.set((si%2)?0.020:-0.015,0.40+si*0.112,(si%2)?-0.013:0.017);
+    sg.rotation.y=Math.PI+(si-1.5)*0.055;
+    sg.add(box(0.35,0.026,0.33,0x7a5a37,0,0,0));
+    sg.add(put(box(0.35,0.29,0.024,0x7a5a37,0,0,0),0,0.155,-0.155,-0.13));
+    [[-0.145,-0.135],[0.145,-0.135],[-0.145,0.135],[0.145,0.135]].forEach(function(o){
+      sg.add(cyl(0.011,0.011,0.40,0x555f66,o[0],-0.20,o[1],8,0.45));
+    });
+    chairsG.add(sg);
+  }
+  scene.add(chairsG);
+  hotOnly(0.56,0.95,0.44,2.15,0.50,3.72,"chairs","쌓아 둔 의자");
+
+  /* 청소도구 — 뒷벽 왼쪽 구석. 양동이는 말라 있다 */
+  var mopG=new THREE.Group();mopG.position.set(-4.46,0,3.40);
+  mopG.add(shadowDecal(0.72,0.62,0.34,0.04,0.02));
+  /* 양동이 — 자루와 겹치지 않게 옆으로 뺀다 */
+  mopG.add(cyl(0.145,0.116,0.26,0x4c5a63,0.26,0.13,0.06,18,0.62));
+  mopG.add(cyl(0.128,0.128,0.012,0x3a444b,0.26,0.255,0.06,18,0.9));  /* 말라붙은 바닥 */
+  mopG.add(put(new THREE.Mesh(new THREE.TorusGeometry(0.147,0.010,7,20),
+    new THREE.MeshStandardMaterial({color:0x66757f,roughness:0.44,metalness:0.42})),
+    0.26,0.26,0.06,Math.PI/2));
+  /* 대걸레 — 회색 걸레 뭉치 */
+  var mopL=new THREE.Group();mopL.position.set(-0.14,0,0.04);
+  mopL.rotation.z=0.12;mopL.rotation.x=-0.06;
+  mopL.add(cyl(0.015,0.015,1.34,0x8d6a42,0,0.67,0,8,0.58));
+  mopL.add(cyl(0.105,0.062,0.30,0xcfc9b6,0,0.15,0,14,0.97));
+  mopL.add(cyl(0.052,0.052,0.05,0x8a8577,0,0.31,0,12,0.8));
+  mopG.add(mopL);
+  /* 빗자루 — 아래로 퍼지는 짚 뭉치 */
+  var brm=new THREE.Group();brm.position.set(0.02,0,-0.12);
+  brm.rotation.z=-0.14;brm.rotation.x=0.05;
+  brm.add(cyl(0.014,0.014,1.24,0x6f5636,0,0.62,0,8,0.58));
+  var bristle=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.28,0.07),
+    new THREE.MeshStandardMaterial({map:tex(function(g,w,h){
+      g.fillStyle="#b98f4e";g.fillRect(0,0,w,h);
+      g.strokeStyle="rgba(90,64,28,.55)";g.lineWidth=2;
+      for(var x=3;x<w;x+=6){g.beginPath();g.moveTo(x,h*0.12);g.lineTo(x+(x%12?2:-2),h);g.stroke();}
+      g.fillStyle="#7c5a2c";g.fillRect(0,0,w,h*0.14);
+    },128,128),roughness:0.95}));
+  bristle.position.y=0.15;brm.add(bristle);
+  mopG.add(brm);
+  scene.add(mopG);
+  var mopH=cyl(0.40,0.40,1.36,0xffffff,-4.40,0.68,3.42,10);
+  mopH.material.transparent=true;mopH.material.opacity=0;
+  scene.add(hot(mopH,"decoy:mop","청소도구"));
+
   /* --- 정통 클래식 주철 스팀 라디에이터 (창문 아래 -4.82, 0, 0.85) --- */
   var radG=new THREE.Group();radG.position.set(-4.82,0,0.85);
 
@@ -3630,6 +3844,7 @@ var DECOY={
   bin:"쓰레기통이다. 비어 있다.",
   umb:"우산꽂이다. 주인 없는 우산 두 자루가 남아 있다.",
   chalk:"분필함이다. 짧은 분필 몇 개와 지우개가 놓여 있다.",
+  eraser:"칠판지우개다. 분필가루가 굳어 눌린 자국이 그대로 남아 있다.",
   locker:"사물함이다. 대부분 잠겨 있고, 열리는 칸은 비어 있다.",
   notice2:"게시판이다. 압정 구멍만 빼곡히 남아 있다."
 };
