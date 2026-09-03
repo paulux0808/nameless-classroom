@@ -57,6 +57,14 @@ button{cursor:pointer;touch-action:manipulation}
 .hidden{display:none !important}
 :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 
+#scene{position:fixed;inset:0;display:block;touch-action:none;cursor:grab}
+#scene.dragging{cursor:grabbing}
+
+/* 렌더 색보정 및 비네트 */
+#grade{position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:radial-gradient(130% 110% at 50% 45%,transparent 42%,rgba(14,9,4,0.38) 78%,rgba(6,4,2,0.78) 100%),
+             linear-gradient(180deg,rgba(255,210,140,0.04),rgba(30,20,8,0.08))}
+
 /* ── 스크롤 ──────────────────────────────────────────────────────────
    내용이 넘치면 스크롤할 수 있다는 걸 반드시 눈에 보이게 한다.
    macOS/iOS 는 기본적으로 만지기 전까지 스크롤바를 숨기므로
@@ -110,6 +118,75 @@ button{cursor:pointer;touch-action:manipulation}
 /* 넘치는 영역임을 스크롤바로도 알린다. 오버레이 스크롤바(macOS/iOS/
    최신 크로뮴)는 만지기 전까지 안 보이므로 자리를 잡아 항상 그린다. */
 .scrolls.can-y{scrollbar-gutter:stable}
+
+/* ---------------------------- [2] HUD ---------------------------- */
+#hud{position:fixed;inset:0;z-index:30;pointer-events:none;display:flex;flex-direction:column;
+     justify-content:space-between;padding:16px;gap:12px}
+#hud > *{pointer-events:auto}
+.hud-row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+
+/* 표제 배지 (1.6배) */
+.tag{display:inline-flex;align-items:center;gap:12px;padding:8px 22px 8px 12px;border-radius:30px;
+  background:rgba(20,15,10,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);
+  color:#f2e6d2;font-size:18px;font-weight:600;letter-spacing:.02em;white-space:nowrap;flex:none}
+.tag b{display:inline-flex;align-items:center;padding:4px 12px;border-radius:14px;
+  background:linear-gradient(135deg,#d8a64e,#946b28);color:#120e09;
+  font-weight:900;font-size:14px;letter-spacing:.14em;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.tag > span{letter-spacing:.02em;color:#f0e4d0}
+
+/* 8조각 인디케이터 — 보석형 발광 슬롯 (1.6배) */
+#pieces{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:30px;
+  background:rgba(20,15,10,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);flex:none}
+#pieces i{width:22px;height:22px;border-radius:50%;font-style:normal;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(214,186,136,0.22);
+  transition:all .35s cubic-bezier(0.3,0,0,1)}
+#pieces i.on{background:radial-gradient(circle at 35% 35%,#ffeab2,#d8a64e 60%,#8c601f);
+  border-color:#ffebbb;box-shadow:0 0 14px rgba(230,175,70,0.75),inset 0 1px 2px rgba(255,255,255,0.8);
+  transform:scale(1.15)}
+
+/* 목표 지시문 (1.6배 & 가독성 강화) */
+#objective{align-self:flex-start;max-width:min(800px,92vw);padding:18px 28px;border-radius:18px;
+  font-family:var(--font-ui);font-size:19px;line-height:1.68;letter-spacing:.01em;
+  background:rgba(20,15,10,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--line);color:#eee2cf;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-wrap:pretty}
+#objective b{color:#ecc67a;font-weight:700}
+#objective .hint{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+  color:#d4ab63;font-size:18px}
+
+#hud-right{display:flex;align-items:center;gap:12px;flex:none}
+#toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.tbtn{display:inline-flex;align-items:center;justify-content:center;padding:0 22px;min-height:48px;
+  border-radius:24px;border:1px solid var(--line);color:#eedcc4;
+  background:rgba(22,17,11,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-size:17px;font-weight:600;font-family:var(--font-ui);letter-spacing:.02em;
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);transition:all .18s ease}
+.tbtn:hover{background:rgba(38,28,18,0.92);border-color:var(--line-hi);color:#fff;
+  transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
+.tbtn:active{transform:translateY(1px);box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+.tbtn.act{background:linear-gradient(135deg,#c8923a,#8c5f1c);color:#120d06;border-color:#ecc87a;
+  font-weight:800;box-shadow:0 0 16px rgba(210,160,60,0.5)}
+
+/* 조준점 & 대상 툴팁 */
+#reticle{position:fixed;z-index:31;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
+  border-radius:50%;background:#f4dfb5;pointer-events:none;transition:all .15s ease;opacity:.65;
+  box-shadow:0 0 8px rgba(0,0,0,0.8)}
+#reticle.far{width:18px;height:18px;margin:-9px 0 0 -9px;background:transparent;
+  border:2px solid rgba(244,223,181,0.45);opacity:.85}
+#reticle.hot{width:32px;height:32px;margin:-16px 0 0 -16px;background:transparent;
+  border:2.5px solid #ecc67a;opacity:1;box-shadow:0 0 20px rgba(236,198,122,0.7),inset 0 0 10px rgba(236,198,122,0.25);
+  animation:reticlePulse 1.8s ease-in-out infinite}
+@keyframes reticlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+#label{position:fixed;z-index:31;pointer-events:none;transform:translate(-50%,-160%);
+  padding:10px 22px;font-size:18px;font-weight:600;white-space:nowrap;
+  font-family:var(--font-ui);color:#fff;
+  background:rgba(18,14,10,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(236,198,122,0.45);border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.65);opacity:0;transition:opacity .15s ease,transform .15s ease}
+#label.show{opacity:1;transform:translate(-50%,-150%)}
+#label i{display:block;font-style:normal;font-size:14px;color:#e89078;margin-top:3px}
 
 /* ---------------------------- [3] 모달 & 카드 ---------------------------- */
 .sheetwrap{position:fixed;inset:0;z-index:60;display:grid;place-items:center;
@@ -437,6 +514,7 @@ body.touch #t-crouch{display:none}
 body.touch .tbtn{min-height:var(--tap);min-width:var(--tap);padding:0 14px;font-size:12.5px}
 body.touch #objective{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--sa-t) + 60px);bottom:auto;
   align-self:auto;max-width:min(58vw,480px);text-align:center;font-size:12.5px;padding:9px 16px;line-height:1.5}
+body.touch #objective:empty{display:none}
 /* 터치 기기에서 HUD만 12px로 줄고 읽을거리는 28px로 남아 있어 위화감이 컸다. */
 body.touch{--fs-read:17px;--fs-read-sm:15px;--fs-body:14.5px;--fs-title:19px;
            --fs-label:12px;--fs-meta:13.5px;--lh-read:1.8}
@@ -3467,7 +3545,10 @@ function goToNextStage(){
   var old=document.getElementById("stage-transition");if(old)old.remove();
   var fade=el("div");fade.id="stage-transition";document.body.appendChild(fade);
   requestAnimationFrame(function(){requestAnimationFrame(function(){fade.classList.add("on");});});
-  try{sessionStorage.setItem("nameless-stage2-access","0808");}catch(e){} setTimeout(function(){location.href="../stage2/";},1250);
+  /* 스테이지 2는 아직 준비 중 안내를 거쳐 들어간다. 뒷문에서 바로
+     ../stage2/ 로 보내면 그 안내를 통째로 건너뛴다. */
+  try{sessionStorage.setItem("nameless-stage2-access","0808");}catch(e){}
+  setTimeout(function(){location.href="../preparing/";},1250);
 }
 function showStageClear(){
   closeEndingScene();
@@ -3481,7 +3562,7 @@ function showStageClear(){
     var next=el("button","btn btn-p","다음 스테이지");
     next.onclick=function(){goToNextStage();};
     r.appendChild(replay);r.appendChild(next);b.appendChild(r);
-    b.appendChild(el("p","mini","스테이지 2 · 챕터 1로 이동합니다."));
+    b.appendChild(el("p","mini","스테이지 2 준비 안내 화면으로 이동합니다."));
   },null,"교실에 남기");
 }
 function showExitDoor(){
