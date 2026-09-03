@@ -449,6 +449,62 @@
     step();
   }
 
+  /* ── 스크롤 표시 ─────────────────────────────────────────────────────
+     .scrolls 영역이 실제로 넘치는지 재서 가장자리 오버레이를 덮는다.
+     CSS 만으로는 안 된다 — 자식이 불투명 배경을 가지면 그라디언트가
+     가려지고, 오버레이 스크롤바는 만지기 전까지 보이지 않는다. */
+  var _edges = {}, _edgeSeq = 0;
+  function edgeEl(key, side) {
+    var k = key + ":" + side;
+    if (!_edges[k]) {
+      var d = el("div", "scroll-edge " + side);
+      document.body.appendChild(d);
+      _edges[k] = d;
+    }
+    return _edges[k];
+  }
+  function placeEdge(host, side, on, r, thick) {
+    var d = edgeEl(host._edgeKey, side);
+    if (side === "top" || side === "bottom") {
+      d.style.left = r.left + "px"; d.style.width = r.width + "px";
+      d.style.height = thick + "px";
+      d.style.top = (side === "top" ? r.top : r.bottom - thick) + "px";
+    } else {
+      d.style.top = r.top + "px"; d.style.height = r.height + "px";
+      d.style.width = thick + "px";
+      d.style.left = (side === "left" ? r.left : r.right - thick) + "px";
+    }
+    d.classList.toggle("on", !!on);
+  }
+  function markScrollables() {
+    [].slice.call(document.querySelectorAll(".scrolls")).forEach(function (host) {
+      if (!host._edgeKey) host._edgeKey = "s" + (++_edgeSeq);
+      if (!host._scrollBound) {
+        host._scrollBound = true;
+        host.addEventListener("scroll", function () { markScrollables(); }, { passive: true });
+      }
+      var visible = host.offsetParent !== null;
+      var oy = host.scrollHeight - host.clientHeight;
+      var ox = host.scrollWidth - host.clientWidth;
+      var canY = visible && oy > 2, canX = visible && ox > 2;
+      host.classList.toggle("can-y", canY);
+      host.classList.toggle("can-x", canX);
+      var r = host.getBoundingClientRect();
+      placeEdge(host, "top",    canY && host.scrollTop > 1,       r, 34);
+      placeEdge(host, "bottom", canY && host.scrollTop < oy - 1,  r, 34);
+      placeEdge(host, "left",   canX && host.scrollLeft > 1,      r, 30);
+      placeEdge(host, "right",  canX && host.scrollLeft < ox - 1, r, 30);
+    });
+  }
+  function refreshScrollHints() {
+    markScrollables();
+    setTimeout(markScrollables, 60);
+    setTimeout(markScrollables, 340);
+  }
+  function hideAllEdges() {
+    Object.keys(_edges).forEach(function (k) { _edges[k].classList.remove("on"); });
+  }
+
   /* ── 시트(모달) ────────────────────────────────────────────────────── */
   function openSheet(title, sub, build) {
     $("#sheet-title").textContent = title;
@@ -457,11 +513,13 @@
     b.innerHTML = "";
     build(b);
     $("#sheet").classList.remove("hidden");
+    refreshScrollHints();
     var first = b.querySelector("button") || $("#sheet-close");
     if (first) try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
   }
   function closeSheet() {
     $("#sheet").classList.add("hidden");
+    hideAllEdges();
     picked = null;
   }
 
@@ -530,6 +588,7 @@
     addEventListener("keyup", function (e) { var k = MAP[e.key]; if (k) keys[k] = false; });
     addEventListener("blur", function () { keys = {}; joy.x = joy.z = 0; });
     addEventListener("resize", resize);
+    addEventListener("resize", refreshScrollHints);
 
     document.addEventListener("click", function (e) {
       if (e.target && e.target.closest && e.target.closest("[data-close]")) closeSheet();

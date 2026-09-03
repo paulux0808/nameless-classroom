@@ -57,83 +57,59 @@ button{cursor:pointer;touch-action:manipulation}
 .hidden{display:none !important}
 :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 
-#scene{position:fixed;inset:0;display:block;touch-action:none;cursor:grab}
-#scene.dragging{cursor:grabbing}
+/* ── 스크롤 ──────────────────────────────────────────────────────────
+   내용이 넘치면 스크롤할 수 있다는 걸 반드시 눈에 보이게 한다.
+   macOS/iOS 는 기본적으로 만지기 전까지 스크롤바를 숨기므로
+   "화면에 다 안 보인다"의 큰 원인이 된다.
 
-/* 렌더 색보정 및 비네트 */
-#grade{position:fixed;inset:0;z-index:5;pointer-events:none;
-  background:radial-gradient(130% 110% at 50% 45%,transparent 42%,rgba(14,9,4,0.38) 78%,rgba(6,4,2,0.78) 100%),
-             linear-gradient(180deg,rgba(255,210,140,0.04),rgba(30,20,8,0.08))}
+   1) 스크롤바를 항상 그린다 (overflow:auto 라 넘칠 때만 나타난다)
+   2) --scroll-bg 를 준 컨테이너는 가장자리 페이드까지 붙는다.
+      local 배경은 내용과 함께 스크롤해서 끝에 닿으면 사라지므로,
+      "위/아래로 더 있음"을 정확히 표현한다. */
+.scrolls{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(214,186,136,0.55) rgba(255,255,255,0.06);
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.scrolls::-webkit-scrollbar{width:10px;height:10px}
+.scrolls::-webkit-scrollbar-track{background:rgba(255,255,255,0.06);border-radius:6px}
+.scrolls::-webkit-scrollbar-thumb{background:rgba(214,186,136,0.5);border-radius:6px;
+  border:2px solid transparent;background-clip:content-box}
+.scrolls::-webkit-scrollbar-thumb:hover{background:rgba(226,199,145,0.75);background-clip:content-box}
+.scrolls::-webkit-scrollbar-corner{background:transparent}
 
-/* ---------------------------- [2] HUD ---------------------------- */
-#hud{position:fixed;inset:0;z-index:30;pointer-events:none;display:flex;flex-direction:column;
-     justify-content:space-between;padding:16px;gap:12px}
-#hud > *{pointer-events:auto}
-.hud-row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+/* 가장자리 표시 — 스크롤 영역 위에 덮는 실제 요소.
+   가상요소로는 자식의 불투명 배경(일기 종이)에 가려지거나 아예 박스를
+   만들지 못하는 경우가 있어, markScrollables() 가 위치를 잡아 준다.
+   넘칠 때만, 그리고 그 방향으로 더 남았을 때만 보인다. */
+.scroll-edge{position:fixed;z-index:70;pointer-events:none;opacity:0;
+  transition:opacity .18s ease}
+.scroll-edge.on{opacity:1}
+/* 배경색을 맞추는 대신 옅은 그림자로 덮는다. 크림색 종이 위든
+   어두운 목록 위든 "가장자리가 이어진다"로 읽힌다. */
+.scroll-edge.top   {background:linear-gradient(rgba(8,6,3,.42),transparent)}
+.scroll-edge.bottom{background:linear-gradient(transparent,rgba(8,6,3,.42))}
+.scroll-edge.left  {background:linear-gradient(90deg,rgba(8,6,3,.38),transparent)}
+.scroll-edge.right {background:linear-gradient(90deg,transparent,rgba(8,6,3,.38))}
+/* 더 있다는 표시 — 페이드만으로는 놓치기 쉬워 칩으로 붙인다.
+   어느 배경에서도 읽히도록 자체 배경을 갖는다. */
+.scroll-edge.bottom::after,
+.scroll-edge.right::after{
+  content:"▾";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);
+  display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
+  font-size:13px;line-height:1;color:#f3e6cc;
+  background:rgba(18,13,7,0.88);border:1px solid rgba(214,186,136,0.45);
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
+  animation:edgeBob 1.8s ease-in-out infinite}
+.scroll-edge.right::after{content:"▸";left:auto;right:4px;bottom:50%;
+  transform:translateY(50%);animation:none}
+@keyframes edgeBob{0%,100%{transform:translateX(-50%) translateY(0)}
+                   50%{transform:translateX(-50%) translateY(3px)}}
 
-/* 표제 배지 (1.6배) */
-.tag{display:inline-flex;align-items:center;gap:12px;padding:8px 22px 8px 12px;border-radius:30px;
-  background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);
-  color:#f2e6d2;font-size:18px;font-weight:600;letter-spacing:.02em;white-space:nowrap;flex:none}
-.tag b{display:inline-flex;align-items:center;padding:4px 12px;border-radius:14px;
-  background:linear-gradient(135deg,#d8a64e,#946b28);color:#120e09;
-  font-weight:900;font-size:14px;letter-spacing:.14em;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
-.tag > span{letter-spacing:.02em;color:#f0e4d0}
-
-/* 8조각 인디케이터 — 보석형 발광 슬롯 (1.6배) */
-#pieces{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:30px;
-  background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);flex:none}
-#pieces i{width:22px;height:22px;border-radius:50%;font-style:normal;
-  background:rgba(255,255,255,0.06);border:1px solid var(--line);
-  transition:all .35s cubic-bezier(0.3,0,0,1)}
-#pieces i.on{background:radial-gradient(circle at 35% 35%,#ffeab2,#d8a64e 60%,#8c601f);
-  border-color:#ffebbb;box-shadow:0 0 14px rgba(230,175,70,0.75),inset 0 1px 2px rgba(255,255,255,0.8);
-  transform:scale(1.15)}
-
-/* 목표 지시문 (1.6배 & 가독성 강화) */
-#objective{align-self:flex-start;max-width:min(800px,92vw);padding:18px 28px;border-radius:18px;
-  font-family:var(--font-ui);font-size:19px;line-height:1.68;letter-spacing:.01em;
-  background:rgba(20,15,10,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid var(--line);color:#eee2cf;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-wrap:pretty}
-#objective:empty{display:none}
-#objective b{color:#ecc67a;font-weight:700}
-#objective .hint{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
-  color:#d4ab63;font-size:18px}
-
-#hud-right{display:flex;align-items:center;gap:12px;flex:none}
-#toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.tbtn{display:inline-flex;align-items:center;justify-content:center;padding:0 22px;min-height:48px;
-  border-radius:24px;border:1px solid var(--line);color:#eedcc4;
-  background:rgba(22,17,11,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  font-size:17px;font-weight:600;font-family:var(--font-ui);letter-spacing:.02em;
-  box-shadow:0 4px 14px rgba(0,0,0,0.35);transition:all .18s ease}
-.tbtn:hover{background:rgba(38,28,18,0.92);border-color:var(--line-hi);color:#fff;
-  transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
-.tbtn:active{transform:translateY(1px);box-shadow:0 2px 6px rgba(0,0,0,0.4)}
-.tbtn.act{background:linear-gradient(135deg,#c8923a,#8c5f1c);color:#120d06;border-color:#ecc87a;
-  font-weight:800;box-shadow:0 0 16px rgba(210,160,60,0.5)}
-
-/* 조준점 & 대상 툴팁 */
-#reticle{position:fixed;z-index:31;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
-  border-radius:50%;background:#f4dfb5;pointer-events:none;transition:all .15s ease;opacity:.65;
-  box-shadow:0 0 8px rgba(0,0,0,0.8)}
-#reticle.far{width:18px;height:18px;margin:-9px 0 0 -9px;background:transparent;
-  border:2px solid rgba(244,223,181,0.45);opacity:.85}
-#reticle.hot{width:32px;height:32px;margin:-16px 0 0 -16px;background:transparent;
-  border:2.5px solid #ecc67a;opacity:1;box-shadow:0 0 20px rgba(236,198,122,0.7),inset 0 0 10px rgba(236,198,122,0.25);
-  animation:reticlePulse 1.8s ease-in-out infinite}
-@keyframes reticlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-
-#label{position:fixed;z-index:31;pointer-events:none;transform:translate(-50%,-160%);
-  padding:10px 22px;font-size:18px;font-weight:600;white-space:nowrap;
-  font-family:var(--font-ui);color:#fff;
-  background:rgba(18,14,10,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(236,198,122,0.45);border-radius:12px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.65);opacity:0;transition:opacity .15s ease,transform .15s ease}
-#label.show{opacity:1;transform:translate(-50%,-150%)}
-#label i{display:block;font-style:normal;font-size:14px;color:#e89078;margin-top:3px}
+/* 넘치는 영역임을 스크롤바로도 알린다. 오버레이 스크롤바(macOS/iOS/
+   최신 크로뮴)는 만지기 전까지 안 보이므로 자리를 잡아 항상 그린다. */
+.scrolls.can-y{scrollbar-gutter:stable}
 
 /* ---------------------------- [3] 모달 & 카드 ---------------------------- */
 .sheetwrap{position:fixed;inset:0;z-index:60;display:grid;place-items:center;
@@ -168,7 +144,7 @@ button{cursor:pointer;touch-action:manipulation}
   border:1px solid var(--line);border-radius:12px;background:rgba(22,17,11,0.96);box-shadow:0 18px 46px rgba(0,0,0,0.55)}
 .terminal-aid-head{flex:none;padding:12px 18px;background:#1a140d;color:#d8bd88;border-bottom:1px solid var(--line);
   font-size:16px;font-weight:800;letter-spacing:.12em}
-.terminal-aid-scroll{min-height:0;overflow:auto;overscroll-behavior:contain}
+.terminal-aid-scroll{min-height:0;overflow:auto;--scroll-edge:rgba(22,17,9,0.96)}
 .terminal-aid-pane .paper{min-height:100%;padding:26px 32px;font-size:22px;line-height:1.88;box-shadow:none;border:0;border-radius:0}
 .terminal-aid-pane .paper p{margin:0 0 16px}
 .terminal-aid-ref{padding:18px 22px;background:linear-gradient(165deg,rgba(36,28,18,0.96),rgba(20,15,9,0.96));color:var(--text)}
@@ -191,15 +167,9 @@ button{cursor:pointer;touch-action:manipulation}
   padding:20px 30px;border-bottom:1px solid var(--line);background:rgba(18,13,7,0.98)}
 .card-head h2{margin:0;font-size:28px;font-family:var(--font-ui);font-weight:800;letter-spacing:.02em;color:#f6ede0}
 .card-head .sub{color:var(--text-dim);font-size:18px;letter-spacing:.12em}
-/* 본문이 스크롤 주체. 위아래 그림자는 순수 CSS로, 실제로 넘칠 때만 뜬다
-   (local 배경은 내용과 함께 스크롤하며 가장자리 그라디언트를 덮는다). */
-.card-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;padding:30px 36px;
-  background:
-    linear-gradient(#1b1510 30%, rgba(27,21,16,0)) top / 100% 30px no-repeat local,
-    linear-gradient(rgba(20,15,9,0), #140f09 72%) bottom / 100% 30px no-repeat local,
-    radial-gradient(farthest-side at 50% 0, rgba(0,0,0,.55), rgba(0,0,0,0)) top / 100% 12px no-repeat scroll,
-    radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,.55), rgba(0,0,0,0)) bottom / 100% 12px no-repeat scroll}
+/* 본문이 스크롤 주체 (.scrolls.fade-y 는 마크업에서 붙인다) */
+.card-body{flex:1 1 auto;min-height:0;overflow:auto;padding:30px 36px;
+  --scroll-edge:rgba(20,15,9,0.96)}
 .eyebrow{font-size:16px;letter-spacing:.25em;color:var(--brass);font-weight:900}
 
 /* 일기장 / 자료 서식 (폰트 2배 & 여백/요소 1.6배) */
@@ -299,7 +269,10 @@ button{cursor:pointer;touch-action:manipulation}
 .sgrid{--tile:80px;
   display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;
   background:#ede2ca;padding:18px 16px;border-radius:10px;box-shadow:inset 0 0 0 1px #ccbfa0;
-  overflow-x:auto;overscroll-behavior-x:contain}
+  overflow-x:auto;--scroll-edge:rgba(237,226,202,0.97);
+  scrollbar-color:rgba(120,98,62,0.5) rgba(90,72,44,0.12)}
+.sgrid::-webkit-scrollbar-track{background:rgba(90,72,44,0.12)}
+.sgrid::-webkit-scrollbar-thumb{background:rgba(120,98,62,0.5);background-clip:content-box}
 .stile{background:#fff;border:2px solid #1d1913;display:grid;flex:none}
 .stile.v{grid-template-rows:1fr 1fr;width:var(--tile);height:calc(var(--tile) * 2)}
 .stile.h{grid-template-columns:1fr 1fr;width:calc(var(--tile) * 2);height:var(--tile)}
@@ -345,9 +318,14 @@ button{cursor:pointer;touch-action:manipulation}
   .assembly-layout{grid-template-columns:minmax(0,1fr)}
   .assembly-diary .paper{max-height:32vh}
 }
-.assembly-diary .paper{padding:28px 32px;font-size:22px;line-height:1.85;max-height:calc(100dvh - 160px);overflow:auto}
+.assembly-diary .paper{padding:28px 32px;font-size:22px;line-height:1.85;
+  max-height:calc(100dvh - 160px);overflow:auto;
+  --scroll-edge:rgba(246,240,225,0.97);
+  scrollbar-color:rgba(120,98,62,0.55) rgba(90,72,44,0.12)}
+.assembly-diary .paper::-webkit-scrollbar-track{background:rgba(90,72,44,0.12)}
+.assembly-diary .paper::-webkit-scrollbar-thumb{background:rgba(120,98,62,0.55);background-clip:content-box}
 .assembly-stackview{perspective:1000px;padding:8px 6px 16px;
-  overflow-x:auto;overflow-y:visible;min-width:0;overscroll-behavior-x:contain}
+  overflow-x:auto;overflow-y:visible;min-width:0;--scroll-edge:rgba(25,19,9,0.94)}
 .assembly-stackview .stack{padding-left:14px;transform:rotateX(5deg);transform-origin:50% 0}
 .assembly-stackview .bar .face{transform:skewX(-18deg)}
 .assembly-stackview .bar .face > *{transform:skewX(18deg)}
@@ -358,8 +336,8 @@ button{cursor:pointer;touch-action:manipulation}
    버튼 줄은 카드 바닥에 붙여 항상 보이게 한다. */
 #intro .card{width:min(720px,100%);max-height:calc(100dvh - 32px - var(--sa-t) - var(--sa-b));
   display:flex;flex-direction:column;overflow:hidden;padding:0}
-#intro .intro-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;
-  padding:40px 40px 8px}
+#intro .intro-scroll{flex:1 1 auto;min-height:0;overflow:auto;
+  padding:40px 40px 8px;--scroll-edge:rgba(29,22,14,0.96)}
 #intro .intro-actions{flex:none;display:flex;gap:12px;flex-wrap:wrap;
   padding:16px 40px calc(16px + var(--sa-b));border-top:1px solid var(--line);
   background:linear-gradient(180deg,rgba(20,15,9,0.92),rgba(20,15,9,0.99))}
@@ -376,7 +354,7 @@ button{cursor:pointer;touch-action:manipulation}
 .fin .sb{color:var(--text-dim);font-size:var(--fs-meta);line-height:1.8}
 
 #ending-scene{position:fixed;inset:0;z-index:170;display:grid;grid-template-columns:minmax(300px,38vw) minmax(0,1fr);background:#050403;color:#eee6d6;overflow:hidden}
-.ending-credits{position:relative;z-index:2;min-width:0;height:100%;overflow:auto;padding:clamp(26px,4vh,52px) clamp(24px,4vw,58px) 0;background:linear-gradient(90deg,rgba(8,6,3,0.99),rgba(16,12,7,0.97) 72%,rgba(16,12,7,0.82));border-right:1px solid rgba(214,186,136,0.18)}
+.ending-credits{position:relative;z-index:2;min-width:0;height:100%;overflow:auto;--scroll-edge:rgba(11,8,5,0.96);padding:clamp(26px,4vh,52px) clamp(24px,4vw,58px) 0;background:linear-gradient(90deg,rgba(8,6,3,0.99),rgba(16,12,7,0.97) 72%,rgba(16,12,7,0.82));border-right:1px solid rgba(214,186,136,0.18)}
 .ending-credit-inner{max-width:560px;margin:0 auto;text-align:center;animation:endingCreditsIn 1.2s ease both}
 @keyframes endingCreditsIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
 .ending-kicker{font-size:var(--fs-label);letter-spacing:.28em;color:#c0a87e;margin-bottom:16px}
@@ -597,6 +575,8 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
      보이는 상태가 됐다. 이 둘은 '연출'이 아니라 장면 전환 자체라 남긴다. */
   #whiteout{transition:opacity .45s linear!important}
   #stage-transition{transition:opacity .45s linear!important}
+  /* 스크롤 표시는 연출이 아니라 정보다. 움직임만 끄고 표시는 남긴다. */
+  .scroll-edge{transition:opacity .2s linear!important}
 }
 </style>
 </head>
@@ -624,7 +604,7 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
 
 <div class="sheetwrap" id="intro">
   <div class="card">
-    <div class="intro-scroll">
+    <div class="intro-scroll scrolls fade-y">
     <h1>이름 없는 교실</h1>
     <p>한 사람이 이름을 남기지 않고 세상을 떠났습니다. 유언장에는 재산의 사용처 대신 이런 문장만 적혀 있었습니다.</p>
     <div class="will">
@@ -651,7 +631,7 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
       <div><h2 id="m-title">—</h2><div class="sub" id="m-sub"></div></div>
       <button class="btn btn-s" data-x>닫기</button>
     </div>
-    <div class="card-body" id="m-body"></div>
+    <div class="card-body scrolls fade-y" id="m-body"></div>
   </div>
 </div>
 
@@ -753,7 +733,7 @@ var SHEET=[
  {dir:"v",a:["apple",0],    b:["compass",180]}
 ];
 function symbolSheetHTML(){
-  return '<div class="sgrid">'+SHEET.map(function(t){
+  return '<div class="sgrid scrolls fade-x">'+SHEET.map(function(t){
     function cell(x){return '<div class="scell"><span style="transform:rotate('+x[1]+'deg)"><i class="mk"></i>'+SYMBOL_SVG[x[0]]+'</span></div>';}
     return '<div class="stile '+t.dir+'">'+cell(t.a)+cell(t.b)+'</div>';
   }).join("")+'</div>';
@@ -915,6 +895,84 @@ function setupAnswerInput(inp){
   inp.autocomplete="off";inp.autocapitalize="none";inp.spellcheck=false;
   inp.setAttribute("pattern","[A-Za-z0-9]*");
 }
+/* ── 스크롤 표시 ──────────────────────────────────────────────────────
+   .scrolls 영역이 실제로 넘치는지 재서, 그 위에 가장자리 오버레이를 덮는다.
+   CSS 만으로는 안 된다 — 자식이 불투명 배경을 가지면 배경 그라디언트가
+   가려지고, 오버레이 스크롤바는 만지기 전까지 보이지 않는다.
+   오버레이는 body 에 두고 fixed 로 위치를 잡으므로 기존 레이아웃을
+   건드리지 않는다. */
+var _edges = {};
+function edgeEl(key, side){
+  var k = key + ":" + side;
+  if(!_edges[k]){
+    var d = el("div", "scroll-edge " + side);
+    document.body.appendChild(d);
+    _edges[k] = d;
+  }
+  return _edges[k];
+}
+function placeEdge(host, side, on, rect, thick){
+  var d = edgeEl(host._edgeKey, side);
+  var cs = getComputedStyle(host);
+  var edge = cs.getPropertyValue("--scroll-edge").trim();
+  if(edge) d.style.setProperty("--edge", edge);
+  var mark = cs.getPropertyValue("--scroll-mark").trim();
+  d.style.setProperty("--edge-mark", mark || "#e6cf9e");
+  if(side === "top" || side === "bottom"){
+    d.style.left = rect.left + "px";
+    d.style.width = rect.width + "px";
+    d.style.height = thick + "px";
+    d.style.top = (side === "top" ? rect.top : rect.bottom - thick) + "px";
+  }else{
+    d.style.top = rect.top + "px";
+    d.style.height = rect.height + "px";
+    d.style.width = thick + "px";
+    d.style.left = (side === "left" ? rect.left : rect.right - thick) + "px";
+  }
+  d.classList.toggle("on", !!on);
+}
+
+var _edgeSeq = 0;
+function markScrollables(){
+  $$(".scrolls").forEach(function(host){
+    if(!host._edgeKey) host._edgeKey = "s" + (++_edgeSeq);
+    if(!host._scrollBound){
+      host._scrollBound = true;
+      host.addEventListener("scroll", function(){ markScrollables(); }, {passive:true});
+    }
+    var visible = host.offsetParent !== null || getComputedStyle(host).position === "fixed";
+    var oy = host.scrollHeight - host.clientHeight;
+    var ox = host.scrollWidth  - host.clientWidth;
+    var canY = visible && oy > 2 && host.classList.contains("fade-y");
+    var canX = visible && ox > 2 && host.classList.contains("fade-x");
+    host.classList.toggle("can-y", visible && oy > 2);
+    host.classList.toggle("can-x", visible && ox > 2);
+
+    var r = host.getBoundingClientRect();
+    placeEdge(host, "top",    canY && host.scrollTop > 1,        r, 34);
+    placeEdge(host, "bottom", canY && host.scrollTop < oy - 1,   r, 34);
+    placeEdge(host, "left",   canX && host.scrollLeft > 1,       r, 30);
+    placeEdge(host, "right",  canX && host.scrollLeft < ox - 1,  r, 30);
+  });
+  /* 사라진 컨테이너의 오버레이는 숨긴다 */
+  Object.keys(_edges).forEach(function(k){
+    var d = _edges[k];
+    if(!document.querySelector(".scrolls")) d.classList.remove("on");
+  });
+}
+/* 내용·크기가 바뀌면 다시 잰다. 폰트나 이미지 때문에 늦게 넘치는 경우가
+   있어 한 박자 뒤에도 한 번 더 본다. */
+function refreshScrollHints(){
+  markScrollables();
+  setTimeout(markScrollables, 60);
+  setTimeout(markScrollables, 340);
+}
+function hideAllEdges(){
+  Object.keys(_edges).forEach(function(k){ _edges[k].classList.remove("on"); });
+}
+addEventListener("resize", refreshScrollHints);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(refreshScrollHints);
+
 var _tt;
 function toast(m,k){var t=$("#toast");t.textContent=m;t.className="show "+(k||"");
   clearTimeout(_tt);_tt=setTimeout(function(){t.className="";},2700);}
@@ -3101,7 +3159,7 @@ function clearTerminalCompanion(){
 function terminalAidPane(title,cls){
   var pane=el("section","terminal-aid-pane "+(cls||""));
   pane.appendChild(el("div","terminal-aid-head",title));
-  var scroll=el("div","terminal-aid-scroll");pane.appendChild(scroll);
+  var scroll=el("div","terminal-aid-scroll scrolls fade-y");pane.appendChild(scroll);
   return {pane:pane,scroll:scroll};
 }
 /* 일기 본문 한 벌 — 터미널 옆 패널과 일기 모달이 같이 쓴다. */
@@ -3200,6 +3258,7 @@ function showTerminalCompanion(c){
   grid.appendChild(terminalAidDiary(c));
   if(spec.kind)grid.appendChild(terminalAidResource(spec));
   host.appendChild(grid);document.body.appendChild(host);
+  refreshScrollHints();
 }
 var _modalReturnFocus=null;
 function openModal(title,sub,build,afterClose,closeText){
@@ -3210,6 +3269,7 @@ function openModal(title,sub,build,afterClose,closeText){
   $("#modal [data-x]").textContent=closeText||"닫기";
   $("#modal").classList.remove("hidden");
   $("#reticle").classList.remove("hot");$("#label").classList.remove("show");
+  refreshScrollHints();
   /* 키보드 사용자가 캔버스에 갇히지 않도록 포커스를 모달로 넘긴다. */
   var active=document.activeElement;
   _modalReturnFocus=(active&&active!==document.body)?active:null;
@@ -3218,6 +3278,7 @@ function openModal(title,sub,build,afterClose,closeText){
 }
 function closeModal(){
   if($("#modal").classList.contains("hidden"))return;
+  hideAllEdges();
   clearTerminalCompanion();
   $$("#m-body video").forEach(function(v){v.pause();});
   $("#modal").classList.add("hidden");
@@ -3340,8 +3401,8 @@ function showAssembly(){
   openModal("기억을 쌓다","마지막 일기를 보며 기억 조각을 맞추세요",function(b){
     var layout=el("div","assembly-layout");
     var diaryCol=el("div","assembly-diary");
-    diaryCol.appendChild(el("article","paper",DIARY_HTML.diary9));
-    var work=el("div","assembly-stackview");
+    diaryCol.appendChild(el("article","paper scrolls fade-y",DIARY_HTML.diary9));
+    var work=el("div","assembly-stackview scrolls fade-x");
     var host=el("div");work.appendChild(host);
     var term=el("div");work.appendChild(term);
     layout.appendChild(diaryCol);layout.appendChild(work);b.appendChild(layout);
@@ -3373,6 +3434,7 @@ function showAssembly(){
   });
 }
 function closeEndingScene(){
+  hideAllEdges();
   var x=$("#ending-scene");
   if(x){var v=x.querySelector("video");if(v){try{v.pause();}catch(e){}}x.remove();}
   document.body.classList.remove("ending");
@@ -3380,7 +3442,7 @@ function closeEndingScene(){
 function showEnding(){
   closeEndingScene();clearTerminalCompanion();document.body.classList.add("ending");
   var x=el("section");x.id="ending-scene";
-  x.innerHTML='<div class="ending-credits"><div class="ending-credit-inner">'+
+  x.innerHTML='<div class="ending-credits scrolls fade-y"><div class="ending-credit-inner">'+
     '<div class="ending-kicker">STEPHEN HAWKING · FINAL MEMORY</div>'+
     '<h2 class="ending-name">스티븐 호킹</h2><div class="ending-years">1942 — 2018</div>'+
     '<section class="ending-credit-section"><div class="ending-credit-label">ABOUT HIM</div>'+
@@ -3397,6 +3459,7 @@ function showEnding(){
     '<div class="ending-film"><video controls autoplay playsinline src="'+A.videoFinale+'"></video></div>'+
     '<button type="button" class="ending-close" data-ending-close>교실로 돌아가기</button>';
   document.body.appendChild(x);
+  refreshScrollHints();
   x.querySelector("[data-ending-close]").onclick=closeEndingScene;
 }
 function goToNextStage(){
@@ -3879,6 +3942,7 @@ function boot(){
   refreshBoard();
   loop();
   $("#loading").classList.add("hidden");
+  refreshScrollHints();
   /* 방이 뜬 뒤에 노멀·러프니스 맵을 채워 넣는다. */
   if(window.requestIdleCallback) requestIdleCallback(runPbrJobs,{timeout:300});
   else setTimeout(runPbrJobs,32);

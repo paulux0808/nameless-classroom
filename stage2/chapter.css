@@ -153,6 +153,39 @@ p.hint b{color:#9fc6ea}
 #toast.good{border-color:rgba(111,191,149,.5)}
 #toast.bad{border-color:var(--danger);color:#f4d6d0}
 
+/* ── 스크롤 표시 ──────────────────────────────────────────────────────
+   넘치면 스크롤할 수 있다는 걸 반드시 눈에 보이게 한다. macOS/iOS 는
+   만지기 전까지 스크롤바를 숨기고, 자식이 불투명 배경을 가지면 CSS
+   그라디언트는 가려진다. 그래서 실제 요소를 위에 덮는다.
+   위치는 engine.js 의 markScrollables() 가 잡는다. */
+.scrolls{scrollbar-width:thin;
+  scrollbar-color:rgba(168,182,200,0.5) rgba(255,255,255,0.06);
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.scrolls::-webkit-scrollbar{width:10px;height:10px}
+.scrolls::-webkit-scrollbar-track{background:rgba(255,255,255,0.06);border-radius:6px}
+.scrolls::-webkit-scrollbar-thumb{background:rgba(168,182,200,0.45);border-radius:6px;
+  border:2px solid transparent;background-clip:content-box}
+.scrolls.can-y{scrollbar-gutter:stable}
+
+.scroll-edge{position:fixed;z-index:70;pointer-events:none;opacity:0;
+  transition:opacity .18s ease}
+.scroll-edge.on{opacity:1}
+.scroll-edge.top   {background:linear-gradient(rgba(4,6,9,.42),transparent)}
+.scroll-edge.bottom{background:linear-gradient(transparent,rgba(4,6,9,.42))}
+.scroll-edge.left  {background:linear-gradient(90deg,rgba(4,6,9,.38),transparent)}
+.scroll-edge.right {background:linear-gradient(90deg,transparent,rgba(4,6,9,.38))}
+.scroll-edge.bottom::after,
+.scroll-edge.right::after{
+  content:"▾";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);
+  display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
+  font-size:13px;line-height:1;color:#dce7f4;
+  background:rgba(14,18,24,0.9);border:1px solid rgba(168,182,200,0.45);
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);animation:edgeBob 1.8s ease-in-out infinite}
+.scroll-edge.right::after{content:"▸";left:auto;right:4px;bottom:50%;
+  transform:translateY(50%);animation:none}
+@keyframes edgeBob{0%,100%{transform:translateX(-50%) translateY(0)}
+                   50%{transform:translateX(-50%) translateY(3px)}}
+
 #loading{position:fixed;inset:0;z-index:200;display:grid;place-items:center;gap:10px;
   background:#07090c;color:var(--dim);font-size:var(--fs-meta);letter-spacing:.08em;
   text-align:center;align-content:center}
@@ -192,4 +225,6 @@ body.touch.portrait #rotate{display:grid}
 @media(prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
   #bar-fill{transition:width .3s linear!important}
+  /* 스크롤 표시는 연출이 아니라 정보다. 움직임만 끄고 표시는 남긴다. */
+  .scroll-edge{transition:opacity .2s linear!important}
 }
