@@ -17,14 +17,38 @@ h1{margin:22px 0 14px;font:500 clamp(52px,10vw,102px)/.9 Georgia,"Times New Roma
 p{margin:0;color:var(--dim);font-size:14px;line-height:1.8;letter-spacing:.08em}
 a{display:inline-block;margin-top:42px;border:1px solid rgba(197,162,95,.55);padding:13px 22px;color:var(--paper);text-decoration:none;font:700 11px/1 ui-monospace,monospace;letter-spacing:.16em;transition:.2s ease}
 a:hover,a:focus-visible{outline:none;background:var(--gold);color:#111}
+
+/* 히든 루트 — 마지막 마침표.
+   겉보기는 그냥 마침표여야 한다. 커서도 바꾸지 않는다(포인터로 바뀌면
+   숨긴 의미가 없다). 대신 눌릴 만큼의 여백만 준다. */
+.dot{display:inline-block;padding:0 .45em;margin:0 -.45em;
+  cursor:default;user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent}
+.dot:focus{outline:none}
 </style>
 </head>
 <body>
 <main>
   <div class="kicker">STAGE 02 · PREPARING</div>
   <h1>NAMELESS</h1>
-  <p>스테이지 2는 현재 준비 중입니다.</p>
+  <p>스테이지 2는 현재 준비 중입니다<span class="dot" id="dot">.</span></p>
   <a href="../">메인으로 돌아가기</a>
 </main>
+<script>
+/* 마침표를 누르면 스테이지 2로 들어간다.
+   아직 인덱스에 링크를 걸지 않은 단계라, 아는 사람만 들어가는 경로다. */
+(function(){
+  var dot=document.getElementById("dot");
+  if(!dot)return;
+  function enter(e){
+    e.preventDefault();
+    try{sessionStorage.setItem("nameless-stage2-access","0808");}catch(err){}
+    location.href="../stage2/";
+  }
+  dot.addEventListener("click",enter);
+  /* 터치에서 링크로 오인되지 않게 기본 동작만 막는다 */
+  dot.addEventListener("touchend",enter,{passive:false});
+})();
+</script>
 </body>
 </html>
