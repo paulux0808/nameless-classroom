@@ -23,6 +23,7 @@
   var BLOCKS = [];
   var docsNow = {};              /* 현재 유효한 문서(원본 또는 수정본) */
   var npc = null, npcMixer = null, npcClips = {}, npcAction = null;
+  var deskProps = {};
   var picked = null;             /* 대조를 위해 먼저 짚은 필드 */
   var _dir = null, _look = null;
   var _hoverAt = 0;
@@ -97,7 +98,7 @@
     scene.fog = new THREE.Fog(0x0d0f12, 8, 26);
 
     camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.05, 80);
-    camera.position.set(0, EYE, 3.0);
+    camera.position.set(0, EYE, 2.35);
     yaw = Math.PI;      /* 책상(-z)을 마주본다 */
     pitch = -0.16;      /* 책상 상판이 화면에 들어오도록 약간 내린다 */
     ray = new THREE.Raycaster();
@@ -108,13 +109,20 @@
     resize();
   }
 
-  /* 1943년 연구시설 사무실. 벽·바닥·천장만 절차적이고,
-     그 안의 물건은 전부 실제 모델을 쓴다. */
+  /* 1943년 연구시설의 책임자 사무실.
+     구조(바닥·벽·천장·걸레받이·판벽)만 절차적이고 물건은 실제 모델을 쓴다.
+     7x9m 는 물건 대여섯 개로는 채울 수 없어 휑했다. 집무실 규모로 줄인다. */
+  var ROOM = { W: 5.4, D: 6.6, H: 2.9 };
+
   function buildRoom() {
-    var W = 7, D = 9, H = 3.2;
-    var floorMat = new THREE.MeshStandardMaterial({ color: 0x4a3d2e, roughness: 0.92 });
-    var wallMat = new THREE.MeshStandardMaterial({ color: 0x6b6455, roughness: 0.95 });
-    var ceilMat = new THREE.MeshStandardMaterial({ color: 0x8d8878, roughness: 1 });
+    var W = ROOM.W, D = ROOM.D, H = ROOM.H;
+    var WAINSCOT = 1.02;   /* 허리 높이 판벽 */
+
+    var floorMat = new THREE.MeshStandardMaterial({ color: 0x6b5537, roughness: 0.88 });
+    var upperMat = new THREE.MeshStandardMaterial({ color: 0x9a9384, roughness: 0.96 });
+    var lowerMat = new THREE.MeshStandardMaterial({ color: 0x4f5347, roughness: 0.9 });
+    var trimMat  = new THREE.MeshStandardMaterial({ color: 0x3a3228, roughness: 0.7 });
+    var ceilMat  = new THREE.MeshStandardMaterial({ color: 0xb4ada0, roughness: 1 });
 
     var floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorMat);
     floor.rotation.x = -Math.PI / 2;
@@ -126,20 +134,45 @@
     ceil.position.y = H;
     scene.add(ceil);
 
+    /* 벽 한 면 = 위쪽 회벽 + 아래쪽 판벽 + 경계 몰딩 + 걸레받이.
+       단색 한 장이면 눈이 붙잡을 데가 없어 더 휑해 보인다. */
     function wall(w, x, z, ry) {
-      var m = new THREE.Mesh(new THREE.PlaneGeometry(w, H), wallMat);
-      m.position.set(x, H / 2, z);
-      m.rotation.y = ry;
-      m.receiveShadow = true;
-      scene.add(m);
+      var g = new THREE.Group();
+      g.position.set(x, 0, z); g.rotation.y = ry;
+
+      var upper = new THREE.Mesh(new THREE.PlaneGeometry(w, H - WAINSCOT), upperMat);
+      upper.position.y = WAINSCOT + (H - WAINSCOT) / 2;
+      upper.receiveShadow = true; g.add(upper);
+
+      var lower = new THREE.Mesh(new THREE.PlaneGeometry(w, WAINSCOT), lowerMat);
+      lower.position.y = WAINSCOT / 2;
+      lower.receiveShadow = true; g.add(lower);
+
+      var cap = new THREE.Mesh(new THREE.BoxGeometry(w, 0.05, 0.035), trimMat);
+      cap.position.set(0, WAINSCOT, 0.02);
+      cap.castShadow = true; g.add(cap);
+
+      var base = new THREE.Mesh(new THREE.BoxGeometry(w, 0.11, 0.045), trimMat);
+      base.position.set(0, 0.055, 0.025);
+      base.castShadow = true; g.add(base);
+
+      scene.add(g);
     }
     wall(W, 0, -D / 2, 0);
-    wall(W, 0, D / 2, Math.PI);
+    wall(W, 0,  D / 2, Math.PI);
     wall(D, -W / 2, 0, Math.PI / 2);
-    wall(D, W / 2, 0, -Math.PI / 2);
+    wall(D,  W / 2, 0, -Math.PI / 2);
 
-    /* 방 경계 + 책상을 통과하지 못하게 한다 */
-    BLOCKS = [{ x: 0, z: 0.5, hx: 0.9, hz: 0.45 }];
+    /* 천장 보 — 위쪽이 비어 보이는 걸 막는다 */
+    for (var i = -1; i <= 1; i++) {
+      var beam = new THREE.Mesh(new THREE.BoxGeometry(W, 0.16, 0.18), trimMat);
+      beam.position.set(0, H - 0.08, i * 1.9);
+      beam.castShadow = true; beam.receiveShadow = true;
+      scene.add(beam);
+    }
+
+    /* 방 경계와 책상을 통과하지 못하게 한다 */
+    BLOCKS = [{ x: 0, z: 0.5, hx: 1.0, hz: 0.5 }];
   }
 
   function buildLights() {
@@ -294,6 +327,90 @@
     npcAction = next;
   }
 
+  /* ── 책상 위 소품 ─────────────────────────────────────────────────────
+     조사 대상이 눈에 보여야 한다. 지금까지 문서와 도장은 투명 히트박스라
+     "제출된 자료를 확인하십시오" 라고 해놓고 볼 것이 없었다.
+     실제 모델을 구하기 전까지 쓰는 절차적 소품이다. */
+  function paperTex(lines) {
+    var c = document.createElement("canvas");
+    c.width = 256; c.height = 340;
+    var g = c.getContext("2d");
+    g.fillStyle = "#efe7d2"; g.fillRect(0, 0, 256, 340);
+    g.fillStyle = "#cfc4a8"; g.fillRect(0, 0, 256, 6);
+    g.strokeStyle = "rgba(60,50,34,.28)";
+    g.lineWidth = 2;
+    for (var i = 0; i < (lines || 14); i++) {
+      var y = 44 + i * 19;
+      g.beginPath(); g.moveTo(22, y); g.lineTo(210 - (i % 3) * 26, y); g.stroke();
+    }
+    g.strokeStyle = "rgba(60,50,34,.5)";
+    g.strokeRect(2, 2, 252, 336);
+    var t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  /* 종이 여러 장을 살짝 어긋나게 쌓는다 */
+  function paperStack(count, w, h) {
+    var g = new THREE.Group();
+    var mat = new THREE.MeshStandardMaterial({
+      map: paperTex(14), roughness: 0.92, metalness: 0, side: THREE.DoubleSide
+    });
+    for (var i = 0; i < count; i++) {
+      var sheet = new THREE.Mesh(new THREE.BoxGeometry(w, 0.0016, h), mat);
+      sheet.position.set((Math.random() - 0.5) * 0.012, i * 0.0018,
+                         (Math.random() - 0.5) * 0.012);
+      sheet.rotation.y = (Math.random() - 0.5) * 0.07;
+      sheet.castShadow = true; sheet.receiveShadow = true;
+      g.add(sheet);
+    }
+    return g;
+  }
+
+  /* 손잡이 달린 나무 도장 + 잉크 패드 */
+  function stampProp() {
+    var g = new THREE.Group();
+    var wood = new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.55 });
+    var base = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.036, 0.022, 20), wood);
+    base.position.y = 0.011; g.add(base);
+    var neck = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.013, 0.036, 14), wood);
+    neck.position.y = 0.040; g.add(neck);
+    var knob = new THREE.Mesh(new THREE.SphereGeometry(0.021, 18, 14), wood);
+    knob.position.y = 0.068; g.add(knob);
+
+    var pad = new THREE.Group();
+    var tin = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.016, 0.075),
+      new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.42, metalness: 0.6 }));
+    tin.position.y = 0.008; pad.add(tin);
+    var ink = new THREE.Mesh(new THREE.BoxGeometry(0.086, 0.006, 0.062),
+      new THREE.MeshStandardMaterial({ color: 0x7d1f18, roughness: 0.85 }));
+    ink.position.y = 0.017; pad.add(ink);
+    pad.position.set(0.085, 0, 0.02);
+    g.add(pad);
+
+    g.traverse(function (n) { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+    return g;
+  }
+
+  /* 앵커에 소품을 놓고 히트박스를 씌운다 */
+  function buildDeskProps() {
+    var a = chapter.anchors || {};
+    if (a.incomingSlot) {
+      var docs = paperStack(9, 0.21, 0.29);
+      docs.position.set(a.incomingSlot[0], a.incomingSlot[1], a.incomingSlot[2]);
+      docs.rotation.y = -0.14;
+      scene.add(docs);
+      deskProps.docs = docs;
+    }
+    if (a.stampPad) {
+      var st = stampProp();
+      st.position.set(a.stampPad[0], a.stampPad[1], a.stampPad[2]);
+      st.rotation.y = 0.22;
+      scene.add(st);
+      deskProps.stamp = st;
+    }
+  }
+
   /* ── 상호작용 지점 ─────────────────────────────────────────────────── */
   function hot(mesh, id, name) {
     mesh.userData.hot = { id: id, name: name };
@@ -312,10 +429,12 @@
   function buildHotspots() {
     var a = chapter.anchors || {};
     if (a.incomingSlot) {
-      scene.add(hot(invisibleHit(0.5, 0.14, 0.36, a.incomingSlot), "docs", "제출 자료"));
+      scene.add(hot(invisibleHit(0.30, 0.16, 0.38,
+        [a.incomingSlot[0], a.incomingSlot[1] + 0.05, a.incomingSlot[2]]), "docs", "제출 자료"));
     }
     if (a.stampPad) {
-      scene.add(hot(invisibleHit(0.3, 0.14, 0.3, a.stampPad), "stamp", "도장"));
+      scene.add(hot(invisibleHit(0.26, 0.18, 0.20,
+        [a.stampPad[0] + 0.04, a.stampPad[1] + 0.06, a.stampPad[2]]), "stamp", "도장"));
     }
     /* NPC 히트박스는 모델을 올린 뒤 loadNPC() 가 실제 위치에 만든다.
        모델이 없는 챕터만 앵커 자리에 임시로 둔다. */
@@ -329,9 +448,11 @@
   function openDocs() {
     picked = null;
     openSheet("제출 자료", chapter.npc + " · " + chapter.title, function (body) {
-      body.appendChild(el("p", "hint",
-        "두 자료의 값을 하나씩 눌러 <b>맞대어 보세요.</b> " +
-        "이어지지 않는 곳이 있으면 그때 드러납니다."));
+      body.appendChild(el("p", "hint", isVerifyPhase()
+        ? "반려한 자리들이 <b>이제 이어지는지</b> 하나씩 맞대어 확인하세요. " +
+          "아래 목록의 항목마다 같은 두 자리를 다시 눌러 보면 됩니다."
+        : "두 자료의 값을 하나씩 눌러 <b>맞대어 보세요.</b> " +
+          "이어지지 않는 곳이 있으면 그때 드러납니다."));
 
       var grid = el("div", "doc-grid");
       Object.keys(docsNow).forEach(function (docId) {
@@ -360,26 +481,36 @@
     });
   }
 
-  function pickField(ref, btn) {
-    if (!picked) {
-      picked = ref;
-      document.querySelectorAll(".field.picked").forEach(function (b) {
-        b.classList.remove("picked");
-      });
-      btn.classList.add("picked");
-      return;
-    }
-    if (picked === ref) {   /* 같은 것을 두 번 누르면 선택 해제 */
-      picked = null;
-      btn.classList.remove("picked");
-      return;
-    }
-    var res = L.applyCompare(chapter, S.found, picked, ref, docsNow);
+  function clearPicked() {
     picked = null;
     document.querySelectorAll(".field.picked").forEach(function (b) {
       b.classList.remove("picked");
     });
+  }
 
+  function isVerifyPhase() {
+    return S.phase === L.PHASE.REVISED || S.phase === L.PHASE.VERIFIED;
+  }
+
+  function pickField(ref, btn) {
+    if (!picked) {
+      clearPicked();
+      picked = ref;
+      btn.classList.add("picked");
+      return;
+    }
+    if (picked === ref) {   /* 같은 것을 두 번 누르면 선택 해제 */
+      clearPicked();
+      return;
+    }
+    var a = picked;
+    clearPicked();
+
+    /* 조사(모순 찾기)와 재검증(이어졌는지 확인)은 같은 동작이지만
+       국면에 따라 의미가 반대다. */
+    if (isVerifyPhase()) return verifyField(a, ref);
+
+    var res = L.applyCompare(chapter, S.found, a, ref, docsNow);
     if (!res.rule) { toast("두 값 사이에 문제는 없습니다."); return; }
     if (!res.isNew) { toast("이미 확인한 부분입니다."); return; }
 
@@ -390,17 +521,45 @@
     refreshSheet();
   }
 
+  function verifyField(a, b) {
+    var res = L.applyVerify(chapter, S.verified || [], a, b, docsNow);
+    if (!res.rule) { toast("이 둘은 확인할 자리가 아닙니다."); return; }
+    if (res.stillBroken) {
+      toast("아직 이어지지 않습니다: " + safeText(res.rule.label), "bad");
+      return;
+    }
+    if (!res.isNew) { toast("이미 확인했습니다."); return; }
+
+    S.verified = res.verified;
+    advancePhase();
+    save();
+    toast("확인됨 — " + safeText(okLabel(res.rule)), "good");
+    refreshSheet();
+  }
+
   function findingsPanel() {
+    var verifying = isVerifyPhase();
+    var done = verifying ? (S.verified || []) : S.found;
     var box = el("section", "findings");
-    box.appendChild(el("h4", null,
-      "확인한 것 (" + S.found.length + " / " + chapter.required.length + ")"));
+    box.appendChild(el("h4", null, (verifying ? "다시 확인할 자리" : "확인한 것") +
+      " (" + done.length + " / " + chapter.required.length + ")"));
     var ul = el("ul");
     chapter.required.forEach(function (id) {
       var rule = chapter.rules.filter(function (r) { return r.id === id; })[0];
-      var got = S.found.indexOf(id) >= 0;
-      var li = el("li", got ? "got" : "pending",
-        got ? "<b>" + safeText(rule.label) + "</b><span>" + safeText(rule.detail) + "</span>"
-            : "아직 확인하지 못한 부분이 있습니다.");
+      var got = done.indexOf(id) >= 0;
+      var li;
+      if (verifying) {
+        /* 무엇을 확인해야 하는지 명시한다. 반려한 것은 플레이어 자신이므로
+           숨길 이유가 없다 — 숨기면 무엇을 눌러야 할지 알 수 없다. */
+        var pair = L.rulePair(rule).map(fieldLabel).join("  ↔  ");
+        li = el("li", got ? "got" : "pending",
+          got ? "<b>확인됨 — " + safeText(okLabel(rule)) + "</b>"
+              : "<b>" + safeText(rule.label) + "</b><span>" + pair + "</span>");
+      } else {
+        li = el("li", got ? "got" : "pending",
+          got ? "<b>" + safeText(rule.label) + "</b><span>" + safeText(rule.detail) + "</span>"
+              : "아직 확인하지 못한 부분이 있습니다.");
+      }
       ul.appendChild(li);
     });
     box.appendChild(ul);
@@ -413,6 +572,21 @@
           : "수정본이 전부 이어집니다. 책상의 <b>도장</b>을 쓰십시오."));
     }
     return box;
+  }
+
+  /* 재검증이 끝났을 때 보여줄 문구. 챕터가 ok 를 주면 그것을 쓴다 —
+     라벨을 정규식으로 주무르면 규칙마다 문장이 어색해진다. */
+  function okLabel(rule) {
+    return rule.ok || (rule.label + " — 해소됨");
+  }
+
+  /* "card02.fields.output" → "계산 카드 02 · OUTPUT" */
+  function fieldLabel(ref) {
+    var parts = String(ref).split(".");
+    var doc = docsNow[parts[0]];
+    var key = parts[parts.length - 1];
+    var name = (chapter.labels && chapter.labels[key]) || key;
+    return (doc ? doc.title : parts[0]) + " · " + name;
   }
 
   function refreshSheet() {
@@ -428,15 +602,10 @@
   }
 
   function advancePhase() {
-    var found = S.phase === L.PHASE.REVISED ? verifiedFindings() : S.found;
-    setPhase(L.nextPhase(S.phase, chapter.required, found));
-  }
-
-  /* 수정본에서 각 모순이 해소되었는지 확인한 목록 */
-  function verifiedFindings() {
-    return chapter.rules.filter(function (r) {
-      return !L.ruleHolds(r, docsNow);
-    }).map(function (r) { return r.id; });
+    /* 재검증 국면에서는 플레이어가 실제로 확인한 것만 센다.
+       엔진이 알아서 세어 버리면 확인하는 행위 자체가 사라진다. */
+    var done = isVerifyPhase() ? (S.verified || []) : S.found;
+    setPhase(L.nextPhase(S.phase, chapter.required, done));
   }
 
   /* ── 도장 ──────────────────────────────────────────────────────────── */
@@ -470,7 +639,7 @@
       say(chapter.lines.rejected, function () {
         /* 수정/재시험 몽타주 후 재제출 */
         docsNow = Object.assign({}, chapter.docs, chapter.revisedDocs || {});
-        S.found = [];
+        S.verified = [];
         setPhase(L.PHASE.REVISED);
         save();
         say(chapter.lines.revised, function () {
@@ -604,7 +773,7 @@
     goal[L.PHASE.INSPECTING]  = "아직 맞지 않는 곳이 남아 있습니다.";
     goal[L.PHASE.CONTRADICTION] = "모순이 드러났습니다. 도장을 쓰십시오.";
     goal[L.PHASE.REJECTED]    = "수정본을 기다립니다.";
-    goal[L.PHASE.REVISED]     = "수정본을 다시 확인하십시오.";
+    goal[L.PHASE.REVISED]     = "수정본에서 반려한 자리가 <b>이어지는지</b> 확인하십시오.";
     goal[L.PHASE.VERIFIED]    = "전부 이어집니다. 도장을 쓰십시오.";
     goal[L.PHASE.APPROVED]    = "이 챕터는 끝났습니다.";
     $("#objective").innerHTML = goal[S.phase] || "";
@@ -743,7 +912,8 @@
 
   /* ── 이동 ──────────────────────────────────────────────────────────── */
   function canStand(x, z) {
-    if (x < -3.2 || x > 3.2 || z < -4.2 || z > 4.2) return false;
+    var mx = ROOM.W / 2 - 0.45, mz = ROOM.D / 2 - 0.45;
+    if (x < -mx || x > mx || z < -mz || z > mz) return false;
     for (var i = 0; i < BLOCKS.length; i++) {
       var b = BLOCKS[i];
       if (Math.abs(x - b.x) < b.hx + 0.3 && Math.abs(z - b.z) < b.hz + 0.3) return false;
@@ -828,6 +998,7 @@
     _loadTotal = (chapter.models || []).length + (chapter.npcModel ? 1 : 0);
 
     buildScene();
+    buildDeskProps();
     buildHotspots();
     initInput();
     renderHUD();

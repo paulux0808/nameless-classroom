@@ -236,6 +236,34 @@
     return { found: list, rule: rule, isNew: true };
   }
 
+  /* 재검증 — 반려 후 수정본에서 "이제 이어지는가" 를 확인하는 동작.
+     조사와 같은 행위(두 필드 대조)지만 의미가 반대다. 모순을 찾는 게
+     아니라, 끊겼던 자리가 이어졌음을 확인한다. */
+  function verifyPair(rules, refA, refB, docs) {
+    for (var i = 0; i < (rules || []).length; i++) {
+      var r = rules[i], p = rulePair(r);
+      if (p.length !== 2) continue;
+      var hit = (p[0] === refA && p[1] === refB) || (p[0] === refB && p[1] === refA);
+      if (!hit) continue;
+      /* 짝은 맞다. 이제 모순이 남아 있는지가 관건이다. */
+      return { rule: r, resolved: !ruleHolds(r, docs) };
+    }
+    return null;
+  }
+
+  /* 재검증 1회. { verified:[...], rule, isNew, stillBroken } */
+  function applyVerify(chapter, verified, refA, refB, docs) {
+    var m = verifyPair(chapter.rules, refA, refB, docs || chapter.docs);
+    var list = (verified || []).slice();
+    if (!m) return { verified: list, rule: null, isNew: false, stillBroken: false };
+    if (!m.resolved)
+      return { verified: list, rule: m.rule, isNew: false, stillBroken: true };
+    if (list.indexOf(m.rule.id) >= 0)
+      return { verified: list, rule: m.rule, isNew: false, stillBroken: false };
+    list.push(m.rule.id);
+    return { verified: list, rule: m.rule, isNew: true, stillBroken: false };
+  }
+
   /* 챕터 데이터 정합성 — 요구된 finding이 실제 모순으로 성립하는가 */
   function auditChapter(chapter) {
     var problems = [];
@@ -271,7 +299,8 @@
       started: false,
       chapter: 1,
       phase: PHASE.SUBMITTED,
-      found: [],
+      found: [],        /* 조사에서 찾아낸 모순 */
+      verified: [],     /* 수정본에서 이어졌음을 확인한 자리 */
       approved: [],
       spoiler: SPOILER.CHAPTERS,
       seenResults: false,
@@ -284,7 +313,9 @@
     if (!Number.isInteger(s.chapter) || s.chapter < CHAPTER_MIN || s.chapter > CHAPTER_MAX) return false;
     if (PHASE_ORDER.indexOf(s.phase) < 0) return false;
     if (!Array.isArray(s.found) || !Array.isArray(s.approved)) return false;
+    if (!Array.isArray(s.verified)) return false;
     if (s.found.some(function (f) { return typeof f !== "string"; })) return false;
+    if (s.verified.some(function (f) { return typeof f !== "string"; })) return false;
     if (s.approved.some(function (n) { return !Number.isInteger(n) || n < 1 || n > 8; })) return false;
     if (new Set(s.approved).size !== s.approved.length) return false;
     if (!Number.isInteger(s.spoiler) || s.spoiler < 0 || s.spoiler > 2) return false;
@@ -300,6 +331,8 @@
     if (PHASE_ORDER.indexOf(s.phase) < 0) s.phase = PHASE.SUBMITTED;
     if (!Array.isArray(s.found)) s.found = [];
     s.found = s.found.filter(function (f) { return typeof f === "string"; });
+    if (!Array.isArray(s.verified)) s.verified = [];
+    s.verified = s.verified.filter(function (f) { return typeof f === "string"; });
     if (!Array.isArray(s.approved)) s.approved = [];
     var seen = {};
     s.approved = s.approved.filter(function (n) {
@@ -335,6 +368,7 @@
     allFound: allFound, nextPhase: nextPhase,
     docField: docField, ruleHolds: ruleHolds, auditChapter: auditChapter,
     rulePair: rulePair, matchRule: matchRule, applyCompare: applyCompare,
+    verifyPair: verifyPair, applyVerify: applyVerify,
     freshState: freshState, isValidState: isValidState,
     repairState: repairState, normalizeState: normalizeState,
     damp: damp

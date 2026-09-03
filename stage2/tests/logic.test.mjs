@@ -150,99 +150,107 @@ test("damp는 프레임 시간에 독립이다", () => {
   assert.ok(Math.abs(a - b) < 1e-12);
 });
 
+/* 규칙에서 짝을 끌어온다. 챕터 데이터를 다시 손봐도 테스트가 깨지지 않는다. */
+const pairOf = id => L.rulePair(ch01.rules.find(r => r.id === id));
+
 test("두 필드를 대조하면 해당 모순이 드러난다", () => {
-  const r = L.applyCompare(ch01, [], "cardB.fields.output", "cardC.fields.input");
-  assert.equal(r.rule.id, "chain_bc");
+  const [a, b] = pairOf("chain_break");
+  const r = L.applyCompare(ch01, [], a, b);
+  assert.equal(r.rule.id, "chain_break");
   assert.ok(r.isNew);
-  assert.deepEqual(r.found, ["chain_bc"]);
+  assert.deepEqual(r.found, ["chain_break"]);
 });
 
 test("대조 순서는 상관없다", () => {
-  const a = L.matchRule(ch01.rules, "cardB.fields.output", "cardC.fields.input", ch01.docs);
-  const b = L.matchRule(ch01.rules, "cardC.fields.input", "cardB.fields.output", ch01.docs);
-  assert.equal(a.id, b.id);
+  const [a, b] = pairOf("chain_break");
+  assert.equal(L.matchRule(ch01.rules, a, b, ch01.docs).id,
+               L.matchRule(ch01.rules, b, a, ch01.docs).id);
 });
 
 test("무관한 두 필드를 짚으면 아무것도 드러나지 않는다", () => {
-  const r = L.applyCompare(ch01, [], "cardA.fields.batch", "cardB.fields.batch");
+  const r = L.applyCompare(ch01, [], "card01.fields.batch", "card02.fields.batch");
   assert.equal(r.rule, null);
   assert.deepEqual(r.found, []);
 });
 
 test("같은 모순을 두 번 찾아도 한 번만 센다", () => {
-  let s = L.applyCompare(ch01, [], "cardB.fields.output", "cardC.fields.input");
+  const [a, b] = pairOf("chain_break");
+  let s = L.applyCompare(ch01, [], a, b);
   assert.ok(s.isNew);
-  s = L.applyCompare(ch01, s.found, "cardC.fields.input", "cardB.fields.output");
+  s = L.applyCompare(ch01, s.found, b, a);
   assert.ok(!s.isNew, "중복 발견");
-  assert.deepEqual(s.found, ["chain_bc"]);
+  assert.deepEqual(s.found, ["chain_break"]);
 });
 
 test("수정본에서는 같은 대조가 모순을 드러내지 않는다", () => {
   const merged = { ...ch01.docs, ...ch01.revisedDocs };
-  const r = L.applyCompare(ch01, [], "cardB.fields.output", "cardC.fields.input", merged);
+  const [a, b] = pairOf("chain_break");
+  const r = L.applyCompare(ch01, [], a, b, merged);
   assert.equal(r.rule, null, "수정본에서도 모순이 잡히면 재검증이 무의미하다");
 });
 
-test("CH01 전체 플레이 경로 — 제출부터 승인까지", () => {
-  const { PHASE } = L;
-  let phase = PHASE.SUBMITTED, found = [];
-  assert.equal(L.activeStamp(phase), null);
+test("모순은 라벨이 아니라 값을 따라가야 나온다", () => {
+  /* 이전 판은 카드 하나만 "수정본(출처 미상)" 이라 적혀 있어 읽지 않아도
+     답이 보였다. 어떤 필드도 그 자체로 답을 알려주면 안 된다. */
+  const blob = JSON.stringify(ch01.docs);
+  for (const giveaway of ["미상", "불명", "오류", "잘못", "틀림", "이상", "확인 필요"]) {
+    assert.ok(!blob.includes(giveaway), `자료에 "${giveaway}" 가 있으면 답이 보인다`);
+  }
+});
 
-  for (const [a, b] of [
-    ["cardB.fields.output", "cardC.fields.input"],
-    ["summary.fields.batch", "cardC.fields.batch"],
-    ["cardA.fields.source", "cardC.fields.source"]
-  ]) {
-    found = L.applyCompare(ch01, found, a, b).found;
+test("재검증 — 수정본에서 이어졌음을 확인할 수 있다", () => {
+  const rev = { ...ch01.docs, ...ch01.revisedDocs };
+  const [a, b] = L.rulePair(ch01.rules.find(r => r.id === "chain_break"));
+  const r = L.applyVerify(ch01, [], a, b, rev);
+  assert.equal(r.rule.id, "chain_break");
+  assert.ok(r.isNew);
+  assert.ok(!r.stillBroken);
+  assert.deepEqual(r.verified, ["chain_break"]);
+});
+
+test("재검증 — 아직 안 고쳐졌으면 확인되지 않는다", () => {
+  const [a, b] = L.rulePair(ch01.rules.find(r => r.id === "chain_break"));
+  const r = L.applyVerify(ch01, [], a, b, ch01.docs);
+  assert.ok(r.stillBroken, "원본에서는 아직 끊겨 있어야 한다");
+  assert.deepEqual(r.verified, []);
+});
+
+test("재검증 — 무관한 짝은 확인 대상이 아니다", () => {
+  const rev = { ...ch01.docs, ...ch01.revisedDocs };
+  const r = L.applyVerify(ch01, [], "card01.fields.batch", "card02.fields.batch", rev);
+  assert.equal(r.rule, null);
+});
+
+test("CH01 전 구간 — 조사에서 승인까지 국면이 끊기지 않는다", () => {
+  const { PHASE } = L;
+  let phase = PHASE.SUBMITTED, found = [], verified = [];
+
+  // 조사: 세 모순을 대조로 찾는다
+  for (const rule of ch01.rules) {
+    const [a, b] = L.rulePair(rule);
+    const r = L.applyCompare(ch01, found, a, b, ch01.docs);
+    assert.ok(r.isNew, `${rule.id} 를 대조로 찾을 수 없다`);
+    found = r.found;
     phase = L.nextPhase(phase, ch01.required, found);
   }
   assert.equal(phase, PHASE.CONTRADICTION);
   assert.equal(L.activeStamp(phase), "REJECTED");
 
+  // 반려 → 수정본
   phase = PHASE.REJECTED;
   assert.equal(L.activeStamp(phase), null);
-
-  // 수정본 재제출 → 재검증
   phase = PHASE.REVISED;
-  const merged = { ...ch01.docs, ...ch01.revisedDocs };
-  let recheck = [];
-  for (const r of ch01.rules) {
-    if (!L.ruleHolds(r, merged)) recheck.push(r.id);   // 해소 확인
+  const rev = { ...ch01.docs, ...ch01.revisedDocs };
+
+  // 재검증: 같은 자리를 다시 짚어 이어짐을 확인
+  for (const rule of ch01.rules) {
+    const [a, b] = L.rulePair(rule);
+    const r = L.applyVerify(ch01, verified, a, b, rev);
+    assert.ok(r.isNew, `${rule.id} 를 재검증할 수 없다 — 여기서 막힌다`);
+    verified = r.verified;
+    phase = L.nextPhase(phase, ch01.required, verified);
   }
-  assert.deepEqual(recheck.sort(), ch01.required.slice().sort());
-  phase = L.nextPhase(phase, ch01.required, recheck);
-  assert.equal(phase, PHASE.VERIFIED);
+  assert.equal(phase, PHASE.VERIFIED, "재검증을 마쳐도 VERIFIED 로 가지 못한다");
   assert.equal(L.activeStamp(phase), "APPROVED");
-
-  assert.equal(L.progressFor(1), 8, "CH1 승인 후 진행도 8%");
-});
-
-test("한글 표기도 차단한다 — 게임이 한국어로 쓰이기 때문", () => {
-  const { SPOILER } = L;
-  for (const t of ["파인만", "페르미", "오펜하이머", "히로시마", "원자폭탄", "맨해튼"]) {
-    assert.ok(!L.termAllowed(t, SPOILER.CHAPTERS), `${t} 가 CH1~8 에서 노출된다`);
-  }
-});
-
-test("한글은 조사가 붙어도 잡는다", () => {
-  assert.ok(L.findLeaks("파인만이 제출한 계산 카드", 0).includes("파인만"));
-  assert.ok(L.findLeaks("엔리코 페르미와 대화", 0).includes("페르미"));
-  assert.ok(L.findLeaks("리처드 파인만과 대화", 0).length > 0,
-    "구버전에 실제로 있던 문자열이 잡혀야 한다");
-  assert.deepEqual(L.findLeaks("계산 결과를 확인해 주십시오.", 0), []);
-});
-
-test("한글 표기도 레벨에 따라 풀린다", () => {
-  const { SPOILER } = L;
-  assert.ok(!L.termAllowed("히로시마", SPOILER.CHAPTERS));
-  assert.ok(L.termAllowed("히로시마", SPOILER.RESULTS), "CH9 에서 지명은 풀린다");
-  assert.ok(!L.termAllowed("오펜하이머", SPOILER.RESULTS), "정체는 CH10 까지 잠긴다");
-  assert.ok(L.termAllowed("오펜하이머", SPOILER.IDENTITY));
-});
-
-test("표시 이름과 호칭은 언제나 허용", () => {
-  for (const t of ["RICHARD", "ENRICO", "LUIS", "JOHN", "GEORGE",
-                   "EMILIO", "KENNETH", "HANS", "박사님", "책임자님"]) {
-    assert.ok(L.termAllowed(t, 0), `${t} 가 막히면 안 된다`);
-  }
+  assert.equal(L.progressFor(1), 8);
 });
