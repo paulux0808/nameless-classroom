@@ -166,10 +166,13 @@
      같은 claim 을 단 문단끼리는 같은 값을 말해야 한다 — 한 장만 다른 값을
      말하면 그것이 어긋난 장이다.
 
-       reports        원본 (어긋난 장이 섞여 있다)
-       revisedReports 수정본 (모든 claim 이 같은 값을 말한다)
-       claims         짚어야 할 진술. id 는 문단의 claim 과 같다
-       oddReport      어긋난 장의 id (감사에서 실제 데이터와 대조한다)
+       reports        원본. 진술마다 두 장이 같은 말을, 한 장이 다른 말을 한다
+     revisedReports 수정본 (모든 claim 이 같은 값을 말한다)
+     claims         짚어야 할 진술. id 는 문단의 claim 과 같다
+
+     어긋남은 한 장에 몰려 있지 않다. 진술마다 혼자 다른 말을 하는 장이
+     바뀐다 — 그래서 "이 장이 문제다" 로 끝나지 않고 세 장을 다 뒤져야 한다.
+     플레이어는 그 혼자 다른 문장을 직접 눌러 짚는다.
 
      문단 텍스트는 셋 다 표현이 다르다. 표현이 다른 것과 뜻이 다른 것을
      가르는 게 이 퍼즐이다 — 값(value)만이 뜻이고 텍스트는 위장이다. */
@@ -238,16 +241,11 @@
     return null;
   }
 
-  /* 모든 어긋난 claim 이 같은 한 장을 가리키는가 — 그 장의 id */
-  function oddReportFrom(chapter, reports) {
-    var ids = requiredClaims(chapter), odd = null;
-    for (var i = 0; i < ids.length; i++) {
-      var o = oddOf(reports, ids[i]);
-      if (!o) return null;
-      if (odd === null) odd = o;
-      else if (odd !== o) return null;
-    }
-    return odd;
+  /* 진술마다 혼자 다른 말을 하는 장. { claimId: reportId } */
+  function oddMap(chapter, reports) {
+    var out = {};
+    requiredClaims(chapter).forEach(function (id) { out[id] = oddOf(reports, id); });
+    return out;
   }
 
   function requiredClaims(chapter) {
@@ -261,39 +259,44 @@
     return null;
   }
 
-  /* 어긋난 장을 옳게 골랐는가 */
-  function checkOdd(chapter, reportId) {
-    return !!reportId && reportId === chapter.oddReport;
-  }
+  /* ── 문장 짚기 ─────────────────────────────────────────────────────────
+     플레이어는 "혼자 다른 말을 하는 문장" 을 직접 누른다. 어느 장인지
+     고르는 단계는 없다 — 세 장 중 하나를 찍는 건 세 번 눌러 보면 맞는다.
+     문장을 짚어야 읽은 것이다.
 
-  /* ── 근거 찍기 ─────────────────────────────────────────────────────────
-     리처드가 세 장을 나란히 펼친 뒤, 플레이어는 어긋난 진술을 세 장 모두에서
-     짚는다. 한 claim 의 문단을 전부 짚어야 그 claim 이 드러난 것으로 센다 —
-     한 장만 짚고 "저 장이 이상하다" 라고 하는 건 근거가 아니다.
+     같은 진술이라도 나머지 두 장의 문장은 답이 아니다. 그 둘은 서로 같은
+     말을 하고 있으므로 어긋난 쪽이 아니다.
 
-     { marks, found, claim, isNew, complete, offClaim } */
+     { marks, found, claim, isNew, ok, reason }
+       reason  "notClaim" 어긋남과 무관한 문단
+               "majority" 다수 쪽 문장
+               "settled"  이미 어긋나지 않는 진술(수정본) */
   function applyMark(chapter, marks, found, paraId, reports) {
     var list = (marks || []).slice(), got = (found || []).slice();
+    function miss(why) {
+      return { marks: list, found: got, claim: null, isNew: false, ok: false, reason: why };
+    }
     var hit = paraById(reports, paraId);
-    var claim = hit && hit.para.claim ? claimById(chapter, hit.para.claim) : null;
-    if (!claim) return { marks: list, found: got, claim: null, isNew: false,
-                         complete: false, offClaim: true };
-    if (list.indexOf(paraId) >= 0)
-      return { marks: list, found: got, claim: claim, isNew: false,
-               complete: got.indexOf(claim.id) >= 0, offClaim: false };
-    list.push(paraId);
+    if (!hit || !hit.para.claim) return miss("notClaim");
 
-    var need = claimParas(reports, claim.id).map(function (x) { return x.para.id; });
-    var full = need.every(function (id) { return list.indexOf(id) >= 0; });
-    if (full && got.indexOf(claim.id) < 0) got.push(claim.id);
-    return { marks: list, found: got, claim: claim, isNew: true,
-             complete: full, offClaim: false };
+    var claim = claimById(chapter, hit.para.claim);
+    if (!claim) return miss("notClaim");
+    if (!claimBroken(reports, claim.id)) return miss("settled");
+    if (oddOf(reports, claim.id) !== hit.report.id) return miss("majority");
+
+    if (list.indexOf(paraId) >= 0)
+      return { marks: list, found: got, claim: claim, isNew: false, ok: true, reason: null };
+    list.push(paraId);
+    if (got.indexOf(claim.id) < 0) got.push(claim.id);
+    return { marks: list, found: got, claim: claim, isNew: true, ok: true, reason: null };
   }
 
-  /* 한 claim 에서 아직 짚지 않은 문단 수 */
-  function marksLeft(reports, claimId, marks) {
-    var need = claimParas(reports, claimId).map(function (x) { return x.para.id; });
-    return need.filter(function (id) { return (marks || []).indexOf(id) < 0; }).length;
+  /* 아직 짚지 못한 어긋남의 수 */
+  function marksLeft(chapter, found) {
+    var got = found || [];
+    return requiredClaims(chapter).filter(function (id) {
+      return got.indexOf(id) < 0;
+    }).length;
   }
 
   /* ── 재검증 ────────────────────────────────────────────────────────────
@@ -322,14 +325,18 @@
 
     if (reports.length < 2) problems.push("보고서가 2장 미만이다");
 
-    /* 문단 id 는 챕터 전체에서 유일해야 한다 — 찍기가 id 로 오간다 */
-    var seen = {};
-    reports.forEach(function (r) {
-      (r.body || []).forEach(function (p) {
-        if (seen[p.id]) problems.push("문단 id 중복: " + p.id);
-        seen[p.id] = true;
+    /* 문단 id 는 한 묶음 안에서 유일해야 한다 — 찍기가 id 로 오간다.
+       원본과 수정본은 서로 다른 묶음이므로 따로 센다. */
+    function uniqueIds(set, label) {
+      var seen = {};
+      set.forEach(function (r) {
+        (r.body || []).forEach(function (p) {
+          if (seen[p.id]) problems.push(label + " 문단 id 중복: " + p.id);
+          seen[p.id] = true;
+        });
       });
-    });
+    }
+    uniqueIds(reports, "원본");
 
     var claimIds = {};
     claims.forEach(function (c) {
@@ -357,28 +364,36 @@
       if (!claimBroken(reports, id)) problems.push("원본에서 갈리지 않는 claim: " + id);
     });
 
-    /* 어긋난 장은 하나여야 하고, 선언한 것과 같아야 한다 */
-    var derived = oddReportFrom(chapter, reports);
-    if (!derived) problems.push("어긋난 장이 하나로 모이지 않는다");
-    else if (chapter.oddReport && derived !== chapter.oddReport)
-      problems.push("oddReport 가 데이터와 다르다: 선언 " + chapter.oddReport +
-                    " / 실제 " + derived);
+    /* 진술마다 혼자 다른 장이 정확히 하나여야 짚을 대상이 정해진다 */
+    var odd = oddMap(chapter, reports), where = {};
+    need.forEach(function (id) {
+      if (!odd[id]) { problems.push("혼자 다른 장이 하나로 정해지지 않는 claim: " + id); return; }
+      where[odd[id]] = true;
+    });
 
-    /* 수정본이 있으면 같은 문단 구성으로 모든 claim 이 붙어야 한다 */
+    /* 어긋남이 한 장에 몰려 있으면 "이 장이 문제다" 로 끝나 세 장을 읽지
+       않는다. 장마다 흩어져 있어야 한다. */
+    if (need.length > 1 && Object.keys(where).length < 2)
+      problems.push("어긋남이 한 장에 몰려 있다: " + Object.keys(where).join(","));
+
+    /* 수정본은 다시 쓴 글이다. 문단 구성까지 원본과 같을 이유는 없다 —
+       같은 장이 그대로 있고, 짚어야 할 진술이 장마다 하나씩 있고,
+       이제 갈리지 않으면 된다. */
     var fixed = chapter.revisedReports || [];
     if (fixed.length) {
+      uniqueIds(fixed, "수정본");
       if (fixed.length !== reports.length) problems.push("수정본 장 수가 다르다");
       reports.forEach(function (r) {
-        var f = reportById(fixed, r.id);
-        if (!f) { problems.push("수정본에 없는 장: " + r.id); return; }
-        (r.body || []).forEach(function (p) {
-          var q = (f.body || []).filter(function (x) { return x.id === p.id; })[0];
-          if (!q) problems.push("수정본에 없는 문단: " + p.id);
-          else if (q.claim !== p.claim)
-            problems.push("수정본에서 claim 이 바뀐 문단: " + p.id);
-        });
+        if (!reportById(fixed, r.id)) problems.push("수정본에 없는 장: " + r.id);
       });
       need.forEach(function (id) {
+        var ps = claimParas(fixed, id);
+        if (ps.length !== fixed.length)
+          problems.push("수정본에서 claim '" + id + "' 의 문단이 " + ps.length + "개다");
+        ps.forEach(function (x) {
+          if (x.para.value === undefined)
+            problems.push("수정본 문단 " + x.para.id + " 에 value 가 없다");
+        });
         if (claimBroken(fixed, id)) problems.push("수정본에서도 갈리는 claim: " + id);
       });
     }
@@ -424,10 +439,9 @@
       started: false,
       chapter: 1,
       phase: PHASE.SUBMITTED,
-      odd: null,        /* 어긋난 장으로 지목한 보고서 id */
       confronted: false,/* 세 장을 나란히 펼치는 대화를 지났는가 */
-      marks: [],        /* 찍어 둔 문단 id */
-      found: [],        /* 세 장 모두에서 근거를 찍은 claim */
+      marks: [],        /* 짚어 둔 문단 id */
+      found: [],        /* 어긋난 문장을 짚어낸 claim */
       verified: [],     /* 수정본에서 같아졌음을 확인한 claim */
       approved: [],
       spoiler: SPOILER.CHAPTERS,
@@ -445,7 +459,6 @@
     if (s.found.some(function (f) { return typeof f !== "string"; })) return false;
     if (s.verified.some(function (f) { return typeof f !== "string"; })) return false;
     if (s.marks.some(function (f) { return typeof f !== "string"; })) return false;
-    if (s.odd !== null && typeof s.odd !== "string") return false;
     if (typeof s.confronted !== "boolean") return false;
     if (s.approved.some(function (n) { return !Number.isInteger(n) || n < 1 || n > 8; })) return false;
     if (new Set(s.approved).size !== s.approved.length) return false;
@@ -466,7 +479,7 @@
     s.verified = s.verified.filter(function (f) { return typeof f === "string"; });
     if (!Array.isArray(s.marks)) s.marks = [];
     s.marks = s.marks.filter(function (f) { return typeof f === "string"; });
-    if (typeof s.odd !== "string") s.odd = null;
+    delete s.odd;   /* 예전 저장본의 '어긋난 장 지목' 은 더 쓰지 않는다 */
     if (!Array.isArray(s.approved)) s.approved = [];
     var seen = {};
     s.approved = s.approved.filter(function (n) {
@@ -503,8 +516,8 @@
     auditChapter: auditChapter,
     reportsFor: reportsFor, reportById: reportById, paraById: paraById,
     claimParas: claimParas, claimValues: claimValues, claimBroken: claimBroken,
-    oddOf: oddOf, oddReportFrom: oddReportFrom,
-    requiredClaims: requiredClaims, claimById: claimById, checkOdd: checkOdd,
+    oddOf: oddOf, oddMap: oddMap,
+    requiredClaims: requiredClaims, claimById: claimById,
     applyMark: applyMark, marksLeft: marksLeft, applyClaimVerify: applyClaimVerify,
     freshState: freshState, isValidState: isValidState,
     repairState: repairState, normalizeState: normalizeState,

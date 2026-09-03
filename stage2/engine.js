@@ -774,71 +774,57 @@
 
   /* ── 보고서 열람 ──────────────────────────────────────────────────────
      보기 방식은 셋이다.
-       one    한 장을 크게 — 문장으로 읽는 게 이 챕터의 일이다
-       pair   두 장을 화면 반반으로 맞대어
-       three  세 장을 나란히 — 리처드가 펼쳐 준 뒤에만 열린다
-     찍기는 three 에서만 한다. 한 장만 보고 찍는 건 근거가 아니기 때문이다. */
+       one    한 장을 크게
+       pair   두 장을 화면 반반으로
+       three  세 장을 나란히 — 리처드가 펼쳐 준 뒤에 열린다
+
+     장마다 스크롤이 따로 논다. 셋을 한 통에 넣고 굴리면 좁은 화면에서
+     같은 자리를 맞대어 볼 수가 없다. */
   var view = { mode: "one", a: "r1", b: "r2" };
 
   function reportsNow() { return L.reportsFor(chapter, S.phase); }
   function isVerifyPhase() {
     return S.phase === L.PHASE.REVISED || S.phase === L.PHASE.VERIFIED;
   }
-  /* 근거를 찍는 국면인가 — 어긋난 장을 짚었고 리처드가 세 장을 펼친 뒤 */
+  /* 문장을 짚는 국면인가 */
   function isMarkPhase() {
-    return !!S.confronted && (S.phase === L.PHASE.INSPECTING ||
-                              S.phase === L.PHASE.SUBMITTED);
+    return S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING;
   }
 
   function openDocs() {
-    if (S.confronted && view.mode !== "three") view.mode = "three";
+    if (S.confronted && view.mode === "one") view.mode = "three";
     if (isVerifyPhase()) view.mode = "three";
     renderReader();
   }
 
   function renderReader() {
     var reps = reportsNow();
-    var sub = chapter.npc + " · " + chapter.title +
-              (isVerifyPhase() ? " · 수정본" : "");
-    openSheet("제출 자료 — 보고서 " + reps.length + "장", sub, function (body) {
-      body.appendChild(readerHint());
-      body.appendChild(viewBar(reps));
-      body.appendChild(readerPages(reps));
-      body.appendChild(claimPanel(reps));
-    });
-    alignRows();
+    var need = L.requiredClaims(chapter).length;
+    var done = (isVerifyPhase() ? S.verified : S.found) || [];
+    openSheet("제출 자료", chapter.npc + " · 보고서 " + reps.length + "장",
+      function (body) {
+        body.appendChild(counterBar(done.length, need));
+        body.appendChild(viewBar(reps));
+        body.appendChild(readerPages(reps));
+        body.appendChild(claimPanel(reps));
+      }, true);
   }
 
-  function readerHint() {
-    if (S.phase === L.PHASE.APPROVED) {
-      return el("p", "hint", "승인한 자료입니다. 세 장이 같은 말을 합니다.");
-    }
-    if (S.phase === L.PHASE.CONTRADICTION) {
-      return el("p", "hint",
-        "찍은 자리가 " + (S.marks || []).length + "곳입니다. 같은 시험이라고 적어 놓고 " +
-        "같은 시험이 아니었습니다. 책상의 <b>도장</b>을 쓰십시오.");
-    }
-    if (S.phase === L.PHASE.REJECTED) {
-      return el("p", "hint", "반려했습니다. 수정본을 기다리십시오.");
-    }
-    if (isVerifyPhase()) {
-      return el("p", "hint",
-        "반려한 두 자리가 <b>이제 세 장에서 같은 말을 하는지</b> 확인하십시오. " +
-        "아래 <b>맞대어 확인</b> 을 자리마다 한 번씩 누르면 됩니다.");
-    }
-    if (isMarkPhase()) {
-      return el("p", "hint",
-        "세 장이 나란히 놓였습니다. 어긋난 진술을 <b>세 장 모두에서</b> 짚으십시오. " +
-        "문단을 누르면 표시가 남습니다. 한 장만 짚어서는 근거가 되지 않습니다.");
-    }
-    if (S.odd) {
-      return el("p", "hint",
-        "어긋난 장은 짚었습니다. <b>" + chapter.npc + "</b> 에게 말을 거십시오.");
-    }
-    return el("p", "hint",
-      "회차마다 한 장씩입니다. 착수 시각도, 정전 시각도, 서명 형식도 다릅니다 — " +
-      "<b>회차가 다르니 그건 달라도 됩니다.</b> " +
-      "달라서는 안 되는 것이 무엇인지 찾아, 어긋난 한 장을 짚으십시오.");
+  /* 안내는 한 줄이면 된다. 셈은 숫자로, 할 일은 짧게. */
+  function counterBar(done, need) {
+    var bar = el("div", "counter");
+    var what = isVerifyPhase() ? "맞대어 확인" : "어긋난 문장";
+    bar.appendChild(el("span", "c-n", done + " / " + need));
+    bar.appendChild(el("span", "c-t", what));
+    if (isMarkPhase() && !S.confronted)
+      bar.appendChild(el("span", "c-h", "두 장을 맞대어 읽고, 혼자 다른 말을 하는 문장을 누르십시오."));
+    else if (isMarkPhase())
+      bar.appendChild(el("span", "c-h", "혼자 다른 말을 하는 문장을 누르십시오."));
+    else if (S.phase === L.PHASE.CONTRADICTION)
+      bar.appendChild(el("span", "c-h", "책상의 <b>도장</b>을 쓰십시오."));
+    else if (isVerifyPhase())
+      bar.appendChild(el("span", "c-h", "자리마다 <b>확인</b>을 한 번씩."));
+    return bar;
   }
 
   function viewBar(reps) {
@@ -850,30 +836,25 @@
       else b.onclick = fn;
       bar.appendChild(b);
     }
-    var locked = S.confronted || isVerifyPhase();
+    var three = S.confronted || isVerifyPhase() || S.phase === L.PHASE.APPROVED;
 
-    bar.appendChild(el("span", "vlabel", "한 장씩"));
     reps.forEach(function (r) {
       tab(r.no, view.mode === "one" && view.a === r.id, function () {
         view.mode = "one"; view.a = r.id; renderReader();
-      }, locked);
+      });
     });
-
-    bar.appendChild(el("span", "vlabel", "맞대어"));
     (chapter.comparePairs || []).forEach(function (pr) {
       var A = L.reportById(reps, pr[0]), B = L.reportById(reps, pr[1]);
       if (!A || !B) return;
-      tab(A.no + " · " + B.no,
+      tab(A.no + "·" + B.no,
           view.mode === "pair" && view.a === pr[0] && view.b === pr[1],
           function () {
             view.mode = "pair"; view.a = pr[0]; view.b = pr[1]; renderReader();
-          }, locked);
+          });
     });
-
-    bar.appendChild(el("span", "vlabel", "세 장"));
-    tab("나란히", view.mode === "three", function () {
+    tab("세 장", view.mode === "three", function () {
       view.mode = "three"; renderReader();
-    }, !locked);
+    }, !three);
     return bar;
   }
 
@@ -884,58 +865,21 @@
              : [view.a];
     show.forEach(function (id) {
       var r = L.reportById(reps, id);
-      if (r) wrap.appendChild(reportPage(r, reps));
+      if (r) wrap.appendChild(reportPage(r));
     });
-    _rows = wrap;
     return wrap;
   }
 
-  /* 맞대어 읽기의 핵심은 같은 자리가 같은 높이에 있는 것이다. 문장 길이가
-     장마다 달라 줄이 어긋나면 "세 장을 나란히 놓았다" 는 말이 무색해진다.
-     칸끼리 같은 순번의 문단 높이를 맞춰 준다. */
-  var _rows = null;
-  function alignRows() {
-    if (!_rows || !_rows.isConnected) return;
-    var pages = [].slice.call(_rows.querySelectorAll(".page"));
-    if (pages.length < 2) return;
-
-    var groups = [];
-    function collect(sel) {
-      var row = [];
-      pages.forEach(function (p) {
-        var list = p.querySelectorAll(sel);
-        for (var i = 0; i < list.length; i++) {
-          list[i].style.minHeight = "";
-          (row[i] = row[i] || []).push(list[i]);
-        }
-      });
-      row.forEach(function (r) { if (r.length === pages.length) groups.push(r); });
-    }
-    collect(".page-head");
-    collect(".para");
-
-    /* 초기화한 높이가 반영된 뒤에 잰다 */
-    requestAnimationFrame(function () {
-      groups.forEach(function (row) {
-        var h = 0;
-        row.forEach(function (n) { h = Math.max(h, n.offsetHeight); });
-        row.forEach(function (n) { n.style.minHeight = h + "px"; });
-      });
-      markScrollables();
-    });
-  }
-
-  function reportPage(r, reps) {
-    /* 지목 표시는 원본에서만 의미가 있다. 수정본까지 빨간 테두리를 달고
-       있으면 고친 장을 계속 의심하라는 말이 된다. */
-    var flagged = S.odd === r.id && !isVerifyPhase() && S.phase !== L.PHASE.APPROVED;
-    var page = el("article", "page" + (flagged ? " flagged" : ""));
+  function reportPage(r) {
+    var page = el("article", "page");
     var head = el("header", "page-head");
     head.appendChild(el("span", "page-no", r.no));
     head.appendChild(el("h3", null, safeText(r.title)));
     head.appendChild(el("p", "page-meta", safeText(r.head)));
     page.appendChild(head);
 
+    /* 본문만 따로 구른다 — 장마다 스크롤이 독립이어야 같은 자리를 맞댈 수 있다 */
+    var scroll = el("div", "page-body scrolls");
     (r.body || []).forEach(function (para) {
       var pel = el("p", "para", safeText(para.text));
       pel.dataset.para = para.id;
@@ -949,120 +893,72 @@
           if (e.key === "Enter" || e.key === " ") { e.preventDefault(); markPara(para.id); }
         };
       }
-      page.appendChild(pel);
+      scroll.appendChild(pel);
     });
-
-    /* 어긋난 장 지목 — 아직 짚지 않았고, 원본을 보는 동안만 */
-    if (!S.odd && !isVerifyPhase()) {
-      var b = el("button", "flag-btn", "이 장이 어긋났다 — " + r.no + " 지목");
-      b.type = "button";
-      b.onclick = function () { flagReport(r.id); };
-      page.appendChild(b);
-    } else if (flagged) {
-      page.appendChild(el("p", "flag-note", "이 장을 어긋난 장으로 지목했습니다."));
-    }
+    page.appendChild(scroll);
     return page;
   }
 
-  /* 어긋난 한 장을 지목한다. 틀려도 벌은 없다 — 다시 읽으면 된다. */
-  function flagReport(id) {
-    if (S.odd) return;
-    if (!L.checkOdd(chapter, id)) {
-      toast("세 장이 같은 말을 하는지 더 맞대어 보십시오.", "bad");
-      return;
-    }
-    S.odd = id;
-    setPhase(L.PHASE.INSPECTING);
-    save();
-    toast("어긋난 장을 짚었습니다. " + chapter.npc + " 에게 말하십시오.", "good");
-    renderReader();
-  }
-
-  /* 근거 찍기 — 같은 자리를 세 장 모두에서 짚어야 한 가지로 센다 */
+  /* 혼자 다른 말을 하는 문장을 직접 짚는다. 어느 장인지 고르는 단계는 없다 —
+     세 장 중 하나를 찍는 건 세 번 눌러 보면 맞기 때문이다. */
   function markPara(paraId) {
     var reps = reportsNow();
     var res = L.applyMark(chapter, S.marks, S.found, paraId, reps);
-    if (res.offClaim) { toast("이 문단은 세 장이 다른 말을 하지 않습니다."); return; }
-    if (!res.isNew) { toast("이미 짚은 자리입니다."); return; }
+    if (!res.ok) { toast("여기서는 어긋남을 찾지 못했습니다."); return; }
+    if (!res.isNew) { toast("이미 짚은 문장입니다."); return; }
 
     S.marks = res.marks;
-    var wasFound = S.found.length;
     S.found = res.found;
     advancePhase();
     save();
-
-    if (res.complete && S.found.length > wasFound) {
-      toast(safeText(res.claim.label) + " — 세 장 모두 짚었습니다.", "good");
-    } else {
-      var left = L.marksLeft(reps, res.claim.id, S.marks);
-      toast(safeText(res.claim.label) + " — " + left + "장 남았습니다.");
-    }
+    var left = L.marksLeft(chapter, S.found);
+    toast(safeText(res.claim.label) + (left ? " — " + left + "곳 남았습니다." : " — 전부 찾았습니다."),
+          "good");
     renderReader();
+    renderHUD();
   }
 
   /* 수정본 재검증 — 자리마다 한 번씩 세 장을 맞댄다 */
   function verifyClaim(claimId) {
     var res = L.applyClaimVerify(chapter, S.verified, claimId, reportsNow());
     if (!res.claim) return;
-    if (res.stillBroken) {
-      toast("아직 세 장이 갈립니다: " + safeText(res.claim.label), "bad");
-      return;
-    }
+    if (res.stillBroken) { toast("아직 갈립니다: " + safeText(res.claim.label), "bad"); return; }
     if (!res.isNew) { toast("이미 확인했습니다."); return; }
     S.verified = res.verified;
     advancePhase();
     save();
-    toast("확인됨 — " + safeText(res.claim.ok || res.claim.label), "good");
+    toast("확인 — " + safeText(res.claim.ok || res.claim.label), "good");
     renderReader();
   }
 
-  /* 무엇을 찾았는지 / 무엇을 확인해야 하는지 */
-  function claimPanel(reps) {
+  /* 찾은 것만 적는다. 못 찾은 자리를 빈 줄로 늘어놓으면 읽을 자리를
+     그만큼 빼앗고, 개수 말고는 알려 주는 것도 없다 — 개수는 위에 있다.
+     재검증은 자리마다 누를 것이 있으므로 전부 내놓는다. */
+  function claimPanel() {
     var verifying = isVerifyPhase();
     var need = L.requiredClaims(chapter);
-    var done = verifying ? (S.verified || []) : (S.found || []);
-    var box = el("section", "findings");
-    box.appendChild(el("h4", null,
-      (verifying ? "맞대어 확인할 자리" : "찾아낸 어긋남") +
-      " (" + done.length + " / " + need.length + ")"));
+    var done = (verifying ? S.verified : S.found) || [];
+    var show = verifying ? need : need.filter(function (id) { return done.indexOf(id) >= 0; });
+    if (!show.length) return document.createComment("");
 
+    var box = el("section", "findings scrolls");
     var ul = el("ul");
-    need.forEach(function (id) {
+    show.forEach(function (id) {
       var c = L.claimById(chapter, id);
       var got = done.indexOf(id) >= 0;
       var li = el("li", got ? "got" : "pending");
-      if (verifying) {
-        li.appendChild(el("b", null, safeText(c.label)));
-        li.appendChild(el("span", null, got ? safeText(c.ok) : safeText(c.question)));
-        if (!got) {
-          var vb = el("button", "verify-btn", "세 장 맞대어 확인");
-          vb.type = "button";
-          vb.onclick = function () { verifyClaim(id); };
-          li.appendChild(vb);
-        }
-      } else if (got) {
-        li.appendChild(el("b", null, safeText(c.label)));
-        li.appendChild(el("span", null, safeText(c.wrong)));
-      } else if (isMarkPhase()) {
-        var left = L.marksLeft(reps, id, S.marks);
-        li.appendChild(el("b", null,
-          left < reps.length ? safeText(c.label) : "아직 짚지 않은 자리가 있습니다"));
-        if (left < reps.length)
-          li.appendChild(el("span", null, left + "장 남았습니다."));
+      li.appendChild(el("b", null, safeText(c.label)));
+      if (verifying && !got) {
+        var vb = el("button", "verify-btn", "확인");
+        vb.type = "button";
+        vb.onclick = function () { verifyClaim(id); };
+        li.appendChild(vb);
       } else {
-        li.appendChild(el("b", null, "아직 짚지 않은 자리가 있습니다"));
+        li.appendChild(el("span", null, safeText(got && verifying ? c.ok : c.wrong)));
       }
       ul.appendChild(li);
     });
     box.appendChild(ul);
-
-    var stamp = L.activeStamp(S.phase);
-    if (stamp) {
-      box.appendChild(el("p", "ready",
-        stamp === "REJECTED"
-          ? "어긋남이 전부 드러났습니다. 책상의 <b>도장</b>을 쓰십시오."
-          : "수정본이 세 장 모두 같은 말을 합니다. 책상의 <b>도장</b>을 쓰십시오."));
-    }
     return box;
   }
 
@@ -1091,14 +987,14 @@
     if (!kind) {
       /* 스펙: 도장은 도덕 선택지가 아니다. 검증 전에는 열리지 않는다. */
       toast(S.phase === L.PHASE.REVISED
-        ? "수정본을 먼저 다시 확인하십시오."
-        : "아직 판단할 근거가 부족합니다.", "bad");
+        ? "수정본을 먼저 확인하십시오."
+        : "아직 근거가 부족합니다.", "bad");
       return;
     }
     openSheet("도장", kind === "REJECTED" ? "반려" : "승인", function (body) {
       body.appendChild(el("p", "hint", kind === "REJECTED"
-        ? "이 결과는 다음 단계로 넘어갈 수 없습니다."
-        : "이 결과는 다음 단계로 넘어가도 됩니다."));
+        ? "다음 단계로 넘길 수 없습니다."
+        : "다음 단계로 넘겨도 됩니다."));
       var b = el("button", "stamp-btn " + kind.toLowerCase(), kind);
       b.type = "button";
       b.onclick = function () { applyStamp(kind); };
@@ -1152,10 +1048,8 @@
       toast("아직 나갈 때가 아닙니다.", "bad");
       return;
     }
-    openSheet("CHAPTER 01 — 종료", chapter.title, function (body) {
-      body.appendChild(el("p", "hint",
-        "첫 번째 자료를 승인했습니다. 진행도 " +
-        L.progressFor(S.approved.length) + "%."));
+    openSheet("CHAPTER " + String(chapter.number).padStart(2, "0") + " 종료",
+      "진행도 " + L.progressFor(S.approved.length) + "%", function (body) {
       var b = el("button", "stamp-btn approved", "복도로 나간다");
       b.type = "button";
       b.onclick = function () { location.href = "index.html"; };
@@ -1246,9 +1140,13 @@
   }
 
   /* ── 시트(모달) ────────────────────────────────────────────────────── */
-  function openSheet(title, sub, build) {
+  /* fill: 화면 높이를 꽉 채운다. 보고서처럼 칸마다 따로 굴러야 하는 화면은
+     바깥이 같이 구르면 안 된다 — 스크롤이 겹치면 어느 쪽이 움직이는지
+     알 수 없다. */
+  function openSheet(title, sub, build, fill) {
     $("#sheet-title").textContent = title;
     $("#sheet-sub").textContent = sub || "";
+    document.querySelector(".sheet-card").classList.toggle("fill", !!fill);
     var b = $("#sheet-body");
     b.innerHTML = "";
     build(b);
@@ -1260,7 +1158,6 @@
   function closeSheet() {
     $("#sheet").classList.add("hidden");
     hideAllEdges();
-    _rows = null;
   }
 
   /* ── HUD ───────────────────────────────────────────────────────────── */
@@ -1272,25 +1169,20 @@
     $("#bar-fill").style.width = pct + "%";
     $("#bar-pct").textContent = pct + "%";
 
-    /* 지금 무엇을 해야 하는지 한 줄로. 국면만으로는 부족하다 —
-       같은 INSPECTING 안에서도 할 일이 세 번 바뀐다. */
-    var g;
+    /* 한 줄로 짧게. 설명은 자료를 열면 거기서 한다. */
+    var g, need = L.requiredClaims(chapter).length;
     if (S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING) {
-      if (!S.odd) g = "보고서 세 장을 맞대어 읽고 <b>어긋난 한 장</b>을 짚으십시오.";
-      else if (!S.confronted) g = "<b>" + chapter.npc + "</b> 에게 말을 거십시오.";
-      else g = "어긋난 진술을 <b>세 장 모두에서</b> 짚으십시오. (" +
-               (S.marks || []).length + " / " +
-               L.requiredClaims(chapter).length * (chapter.reports || []).length + ")";
+      g = "어긋난 문장 <b>" + (S.found || []).length + " / " + need + "</b>";
     } else if (S.phase === L.PHASE.CONTRADICTION) {
-      g = "어긋남이 드러났습니다. <b>도장</b>을 쓰십시오.";
+      g = "<b>도장</b>";
     } else if (S.phase === L.PHASE.REJECTED) {
-      g = "수정본을 기다립니다.";
+      g = "수정본을 기다립니다";
     } else if (S.phase === L.PHASE.REVISED) {
-      g = "수정본에서 두 자리가 <b>세 장 모두 같은 말</b>을 하는지 확인하십시오.";
+      g = "맞대어 확인 <b>" + (S.verified || []).length + " / " + need + "</b>";
     } else if (S.phase === L.PHASE.VERIFIED) {
-      g = "세 장이 같은 말을 합니다. <b>도장</b>을 쓰십시오.";
+      g = "<b>도장</b>";
     } else {
-      g = "승인했습니다. <b>문</b>으로 나가십시오.";
+      g = "<b>문</b>으로 나가십시오";
     }
     $("#objective").innerHTML = g;
   }
@@ -1332,6 +1224,9 @@
                 "ㅗ": "w", "ㄴ": "s", "ㅁ": "a", "ㅇ": "d" };
     addEventListener("keydown", function (e) {
       if (e.key === "Escape") { closeSheet(); return; }
+      if (e.key === "f" || e.key === "F" || e.key === "ㄹ") {
+        if (!inputBlocked()) { toggleFullscreen(); return; }
+      }
       var k = MAP[e.key];
       if (!k || inputBlocked()) return;
       keys[k] = true;
@@ -1341,7 +1236,6 @@
     addEventListener("blur", function () { keys = {}; joy.x = joy.z = 0; });
     addEventListener("resize", resize);
     addEventListener("resize", refreshScrollHints);
-    addEventListener("resize", alignRows);
 
     document.addEventListener("click", function (e) {
       if (e.target && e.target.closest && e.target.closest("[data-close]")) closeSheet();
@@ -1349,8 +1243,50 @@
 
     if (IS_TOUCH) document.body.classList.add("touch");
     initJoystick();
+    initFullscreen();
     var act = $("#act");
     if (act) act.addEventListener("click", function () { pick(innerWidth / 2, innerHeight / 2); });
+  }
+
+  /* ── 전체 화면 ────────────────────────────────────────────────────────
+     주소창과 탭 줄이 세로를 20% 넘게 먹는다. 특히 가로로 돌린 폰에서는
+     그만큼이 그대로 읽을 자리다. 지원하지 않는 기기(아이폰 사파리)에서는
+     버튼을 숨긴다 — 눌러도 아무 일 없는 버튼은 없느니만 못하다. */
+  function fsElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  function toggleFullscreen() {
+    var d = document, e = d.documentElement;
+    var enter = e.requestFullscreen || e.webkitRequestFullscreen;
+    var exit = d.exitFullscreen || d.webkitExitFullscreen;
+    try {
+      var pr = fsElement() ? exit.call(d) : enter.call(e);
+      if (pr && pr.catch) pr.catch(function () {
+        toast("전체 화면으로 바꾸지 못했습니다.", "bad");
+      });
+    } catch (err) {
+      toast("이 기기에서는 전체 화면을 지원하지 않습니다.", "bad");
+    }
+  }
+  function initFullscreen() {
+    var btn = $("#fs");
+    if (!btn) return;
+    var e = document.documentElement;
+    if (!(e.requestFullscreen || e.webkitRequestFullscreen)) {
+      btn.classList.add("hidden");
+      return;
+    }
+    btn.addEventListener("click", toggleFullscreen);
+    function sync() {
+      var on = !!fsElement();
+      btn.classList.toggle("on", on);
+      btn.textContent = on ? "⤡" : "⛶";
+      btn.setAttribute("aria-label", on ? "전체 화면 끄기" : "전체 화면");
+      /* 전체 화면에 들어가고 나오면 뷰포트가 바뀐다 */
+      resize(); refreshScrollHints();
+    }
+    document.addEventListener("fullscreenchange", sync);
+    document.addEventListener("webkitfullscreenchange", sync);
   }
 
   function initJoystick() {
@@ -1367,12 +1303,14 @@
     pad.addEventListener("pointerdown", function (e) {
       if (inputBlocked()) return;
       id = e.pointerId; pad.setPointerCapture(e.pointerId); move(e); e.preventDefault();
+      pad.classList.add("hot");
     });
     pad.addEventListener("pointermove", function (e) { if (e.pointerId === id) move(e); });
     function end(e) {
       if (e.pointerId !== id) return;
       id = null; joy.x = joy.z = 0;
       knob.style.transform = "translate(0,0)";
+      pad.classList.remove("hot");
     }
     pad.addEventListener("pointerup", end);
     pad.addEventListener("pointercancel", end);
@@ -1432,7 +1370,9 @@
     if (S.phase === L.PHASE.REJECTED) { say(l.rejected); return; }
     if (isVerifyPhase()) { say(l.revised); return; }
 
-    if (S.odd && !S.confronted) {
+    /* 어긋남을 하나라도 짚어 온 뒤 말을 걸면 세 장을 펼쳐 준다.
+       그 전까지는 두 장씩 맞대어 읽어야 한다. */
+    if ((S.found || []).length && !S.confronted) {
       say(l.confront, function () {
         S.confronted = true;
         view.mode = "three";
@@ -1443,7 +1383,7 @@
       });
       return;
     }
-    if (S.odd) { say(l.picked || l.probing); return; }
+    if ((S.found || []).length) { say(l.picked || l.probing); return; }
     if (S.phase === L.PHASE.SUBMITTED) { say(l.submission); return; }
     say(l.probing);
   }

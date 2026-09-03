@@ -216,7 +216,7 @@ async function importRichardReference() {
     author: 'manoeldarochadeoliveira', license: 'CC BY 4.0',
     resolution: '1024px PBR; rigged; 25 animation clips',
     role: 'Generic mobile NPC rig reference', status: 'reference-only',
-    notes: 'Not a Richard Feynman likeness. Do not ship it as Richard Feynman.',
+    notes: 'Not a likeness of any real person. Do not ship it as one.',
     bytes: output.length, sha256: digest('sha256', output),
   };
 }

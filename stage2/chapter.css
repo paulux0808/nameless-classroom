@@ -45,6 +45,12 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   flex-direction:column;justify-content:space-between;padding:16px;gap:12px}
 #hud>*{pointer-events:auto}
 .hud-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.hud-right{display:flex;gap:8px;align-items:center}
+.icon-btn{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);
+  font-size:17px;line-height:1;color:#c8d6e8}
+.icon-btn:hover{border-color:var(--line-hi);color:#fff}
+.icon-btn.on{border-color:#9fc6ea;color:#9fc6ea}
 .tag{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:26px;
   background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);
   font-size:var(--fs-meta);font-weight:600;white-space:nowrap}
@@ -87,6 +93,18 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 .sheet-head h2{margin:0;font-size:var(--fs-title);font-weight:800}
 .sheet-head .sub{color:var(--dim);font-size:var(--fs-label);letter-spacing:.1em;margin-top:4px}
 .sheet-body{padding:22px 26px;overflow:auto;overscroll-behavior:contain}
+
+/* 화면을 꽉 채우는 시트 — 바깥은 고정하고 안쪽 칸만 구른다 */
+.sheet-card.fill{height:calc(100dvh - 48px)}
+.sheet-card.fill .sheet-body{display:flex;flex-direction:column;
+  min-height:0;overflow:auto}
+.sheet-card.fill .counter,
+.sheet-card.fill .viewbar{flex:none}
+.sheet-card.fill .pages{flex:1 1 auto;min-height:0}
+/* 남는 높이를 나눠 갖되, 읽을 수 없을 만큼 눌리지는 않는다.
+   더 이상 줄일 수 없으면 그때는 바깥이 구른다. */
+.sheet-card.fill .page-body{flex:1 1 auto;max-height:none;min-height:150px}
+.sheet-card.fill .findings{flex:none;max-height:min(24dvh,190px);overflow-y:auto}
 .btn{padding:10px 20px;border-radius:9px;border:1px solid var(--line);
   background:rgba(255,255,255,.05);font-size:var(--fs-meta);font-weight:600;min-height:var(--tap)}
 .btn:hover{background:rgba(255,255,255,.11);border-color:var(--line-hi)}
@@ -94,83 +112,80 @@ p.hint{margin:0 0 18px;color:var(--dim);font-size:var(--fs-meta);line-height:1.7
 p.hint b{color:#9fc6ea}
 
 /* ── 보고서 열람 ─────────────────────────────────────────────────────
-   보고서는 표가 아니라 글이다. 종이답게 크게, 문장으로 읽히게 한다.
-   한 장 / 두 장 반반 / 세 장 나란히 — 세 가지로 편다. */
-.viewbar{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:0 0 16px;
-  padding-bottom:14px;border-bottom:1px solid var(--line)}
-.vlabel{font-size:var(--fs-label);letter-spacing:.14em;color:var(--dim);
-  margin-left:12px;white-space:nowrap}
-.vlabel:first-child{margin-left:0}
-.vtab{padding:8px 15px;border-radius:8px;border:1px solid var(--line);
+   보고서는 표가 아니라 글이다. 종이답게, 문장으로 읽히게 한다.
+   세 장은 어떤 화면에서도 한눈에 들어와야 한다 — 좁다고 세로로 쌓으면
+   맞대어 읽을 수가 없다. 대신 장마다 스크롤을 따로 준다. */
+.counter{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.c-n{font-family:var(--font-mono);font-size:19px;font-weight:800;color:#9fc6ea;
+  letter-spacing:.06em}
+.c-t{font-size:var(--fs-label);letter-spacing:.12em;color:var(--dim)}
+.c-h{flex:1 1 100%;font-size:var(--fs-label);color:var(--dim);line-height:1.5}
+.c-h b{color:#9fc6ea}
+
+.viewbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;
+  padding-bottom:12px;border-bottom:1px solid var(--line)}
+.vtab{padding:7px 13px;border-radius:8px;border:1px solid var(--line);
   background:rgba(255,255,255,.04);font-size:var(--fs-label);font-weight:700;
   letter-spacing:.04em;min-height:36px;white-space:nowrap}
 .vtab:hover:not(:disabled){background:rgba(255,255,255,.11);border-color:var(--line-hi)}
 .vtab.on{background:#9fc6ea;border-color:#9fc6ea;color:#0d1218}
-.vtab:disabled{opacity:.32;cursor:not-allowed}
+.vtab:disabled{opacity:.3;cursor:not-allowed}
 
-.pages{display:grid;gap:16px;align-items:start}
+.pages{display:grid;gap:12px;align-items:stretch}
 .pages.one{grid-template-columns:minmax(0,1fr);justify-items:center}
 .pages.one .page{width:min(660px,100%)}
 .pages.pair{grid-template-columns:repeat(2,minmax(0,1fr))}
 .pages.three{grid-template-columns:repeat(3,minmax(0,1fr))}
 
-.page{background:var(--paper);color:var(--ink);border-radius:8px;
-  padding:26px 28px 22px;box-shadow:0 14px 34px rgba(0,0,0,.5);
-  border-top:5px solid #cfc4a8;min-width:0}
-.page.flagged{box-shadow:0 0 0 3px var(--stamp-red),0 14px 34px rgba(0,0,0,.5)}
-.page-head{margin:0 0 16px;padding-bottom:12px;
+.page{display:flex;flex-direction:column;min-width:0;min-height:0;
+  background:var(--paper);color:var(--ink);border-radius:8px;
+  box-shadow:0 14px 34px rgba(0,0,0,.5);border-top:5px solid #cfc4a8;overflow:hidden}
+.page-head{flex:none;margin:0;padding:16px 18px 10px;
   border-bottom:2px solid rgba(40,32,20,.28)}
-.page-no{display:inline-block;padding:3px 12px;border-radius:4px;margin-bottom:9px;
+.page-no{display:inline-block;padding:3px 11px;border-radius:4px;margin-bottom:7px;
   background:rgba(40,32,20,.14);font-family:var(--font-mono);font-weight:800;
   font-size:var(--fs-label);letter-spacing:.16em}
 .page-head h3{margin:0;font-size:var(--fs-body);font-weight:800;letter-spacing:.01em}
-.page-meta{margin:6px 0 0;font-family:var(--font-mono);font-size:var(--fs-label);
+.page-meta{margin:5px 0 0;font-family:var(--font-mono);font-size:var(--fs-label);
   color:#6b6152}
+/* 나란히 볼 때 머리말이 두 줄로 접히면 칸마다 본문 시작 높이가 어긋난다 */
+.pages.three .page-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* 문단이 이 챕터의 조사 대상이다. 읽히는 크기여야 한다. */
-.para{margin:0 0 14px;padding:9px 12px;border-radius:6px;border:1px solid transparent;
-  font-size:var(--fs-body);line-height:1.85;word-break:keep-all}
+/* 장마다 따로 구르는 본문 */
+.page-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 18px 16px;
+  max-height:min(58dvh,540px)}
+.pages.one .page-body{max-height:min(62dvh,620px)}
+
+.para{margin:0 0 12px;padding:8px 11px;border-radius:6px;border:1px solid transparent;
+  font-size:var(--fs-body);line-height:1.8;word-break:keep-all}
+.para:last-child{margin-bottom:0}
 .para.markable{cursor:pointer;transition:background .12s,border-color .12s}
 .para.markable:hover{background:rgba(40,32,20,.09);border-color:rgba(40,32,20,.3)}
-/* 찍은 자리 — 도장 자국처럼 남는다. 정답을 미리 색칠하지 않기 위해
-   찍기 전에는 어떤 문단도 다르게 보이지 않는다. */
+/* 짚은 자리 — 도장 자국처럼 남는다. 짚기 전에는 어떤 문단도 달라 보이지 않는다. */
 .para.marked{position:relative;background:rgba(177,53,44,.1);
-  border-color:rgba(177,53,44,.5);padding-right:52px}
-.para.marked::after{content:"✕";position:absolute;right:9px;top:50%;
-  transform:translateY(-50%) rotate(-14deg);width:34px;height:34px;display:grid;
+  border-color:rgba(177,53,44,.5);padding-right:48px}
+.para.marked::after{content:"\2715";position:absolute;right:8px;top:50%;
+  transform:translateY(-50%) rotate(-14deg);width:32px;height:32px;display:grid;
   place-items:center;border:2.5px solid var(--stamp-red);border-radius:50%;
-  color:var(--stamp-red);font-weight:900;font-size:15px;opacity:.85}
+  color:var(--stamp-red);font-weight:900;font-size:14px;opacity:.85}
 
-.flag-btn{display:block;width:100%;margin-top:6px;padding:11px 14px;border-radius:7px;
-  border:1.5px dashed rgba(40,32,20,.4);background:rgba(40,32,20,.05);
-  color:#5a5245;font-size:var(--fs-label);font-weight:700;min-height:var(--tap)}
-.flag-btn:hover{background:rgba(177,53,44,.12);border-color:var(--stamp-red);
-  color:var(--stamp-red)}
-.flag-note{margin:6px 0 0;padding:9px 12px;border-radius:6px;
-  background:rgba(177,53,44,.12);color:var(--stamp-red);
-  font-size:var(--fs-label);font-weight:700;text-align:center}
-
-.verify-btn{display:block;margin-top:10px;padding:9px 16px;border-radius:7px;
+.verify-btn{margin-left:auto;padding:6px 16px;border-radius:7px;
   border:1px solid var(--line-hi);background:rgba(159,198,234,.12);
-  font-size:var(--fs-label);font-weight:700;min-height:var(--tap)}
+  font-size:var(--fs-label);font-weight:700;min-height:34px}
 .verify-btn:hover{background:rgba(159,198,234,.24)}
 
-/* ── 확인 목록 ───────────────────────────────────────────────────────── */
-.findings{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
-.findings h4{margin:0 0 12px;font-size:var(--fs-label);letter-spacing:.14em;color:var(--dim);
-  text-transform:uppercase}
-.findings ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}
-.findings li{padding:11px 15px;border-radius:8px;font-size:var(--fs-meta);line-height:1.6;
-  border:1px solid var(--line);background:rgba(255,255,255,.03)}
-.findings li.pending{color:var(--dim);font-style:italic}
+/* ── 찾은 것 ────────────────────────────────────────────────────────
+   못 찾은 자리는 이름을 보여 주지 않는다. 이름이 곧 답의 위치다. */
+.findings{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.findings ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.findings li{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:8px;
+  font-size:var(--fs-label);line-height:1.5;border:1px solid var(--line);
+  background:rgba(255,255,255,.03)}
+.findings li.pending{color:#4a5462}
+.findings li.pending b{font-family:var(--font-mono);letter-spacing:.2em}
 .findings li.got{border-color:rgba(111,191,149,.45);background:rgba(111,191,149,.09)}
-.findings li b{display:block}
-.findings li.got b{color:var(--ok)}
-.findings li span{display:block;margin-top:5px;color:var(--dim);font-size:var(--fs-label)}
-.findings p.ready{margin:16px 0 0;padding:13px 17px;border-radius:8px;
-  border:1px dashed var(--line-hi);background:rgba(159,198,234,.08);
-  font-size:var(--fs-meta);color:#c9dcf0}
-.findings p.ready b{color:#fff}
+.findings li b{flex:none;min-width:96px;color:var(--ok);font-weight:800}
+.findings li span{color:var(--dim)}
 
 /* ── 도장 ────────────────────────────────────────────────────────────── */
 .stamp-btn{display:block;margin:8px auto 4px;width:min(320px,100%);padding:26px;border-radius:12px;
@@ -239,19 +254,32 @@ p.hint b{color:#9fc6ea}
 #load-detail{font-size:var(--fs-label);color:#5f6b7a;font-family:var(--font-mono)}
 
 /* ── 모바일 ──────────────────────────────────────────────────────────── */
-#joy,#act{display:none;position:fixed;z-index:40;touch-action:none;user-select:none}
+/* 조작판은 손가락이 닿을 만큼은 크되, 방을 가리지 않아야 한다.
+   쉬는 동안에는 흐려 두고 만지는 동안에만 또렷해진다. */
+#joy,#act{display:none;position:fixed;z-index:40;touch-action:none;user-select:none;
+  opacity:.42;transition:opacity .18s ease}
 body.touch #joy,body.touch #act{display:block}
-#joy{left:calc(var(--sa-l) + 22px);bottom:calc(var(--sa-b) + 20px);width:132px;height:132px;
-  border-radius:50%;background:radial-gradient(circle,rgba(30,36,44,.5),rgba(10,13,18,.75));
-  border:2px solid rgba(168,182,200,.28);backdrop-filter:blur(8px)}
-#joyk{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;
+#joy.hot,#act:active,#joy:active{opacity:.95}
+#joy{left:calc(var(--sa-l) + 16px);bottom:calc(var(--sa-b) + 14px);width:104px;height:104px;
+  border-radius:50%;background:radial-gradient(circle,rgba(30,36,44,.42),rgba(10,13,18,.62));
+  border:2px solid rgba(168,182,200,.28);backdrop-filter:blur(6px)}
+#joyk{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;
   border-radius:50%;background:radial-gradient(circle at 35% 30%,#c8d8ea,#6c8aa8 60%,#40546b);
   border:2px solid rgba(226,236,248,.6);transition:transform .06s}
-#act{right:calc(var(--sa-r) + 22px);bottom:calc(var(--sa-b) + 20px);width:100px;height:100px;
-  border-radius:50%;font-size:17px;font-weight:800;letter-spacing:.1em;color:#fff;
+#act{right:calc(var(--sa-r) + 16px);bottom:calc(var(--sa-b) + 14px);width:82px;height:82px;
+  border-radius:50%;font-size:15px;font-weight:800;letter-spacing:.1em;color:#fff;
   background:radial-gradient(circle at 38% 30%,#3c6d8e,#22485f 60%,#132b3a);
-  border:3px solid rgba(140,190,225,.45);display:grid;place-items:center}
+  border:2px solid rgba(140,190,225,.45);display:grid;place-items:center}
 #act:active{transform:scale(.94)}
+
+/* 조작판이 있는 화면에서는 아래쪽이 손가락 자리다. 할 일 안내와 대사·알림을
+   그 위로 올린다 — 지금까지 목표 문장이 조이스틱 밑에 깔려 있었다. */
+body.touch #hud{justify-content:flex-start}
+body.touch #objective{margin-top:10px}
+body.touch #dialogue{
+  left:calc(var(--sa-l) + 130px);right:calc(var(--sa-r) + 100px);
+  transform:none;width:auto;max-width:none;bottom:calc(var(--sa-b) + 16px)}
+body.touch #toast{bottom:calc(var(--sa-b) + 128px)}
 
 #rotate{position:fixed;inset:0;z-index:175;display:none;place-items:center;text-align:center;
   padding:24px;background:#07090c;color:var(--dim);font-size:14px;line-height:2}
@@ -264,13 +292,12 @@ body.touch.portrait #rotate{display:grid}
   #progress{min-width:150px}
   .sheet-body{padding:14px 16px}
   .sheet-head{padding:12px 16px}
-  .page{padding:16px 17px 14px}
+  .page-head{padding:12px 13px 8px}
+  .page-body{padding:11px 13px 13px}
   .para{padding:7px 9px;margin-bottom:10px;line-height:1.75}
-  .viewbar{gap:5px;margin-bottom:12px;padding-bottom:10px}
-  /* 좁은 화면에서 그룹 이름까지 넣으면 탭 줄이 화면을 다 먹어 정작 보고서가
-     화면 밖으로 밀린다. 탭 글자만으로 충분히 읽힌다. */
-  .vlabel{display:none}
-  .vtab{padding:6px 12px;min-height:36px}
+  .viewbar{gap:5px;margin-bottom:10px;padding-bottom:9px}
+  .vtab{padding:6px 11px;min-height:36px}
+  .c-n{font-size:16px}
   #dialogue{padding:14px 18px;bottom:calc(var(--sa-b) + 14vh)}
   .stamp-btn{padding:18px;font-size:22px}
 }
@@ -281,13 +308,18 @@ body.touch.portrait #rotate{display:grid}
   .scroll-edge{transition:opacity .2s linear!important}
 }
 
-/* 세 장 나란히는 폭이 있어야 읽힌다. 좁으면 세로로 쌓아 스크롤로 본다 —
-   가로로 찌그러진 세 칸은 나란히 놓은 값을 잃는다. */
+/* 좁은 화면에서도 세 장은 나란히 둔다. 세로로 쌓으면 맞대어 읽을 수가
+   없고, 그게 이 챕터에서 할 일의 전부다. 대신 글자와 여백을 줄인다. */
 @media(max-width:820px){
-  .pages.three{grid-template-columns:minmax(0,1fr)}
-}
-@media(max-width:560px){
-  .pages.pair{grid-template-columns:minmax(0,1fr)}
+  .pages{gap:7px}
+  .pages.three .page-head{padding:10px 10px 7px}
+  .pages.three .page-head h3{font-size:12px}
+  .pages.three .page-no{margin-bottom:4px;padding:2px 7px;font-size:10px}
+  .pages.three .page-meta{font-size:9.5px;line-height:1.35}
+  .pages.three .page-body{padding:9px 10px 11px}
+  .pages.three .para{font-size:12px;line-height:1.65;padding:6px 8px;margin-bottom:8px}
+  .pages.three .para.marked{padding-right:34px}
+  .pages.three .para.marked::after{width:24px;height:24px;font-size:11px;right:5px}
 }
 
 /* 세로가 짧은 화면(가로로 돌린 폰, 짧은 노트북)에서는 머리말·안내·탭이
@@ -299,16 +331,35 @@ body.touch.portrait #rotate{display:grid}
   .sheet-head h2{font-size:15px}
   .sheet-head .sub{display:none}
   .sheet-body{padding:10px 14px}
-  p.hint{margin:0 0 8px;font-size:12px;line-height:1.55}
-  .viewbar{margin-bottom:8px;padding-bottom:8px;gap:4px}
-  .vlabel{display:none}
+  .c-h{font-size:11px;line-height:1.45}
+  .viewbar{margin-bottom:7px;padding-bottom:7px;gap:4px}
   .vtab{padding:5px 10px;min-height:32px}
-  .pages{gap:10px}
-  .page{padding:12px 13px 10px;border-top-width:3px}
-  .page-head{margin-bottom:9px;padding-bottom:7px}
-  .page-no{margin-bottom:5px;padding:2px 8px}
+  .counter{margin-bottom:7px}
+  .pages{gap:7px}
+  .page{border-top-width:3px}
+  .page-head{padding:9px 11px 6px}
+  .page-no{margin-bottom:4px;padding:2px 7px}
+  .page-body{padding:9px 11px 11px;max-height:none}
   .para{margin-bottom:8px;padding:6px 8px;line-height:1.7}
-  .findings{margin-top:14px;padding-top:12px}
+  /* 세로가 없으면 읽을 자리부터 지킨다. 머리말은 한 줄로 접고,
+     찾은 목록은 가로로 흐르는 한 줄짜리 띠로 바꾼다. */
+  .pages.three .page-head{display:flex;align-items:baseline;gap:7px;
+    padding:7px 9px 6px;border-bottom-width:1.5px}
+  .pages.three .page-no{margin:0;flex:none}
+  .pages.three .page-head h3{flex:0 1 auto;min-width:0;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .pages.three .page-meta{display:none}
+
+  .findings{margin-top:8px;padding-top:8px}
+  .findings ul{display:flex;flex-wrap:nowrap;gap:5px;overflow-x:auto}
+  .findings li{flex:none;padding:5px 10px;gap:6px}
+  .findings li b{min-width:0}
+  .findings li span{display:none}
+  .sheet-card.fill .findings{flex:none;max-height:none;overflow:visible}
+  .sheet-card.fill .page-body{min-height:120px}
+
+  .counter{margin-bottom:6px}
+  .c-h{flex:1 1 auto;margin-left:4px}
   #dialogue{padding:11px 16px;bottom:calc(var(--sa-b) + 10px)}
   #dialogue .line{font-size:14px;line-height:1.5}
 }

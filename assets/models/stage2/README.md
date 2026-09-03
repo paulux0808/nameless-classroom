@@ -66,7 +66,7 @@ readable, spoiler-safe, and synchronized with chapter state.
 - `common/rubber_stamp_base.glb` is not the final PBR REJECTED/APPROVED pair.
 - `ch01/printing_calculator_reference.glb` is not a period-final 1943 machine.
 - `ch01/richard_reference_business_man.glb` is a generic rig reference and is
-  not a Richard Feynman likeness.
+  not a likeness of any real person.
 - `ch06/metal_detector.glb` is a modern silhouette reference and must not ship
   as Emilio's counter/detector.
 
