@@ -33,13 +33,13 @@
 
   /* 타이포 스케일 — 읽기 중심 게임이라 본문(--fs-read)을 기준으로 잡는다.
      이전에는 일기 28px / 엔딩 라벨 9.5px 처럼 3배까지 벌어져 있었다. */
-  --fs-read:28px;         /* 일기·편지 본문 */
-  --fs-read-sm:24px;      /* 일기 날짜·서명 */
-  --fs-body:20px;         /* 자료 본문 */
-  --fs-title:28px;        /* 모달 제목 */
-  --fs-label:15px;        /* 대문자 라벨·키커 */
-  --fs-meta:18px;         /* 부제·보조 설명 */
-  --lh-read:2.05;
+  --fs-read:20px;         /* 일기·편지 본문 */
+  --fs-read-sm:17px;      /* 일기 날짜·서명 */
+  --fs-body:16px;         /* 자료 본문 */
+  --fs-title:22px;        /* 모달 제목 */
+  --fs-label:13px;        /* 대문자 라벨·키커 */
+  --fs-meta:15px;         /* 부제·보조 설명 */
+  --lh-read:1.8;
   --font-ui:"Pretendard","Gothic A1","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
   --font-hand:"Gowun Batang","Batang",Georgia,serif;
   --shadow:0 24px 60px rgba(0,0,0,0.7),0 2px 0 rgba(0,0,0,0.4);
@@ -78,7 +78,7 @@ button{cursor:pointer;touch-action:manipulation}
 .tag{display:inline-flex;align-items:center;gap:12px;padding:8px 22px 8px 12px;border-radius:30px;
   background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);
-  color:#f2e6d2;font-size:18px;font-weight:600;letter-spacing:.02em;white-space:nowrap;flex:none}
+  color:#f2e6d2;font-size:var(--fs-meta);font-weight:600;letter-spacing:.02em;white-space:nowrap;flex:none}
 .tag b{display:inline-flex;align-items:center;padding:4px 12px;border-radius:14px;
   background:linear-gradient(135deg,#d8a64e,#946b28);color:#120e09;
   font-weight:900;font-size:14px;letter-spacing:.14em;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
@@ -97,20 +97,20 @@ button{cursor:pointer;touch-action:manipulation}
 
 /* 목표 지시문 (1.6배 & 가독성 강화) */
 #objective{align-self:flex-start;max-width:min(800px,92vw);padding:18px 28px;border-radius:18px;
-  font-family:var(--font-ui);font-size:19px;line-height:1.68;letter-spacing:.01em;
+  font-family:var(--font-ui);font-size:var(--fs-meta);line-height:1.65;letter-spacing:.01em;
   background:rgba(20,15,10,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border:1px solid var(--line);color:#eee2cf;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-wrap:pretty}
 #objective:empty{display:none}
 #objective b{color:#ecc67a;font-weight:700}
 #objective .hint{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
-  color:#d4ab63;font-size:18px}
+  color:#d4ab63;font-size:var(--fs-label)}
 
 #hud-right{display:flex;align-items:center;gap:12px;flex:none}
 #toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .tbtn{display:inline-flex;align-items:center;justify-content:center;padding:0 22px;min-height:48px;
   border-radius:24px;border:1px solid var(--line);color:#eedcc4;
   background:rgba(22,17,11,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  font-size:17px;font-weight:600;font-family:var(--font-ui);letter-spacing:.02em;
+  font-size:var(--fs-meta);font-weight:600;font-family:var(--font-ui);letter-spacing:.02em;
   box-shadow:0 4px 14px rgba(0,0,0,0.35);transition:all .18s ease}
 .tbtn:hover{background:rgba(38,28,18,0.92);border-color:var(--line-hi);color:#fff;
   transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
@@ -130,13 +130,13 @@ button{cursor:pointer;touch-action:manipulation}
 @keyframes reticlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
 
 #label{position:fixed;z-index:31;pointer-events:none;transform:translate(-50%,-160%);
-  padding:10px 22px;font-size:18px;font-weight:600;white-space:nowrap;
+  padding:9px 18px;font-size:var(--fs-meta);font-weight:600;white-space:nowrap;
   font-family:var(--font-ui);color:#fff;
   background:rgba(18,14,10,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid rgba(236,198,122,0.45);border-radius:12px;
   box-shadow:0 8px 24px rgba(0,0,0,0.65);opacity:0;transition:opacity .15s ease,transform .15s ease}
 #label.show{opacity:1;transform:translate(-50%,-150%)}
-#label i{display:block;font-style:normal;font-size:14px;color:#e89078;margin-top:3px}
+#label i{display:block;font-style:normal;font-size:var(--fs-label);color:#e89078;margin-top:3px}
 
 /* ── 스크롤 ──────────────────────────────────────────────────────────
    내용이 넘치면 스크롤할 수 있다는 걸 반드시 눈에 보이게 한다.
@@ -224,18 +224,18 @@ button{cursor:pointer;touch-action:manipulation}
 .terminal-aid-pane{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;
   border:1px solid var(--line);border-radius:12px;background:rgba(22,17,11,0.96);box-shadow:0 18px 46px rgba(0,0,0,0.55)}
 .terminal-aid-head{flex:none;padding:12px 18px;background:#1a140d;color:#d8bd88;border-bottom:1px solid var(--line);
-  font-size:16px;font-weight:800;letter-spacing:.12em}
+  font-size:var(--fs-meta);font-weight:800;letter-spacing:.12em}
 .terminal-aid-scroll{min-height:0;overflow:auto;--scroll-edge:rgba(22,17,9,0.96)}
-.terminal-aid-pane .paper{min-height:100%;padding:26px 32px;font-size:22px;line-height:1.88;box-shadow:none;border:0;border-radius:0}
+.terminal-aid-pane .paper{min-height:100%;padding:22px 26px;font-size:var(--fs-read-sm);line-height:1.8;box-shadow:none;border:0;border-radius:0}
 .terminal-aid-pane .paper p{margin:0 0 16px}
 .terminal-aid-ref{padding:18px 22px;background:linear-gradient(165deg,rgba(36,28,18,0.96),rgba(20,15,9,0.96));color:var(--text)}
 .terminal-aid-ref .list{gap:12px}
-.terminal-aid-ref .item>summary{padding:14px 18px;font-size:20px;font-weight:700}
-.terminal-aid-ref .item .in{padding:16px 20px;font-size:19px;line-height:1.75}
-.terminal-aid-ref dl{grid-template-columns:110px 1fr;font-size:19px;gap:8px 14px}
+.terminal-aid-ref .item>summary{padding:12px 16px;font-size:var(--fs-body);font-weight:700}
+.terminal-aid-ref .item .in{padding:14px 18px;font-size:var(--fs-body);line-height:1.7}
+.terminal-aid-ref dl{grid-template-columns:92px 1fr;font-size:var(--fs-body);gap:7px 12px}
 .terminal-aid-ref dt{font-weight:700;color:var(--brass)}
 .terminal-aid-ref dd{margin:0}
-.terminal-aid-ref p{margin:10px 0 0;font-size:19px}
+.terminal-aid-ref p{margin:9px 0 0;font-size:var(--fs-body)}
 .terminal-aid-ref video{width:100%;max-height:45vh;object-fit:contain;background:#050403;border-radius:8px}
 
 /* 카드가 통째로 스크롤하면 머리글이 같이 밀리고, 내용이 더 있다는 신호도
@@ -246,18 +246,18 @@ button{cursor:pointer;touch-action:manipulation}
   border-radius:16px;background:linear-gradient(165deg,#241c12,#140f09);box-shadow:var(--shadow)}
 .card-head{flex:none;z-index:2;display:flex;gap:18px;justify-content:space-between;align-items:center;
   padding:20px 30px;border-bottom:1px solid var(--line);background:rgba(18,13,7,0.98)}
-.card-head h2{margin:0;font-size:28px;font-family:var(--font-ui);font-weight:800;letter-spacing:.02em;color:#f6ede0}
-.card-head .sub{color:var(--text-dim);font-size:18px;letter-spacing:.12em}
+.card-head h2{margin:0;font-size:var(--fs-title);font-family:var(--font-ui);font-weight:800;letter-spacing:.02em;color:#f6ede0}
+.card-head .sub{color:var(--text-dim);font-size:var(--fs-meta);letter-spacing:.12em}
 /* 본문이 스크롤 주체 (.scrolls.fade-y 는 마크업에서 붙인다) */
 .card-body{flex:1 1 auto;min-height:0;overflow:auto;padding:30px 36px;
   --scroll-edge:rgba(20,15,9,0.96)}
-.eyebrow{font-size:16px;letter-spacing:.25em;color:var(--brass);font-weight:900}
+.eyebrow{font-size:var(--fs-label);letter-spacing:.25em;color:var(--brass);font-weight:900}
 
 /* 일기장 / 자료 서식 (폰트 2배 & 여백/요소 1.6배) */
 .paper{padding:42px 48px;border-radius:12px;color:#261d15;font-family:var(--font-hand);
-  font-size:28px;line-height:2.05;background:linear-gradient(180deg,#faf4e6,var(--paper));
+  font-size:var(--fs-read);line-height:var(--lh-read);background:linear-gradient(180deg,#faf4e6,var(--paper));
   box-shadow:0 0 0 1px #d6c6a6 inset, 0 20px 48px rgba(0,0,0,0.45)}
-.paper .date{font-style:italic;color:#6f6250;margin:0 0 28px;font-size:24px}
+.paper .date{font-style:italic;color:#6f6250;margin:0 0 20px;font-size:var(--fs-read-sm)}
 .paper p{margin:0 0 24px}
 .paper .red{color:var(--pen);font-weight:700}
 .paper .em{font-weight:700}
@@ -266,16 +266,16 @@ button{cursor:pointer;touch-action:manipulation}
 .paper .redacted{display:inline-block;min-width:6em;height:1.15em;vertical-align:-.15em;border-radius:3px;
   background:repeating-linear-gradient(135deg,#3a3229,#3a3229 6px,#4a4136 6px,#4a4136 12px)}
 .paper .note{margin:32px 0;padding:24px 32px;border:2px solid #d4c4a4;border-radius:6px;
-  background:rgba(255,255,255,0.65);font-size:25px;line-height:1.95}
-.paper .sign{text-align:right;font-style:italic;color:#6f6250;font-size:24px;margin-top:28px}
-.dict-link{display:inline-block;margin-top:24px;padding:12px 24px;border-radius:8px;font-size:20px;font-family:var(--font-ui);font-weight:700;background:rgba(0,100,50,0.1);color:#185b37;text-decoration:none;border:1.5px solid #23854d}
+  background:rgba(255,255,255,0.65);font-size:var(--fs-read-sm);line-height:1.8}
+.paper .sign{text-align:right;font-style:italic;color:#6f6250;font-size:var(--fs-read-sm);margin-top:20px}
+.dict-link{display:inline-block;margin-top:20px;padding:10px 20px;border-radius:8px;font-size:var(--fs-meta);font-family:var(--font-ui);font-weight:700;background:rgba(0,100,50,0.1);color:#185b37;text-decoration:none;border:1.5px solid #23854d}
 
 /* 삽화 / 스케치 (1.6배) */
 .cosmo-sketch{margin:28px 0;padding:20px;background:rgba(0,0,0,0.03);border:1.5px dashed #c0b090;border-radius:10px}
 .cosmo-sketch svg{width:100%;height:auto;display:block}
-.cosmo-sketch text{font-family:var(--font-hand);font-size:26px;fill:#2b2219}
-.cosmo-sketch text.small{font-size:22px;fill:#554738}
-.cosmo-sketch text.redink{font-size:24px;fill:var(--pen);font-weight:700}
+.cosmo-sketch text{font-family:var(--font-hand);font-size:21px;fill:#2b2219}
+.cosmo-sketch text.small{font-size:18px;fill:#554738}
+.cosmo-sketch text.redink{font-size:19px;fill:var(--pen);font-weight:700}
 .cosmo-sketch path.ink{stroke:#2b2219;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .cosmo-sketch path.fine{stroke:#c04838;stroke-width:2.5;fill:none;stroke-dasharray:6,4}
 .cosmo-sketch circle.ink{stroke:#2b2219;stroke-width:3;fill:none}
@@ -284,9 +284,9 @@ button{cursor:pointer;touch-action:manipulation}
 /* 자료 모달 목록 (1.6배 & 폰트 2배) */
 .list{display:grid;gap:14px}
 .item{border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,0.03);overflow:hidden}
-.item>summary{padding:16px 22px;font-size:22px;font-weight:700;color:#eedcc4;cursor:pointer;background:rgba(0,0,0,0.2)}
-.item .in{padding:20px 24px;font-size:20px;line-height:1.8;color:#d8cdbe;border-top:1px solid var(--line)}
-.item dl{display:grid;grid-template-columns:120px 1fr;gap:10px 16px;font-size:20px;margin:0}
+.item>summary{padding:14px 18px;font-size:var(--fs-body);font-weight:700;color:#eedcc4;cursor:pointer;background:rgba(0,0,0,0.2)}
+.item .in{padding:16px 20px;font-size:var(--fs-body);line-height:1.75;color:#d8cdbe;border-top:1px solid var(--line)}
+.item dl{display:grid;grid-template-columns:96px 1fr;gap:9px 14px;font-size:var(--fs-body);margin:0}
 .item dt{font-weight:700;color:var(--brass)}
 .item dd{margin:0}
 .item p{margin:12px 0 0;font-size:var(--fs-body);line-height:1.75}
@@ -295,16 +295,16 @@ button{cursor:pointer;touch-action:manipulation}
 
 .btn{border:1px solid rgba(214,186,136,0.3);border-radius:10px;padding:14px 24px;
   background:rgba(226,196,140,0.08);font-family:var(--font-ui);font-weight:600;letter-spacing:.02em;
-  font-size:18px;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:all .14s ease}
+  font-size:var(--fs-meta);box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:all .14s ease}
 .btn:hover{background:rgba(226,196,140,0.18);border-color:var(--brass);transform:translateY(-1px)}
 .btn:active{transform:translateY(1px)}
-.btn-p{border-color:#9e722c;color:#181108;font-weight:800;font-size:20px;padding:16px 28px;
+.btn-p{border-color:#9e722c;color:#181108;font-weight:800;font-size:var(--fs-body);padding:13px 24px;
   background:linear-gradient(178deg,#f2d594,#d4a34b 58%,#a8782a);
   box-shadow:0 6px 20px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,248,220,0.6)}
 .btn-p:hover{filter:brightness(1.08)}
 .btn-p:active{transform:translateY(1px);box-shadow:0 2px 6px rgba(0,0,0,0.4)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-s{padding:10px 18px;font-size:18px;border-radius:8px}
+.btn-s{padding:9px 16px;font-size:var(--fs-meta);border-radius:8px}
 .row{display:flex;gap:12px;flex-wrap:wrap}
 
 /* 레트로 컴퓨터 단말기 (1.6배 & 폰트 2배) */
@@ -313,24 +313,24 @@ button{cursor:pointer;touch-action:manipulation}
   box-shadow:inset 0 0 50px rgba(40,140,110,0.08),0 14px 40px rgba(0,0,0,0.6)}
 .term::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:repeating-linear-gradient(180deg,rgba(0,0,0,0.2) 0 1px,transparent 1px 3px);opacity:.45}
-.term .l{color:#5eead4;font-size:18px;letter-spacing:.12em;text-shadow:0 0 8px rgba(94,234,212,0.4)}
-.term .rule{margin-top:12px;font-size:17px;letter-spacing:.08em;color:#38bdf8}
+.term .l{color:#5eead4;font-size:var(--fs-meta);letter-spacing:.12em;text-shadow:0 0 8px rgba(94,234,212,0.4)}
+.term .rule{margin-top:10px;font-size:var(--fs-label);letter-spacing:.08em;color:#38bdf8}
 .term:has(.answer-ui){padding:24px 28px}
 .answer-ui{margin-top:12px;display:grid;gap:10px}
 .answer-display{min-height:56px;padding:12px 20px;border-radius:8px;border:1px solid rgba(94,234,212,0.35);
-  background:#050907;color:#5eead4;font-family:ui-monospace,monospace;font-size:26px;letter-spacing:.16em;
+  background:#050907;color:#5eead4;font-family:ui-monospace,monospace;font-size:21px;letter-spacing:.16em;
   display:flex;align-items:center;overflow-wrap:anywhere;word-break:break-all;text-shadow:0 0 10px rgba(94,234,212,0.45)}
-.answer-display.empty{color:#2a6b5e;letter-spacing:.04em;font-size:18px}
+.answer-display.empty{color:#2a6b5e;letter-spacing:.04em;font-size:var(--fs-meta)}
 .answer-keys{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:8px}
 .answer-keys.number{grid-template-columns:repeat(5,minmax(0,1fr))}
 .answer-key,.answer-tool{min-height:48px;border:1px solid rgba(94,234,212,0.26);border-radius:8px;
-  background:rgba(94,234,212,0.08);color:#99f6e4;font-family:ui-monospace,monospace;font-weight:800;font-size:19px;
+  background:rgba(94,234,212,0.08);color:#99f6e4;font-family:ui-monospace,monospace;font-weight:800;font-size:var(--fs-body);
   transition:all .1s}
 .answer-key:active,.answer-tool:active{background:rgba(94,234,212,0.3);transform:translateY(1px);color:#fff}
 .answer-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.term .done{font-family:var(--font-ui);color:#e2f8f0;font-size:20px;line-height:1.8}
+.term .done{font-family:var(--font-ui);color:#e2f8f0;font-size:var(--fs-body);line-height:1.75}
 .term .cue{margin-top:18px;padding:18px 24px;border-radius:12px;border:1px dashed rgba(94,234,212,0.4);
-  background:rgba(94,234,212,0.07);font-family:var(--font-ui);font-weight:700;font-size:26px;color:#ccfbf1;text-align:center}
+  background:rgba(94,234,212,0.07);font-family:var(--font-ui);font-weight:700;font-size:20px;color:#ccfbf1;text-align:center}
 
 /* 지도 및 액자 모달 (1.6배 & 폰트 2배) */
 .mapwrap{overflow:visible;width:100%}
@@ -342,7 +342,7 @@ button{cursor:pointer;touch-action:manipulation}
   padding:6px 5px;position:relative;overflow-wrap:anywhere;word-break:break-word}
 .mc.blank{background:#5d2a0d;opacity:.55}
 .mc.void{visibility:hidden}
-.maproutes{margin:16px 0 0;padding-left:24px;font-size:18px;line-height:1.75}
+.maproutes{margin:14px 0 0;padding-left:22px;font-size:var(--fs-meta);line-height:1.7}
 
 /* 퍼즐 자료다. 잘리면 풀 수가 없다.
    좁으면 줄바꿈하고, 그래도 모자라면 가로 스크롤을 연다.
@@ -369,7 +369,7 @@ button{cursor:pointer;touch-action:manipulation}
 .stack{display:grid;gap:18px;padding:16px 0 8px;padding-left:24px;min-width:0}
 .srow{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end}
 .bar{position:relative;transition:margin .4s ease;min-width:0}
-.bar .face{height:46px;padding:0 24px;display:flex;gap:14px;align-items:center;font-size:18px;
+.bar .face{height:42px;padding:0 20px;display:flex;gap:12px;align-items:center;font-size:var(--fs-meta);
   color:#fff3e0;white-space:nowrap;overflow:hidden;
   background:linear-gradient(160deg,#c69a62,#a97f4d 60%,#946c40);
   border:1px solid rgba(255,232,190,0.3);border-bottom:0;
@@ -380,7 +380,7 @@ button{cursor:pointer;touch-action:manipulation}
 .bar .band{height:28px;background-repeat:no-repeat;background-color:#6b4a2c;
   border:1px solid rgba(255,232,190,0.22);border-top:0;box-shadow:inset 0 3px 6px rgba(0,0,0,0.34)}
 .srow .mv{display:flex;gap:8px;transition:opacity .3s}
-.srow .mv button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,0.05);font-size:20px;color:#eedcc4}
+.srow .mv button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,0.05);font-size:var(--fs-body);color:#eedcc4}
 .stack.locked{gap:0}
 .stack.locked .bar{margin-left:0!important}
 .stack.locked .srow:not(:first-child) .bar .face{height:0;opacity:0;border:0}
@@ -394,13 +394,21 @@ button{cursor:pointer;touch-action:manipulation}
 #modal.assembly-modal .card{height:auto;max-height:calc(100dvh - 32px - var(--sa-t) - var(--sa-b))}
 .assembly-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:24px;
   align-items:start;min-width:0}
-/* 좁으면 위아래로 쌓는다 — 나란히 두면 양쪽 다 못 읽는다 */
-@media(max-width:1000px){
+/* 좁으면 위아래로 쌓는다 — 나란히 두면 양쪽 다 못 읽는다.
+   다만 '좁다'의 기준은 폭이 아니라 높이다. 가로로 든 폰은 폭이 844px 라
+   폭 기준(max-width:1000px)에 걸려 1단으로 세워지는데, 정작 모자란 건
+   높이 390px 여서 조각 8개 중 3개만 보이고 나머지는 화면 밖으로 밀렸다.
+   높이가 넉넉하지 않으면 오히려 2단을 유지해 세로 길이를 반으로 줄인다. */
+@media(max-width:1000px) and (min-height:521px){
   .assembly-layout{grid-template-columns:minmax(0,1fr)}
   .assembly-diary .paper{max-height:32vh}
 }
-.assembly-diary .paper{padding:28px 32px;font-size:22px;line-height:1.85;
+.assembly-diary .paper{padding:22px 26px;font-size:var(--fs-read-sm);line-height:1.75;
   max-height:calc(100dvh - 160px);overflow:auto;
+  /* .scrolls 의 overscroll-behavior:contain 을 여기서만 푼다. contain 이면
+     일기를 끝까지 내려도 부모로 스크롤이 넘어가지 않아, 일기를 만진 손가락
+     으로는 화면이 영영 안 올라간다 — 조각 절반이 화면 밖에 남는다. */
+  overscroll-behavior:auto;
   --scroll-edge:rgba(246,240,225,0.97);
   scrollbar-color:rgba(120,98,62,0.55) rgba(90,72,44,0.12)}
 .assembly-diary .paper::-webkit-scrollbar-track{background:rgba(90,72,44,0.12)}
@@ -500,7 +508,7 @@ body.touch #joy,body.touch #act,body.touch #crouch{display:block}
   background:rgba(20,15,10,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid var(--line);border-radius:14px;
   box-shadow:0 12px 32px rgba(0,0,0,0.6);padding:16px 36px;
-  font-size:19px;line-height:1.55;color:#f4ede0;pointer-events:none;transition:all .22s ease;
+  font-size:var(--fs-meta);line-height:1.5;color:#f4ede0;pointer-events:none;transition:all .22s ease;
   max-width:min(68vw,620px);text-align:center;text-wrap:pretty}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #toast.good{border-color:rgba(120,200,160,0.5);box-shadow:0 12px 32px rgba(0,0,0,0.6),0 0 14px rgba(90,190,140,0.25)}
@@ -658,6 +666,27 @@ body.ending #hud,body.ending #joy,body.ending #act,body.ending #crouch,body.endi
   #stage-transition{transition:opacity .45s linear!important}
   /* 스크롤 표시는 연출이 아니라 정보다. 움직임만 끄고 표시는 남긴다. */
   .scroll-edge{transition:opacity .2s linear!important}
+}
+/* ── 조립 화면: 낮고 넓은 화면(가로로 든 폰) ────────────────────────────
+   반드시 스타일시트 맨 뒤에 둔다. 앞에 두면 아래 두 규칙에 밀린다.
+     · body.touch .paper        (0,2,1) — 글자 크기
+     · @media(max-height:560px) .assembly-diary .paper — max-height:26vh
+   선택자에 .scrolls 를 더해 (0,3,0) 으로 올리고, 순서로도 마지막이 되게 한다.
+   폭이 아니라 높이가 모자란 화면이므로 2단을 유지해야 조각이 다 보인다. */
+@media(max-height:520px){
+  .assembly-layout{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px}
+  .assembly-diary .paper.scrolls{max-height:calc(100dvh - 130px);padding:12px 14px;
+    font-size:var(--fs-label);line-height:1.65}
+  .assembly-stackview{padding:2px 4px 8px}
+  .assembly-stackview .stack{gap:5px;padding:6px 0 4px;padding-left:10px}
+  .assembly-stackview .srow{gap:9px}
+  .assembly-stackview .bar .face{height:28px;padding:0 12px;gap:8px;font-size:var(--fs-label)}
+  .assembly-stackview .bar .face .n{width:20px;height:20px}
+  /* 나뭇결 띠는 조각의 얼굴이라 너무 줄이면 무엇인지 안 보인다.
+     8칸을 다 담을 만큼은 못 줄이므로, 줄이는 건 여기까지 하고
+     나머지는 스크롤에 맡긴다(위의 overscroll-behavior 수정으로 이제 올라간다). */
+  .assembly-stackview .bar .band{height:20px}
+  .assembly-stackview .srow .mv button{width:28px;height:28px;font-size:var(--fs-label)}
 }
 </style>
 </head>
