@@ -516,10 +516,17 @@
         });
         playNPC("idle");
       }
-      /* 히트박스는 인물을 따라다닌다. 걸어 다니므로 고정할 수 없다. */
+      /* 히트박스는 인물을 따라다닌다. 걸어 다니므로 고정할 수 없다.
+         크기를 바운딩박스에서 가져오면 안 된다 — 리깅 모델의 바인드 포즈
+         박스는 실루엣과 무관하다(이 배우는 높이가 0.41m 로 잡힌다).
+         그대로 쓰면 발치에만 판정이 생겨 사람을 눌러도 반응이 없다.
+         서 있는 사람 크기로 잡고, 필요하면 챕터가 바꾼다. */
+      var rigged = false;
+      npc.traverse(function (n) { if (n.isSkinnedMesh) rigged = true; });
       var box = new THREE.Box3().setFromObject(npc);
-      var h = box.max.y - box.min.y;
-      npcHit = invisibleHit(0.8, h, 0.8, [npc.position.x, h / 2, npc.position.z]);
+      var h = spec.hitHeight || (rigged ? 1.78 : box.max.y - box.min.y);
+      var w = spec.hitWidth || 0.8;
+      npcHit = invisibleHit(w, h, w, [npc.position.x, h / 2, npc.position.z]);
       npcHit.userData.h = h;
       scene.add(hot(npcHit, "npc", chapter.npc));
       loadStep();
@@ -1596,6 +1603,14 @@
     _npcAt: function () {
       return npc ? { x: +npc.position.x.toFixed(2), z: +npc.position.z.toFixed(2),
                      visible: npc.visible, walking: !!npcWalk } : null;
+    },
+    /* 화면 한가운데가 지금 무엇을 조준하고 있는가 — 라벨은 프레임이 느리면
+       한 박자 늦게 갱신되므로 검증에는 이쪽을 쓴다. */
+    _aim: function () {
+      var o = castAt(innerWidth / 2, innerHeight / 2);
+      if (!o || !o.userData.hot) return null;
+      return { id: o.userData.hot.id, name: o.userData.hot.name,
+               dist: +lastDist.toFixed(2), reach: lastDist <= REACH };
     },
     _npcAnim: function () {
       var out = { clips: Object.keys(npcClips), playing: null, overlay: null };
