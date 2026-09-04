@@ -57,6 +57,87 @@ button{cursor:pointer;touch-action:manipulation}
 .hidden{display:none !important}
 :focus-visible{outline:2px solid var(--brass);outline-offset:2px}
 
+/* touch-action:none 이 없으면 브라우저가 드래그를 스크롤/줌 제스처로
+   가로채면서 도중에 pointercancel 을 던진다. 시선 드래그가 중간에
+   끊기던 원인이므로 이 선언은 지우면 안 된다. */
+#scene{position:fixed;inset:0;display:block;touch-action:none;cursor:grab}
+#scene.dragging{cursor:grabbing}
+
+/* 렌더 색보정 및 비네트 */
+#grade{position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:radial-gradient(130% 110% at 50% 45%,transparent 42%,rgba(14,9,4,0.38) 78%,rgba(6,4,2,0.78) 100%),
+             linear-gradient(180deg,rgba(255,210,140,0.04),rgba(30,20,8,0.08))}
+
+/* ---------------------------- [2] HUD ---------------------------- */
+#hud{position:fixed;inset:0;z-index:30;pointer-events:none;display:flex;flex-direction:column;
+     justify-content:space-between;padding:16px;gap:12px}
+#hud > *{pointer-events:auto}
+.hud-row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+
+/* 표제 배지 (1.6배) */
+.tag{display:inline-flex;align-items:center;gap:12px;padding:8px 22px 8px 12px;border-radius:30px;
+  background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);
+  color:#f2e6d2;font-size:18px;font-weight:600;letter-spacing:.02em;white-space:nowrap;flex:none}
+.tag b{display:inline-flex;align-items:center;padding:4px 12px;border-radius:14px;
+  background:linear-gradient(135deg,#d8a64e,#946b28);color:#120e09;
+  font-weight:900;font-size:14px;letter-spacing:.14em;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.tag > span{letter-spacing:.02em;color:#f0e4d0}
+
+/* 8조각 인디케이터 — 보석형 발광 슬롯 (1.6배) */
+#pieces{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:30px;
+  background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);box-shadow:0 6px 20px rgba(0,0,0,0.45);flex:none}
+#pieces i{width:22px;height:22px;border-radius:50%;font-style:normal;
+  background:rgba(255,255,255,0.06);border:1px solid var(--line);
+  transition:all .35s cubic-bezier(0.3,0,0,1)}
+#pieces i.on{background:radial-gradient(circle at 35% 35%,#ffeab2,#d8a64e 60%,#8c601f);
+  border-color:#ffebbb;box-shadow:0 0 14px rgba(230,175,70,0.75),inset 0 1px 2px rgba(255,255,255,0.8);
+  transform:scale(1.15)}
+
+/* 목표 지시문 (1.6배 & 가독성 강화) */
+#objective{align-self:flex-start;max-width:min(800px,92vw);padding:18px 28px;border-radius:18px;
+  font-family:var(--font-ui);font-size:19px;line-height:1.68;letter-spacing:.01em;
+  background:rgba(20,15,10,0.88);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--line);color:#eee2cf;box-shadow:0 10px 30px rgba(0,0,0,0.5);text-wrap:pretty}
+#objective:empty{display:none}
+#objective b{color:#ecc67a;font-weight:700}
+#objective .hint{display:block;margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+  color:#d4ab63;font-size:18px}
+
+#hud-right{display:flex;align-items:center;gap:12px;flex:none}
+#toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.tbtn{display:inline-flex;align-items:center;justify-content:center;padding:0 22px;min-height:48px;
+  border-radius:24px;border:1px solid var(--line);color:#eedcc4;
+  background:rgba(22,17,11,0.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-size:17px;font-weight:600;font-family:var(--font-ui);letter-spacing:.02em;
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);transition:all .18s ease}
+.tbtn:hover{background:rgba(38,28,18,0.92);border-color:var(--line-hi);color:#fff;
+  transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.45)}
+.tbtn:active{transform:translateY(1px);box-shadow:0 2px 6px rgba(0,0,0,0.4)}
+.tbtn.act{background:linear-gradient(135deg,#c8923a,#8c5f1c);color:#120d06;border-color:#ecc87a;
+  font-weight:800;box-shadow:0 0 16px rgba(210,160,60,0.5)}
+
+/* 조준점 & 대상 툴팁 */
+#reticle{position:fixed;z-index:31;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
+  border-radius:50%;background:#f4dfb5;pointer-events:none;transition:all .15s ease;opacity:.65;
+  box-shadow:0 0 8px rgba(0,0,0,0.8)}
+#reticle.far{width:18px;height:18px;margin:-9px 0 0 -9px;background:transparent;
+  border:2px solid rgba(244,223,181,0.45);opacity:.85}
+#reticle.hot{width:32px;height:32px;margin:-16px 0 0 -16px;background:transparent;
+  border:2.5px solid #ecc67a;opacity:1;box-shadow:0 0 20px rgba(236,198,122,0.7),inset 0 0 10px rgba(236,198,122,0.25);
+  animation:reticlePulse 1.8s ease-in-out infinite}
+@keyframes reticlePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+#label{position:fixed;z-index:31;pointer-events:none;transform:translate(-50%,-160%);
+  padding:10px 22px;font-size:18px;font-weight:600;white-space:nowrap;
+  font-family:var(--font-ui);color:#fff;
+  background:rgba(18,14,10,0.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(236,198,122,0.45);border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.65);opacity:0;transition:opacity .15s ease,transform .15s ease}
+#label.show{opacity:1;transform:translate(-50%,-150%)}
+#label i{display:block;font-style:normal;font-size:14px;color:#e89078;margin-top:3px}
+
 /* ── 스크롤 ──────────────────────────────────────────────────────────
    내용이 넘치면 스크롤할 수 있다는 걸 반드시 눈에 보이게 한다.
    macOS/iOS 는 기본적으로 만지기 전까지 스크롤바를 숨기므로
@@ -2893,25 +2974,33 @@ function setDark(dark){
 
 /* 컨트롤 */
 function initControls(){
-  var cv=$("#scene"),down=false,lx=0,ly=0,moved=0;
+  /* 시선 드래그는 반드시 포인터 하나만 따라간다. pid 를 두지 않으면
+     끌던 중 손가락이 하나 더 닿거나(손바닥·엄지) 오른버튼이 눌리는 순간
+     시작점이 그쪽으로 덮어써지고, 그 포인터가 떨어질 때 드래그 전체가
+     끝나 버린다. "가다가 중간에 끊긴다"의 원인이다. */
+  var cv=$("#scene"),pid=null,lx=0,ly=0,moved=0;
   function pt(e){var t=e.touches?e.touches[0]:e;return{x:t.clientX,y:t.clientY};}
-  function endDrag(){down=false;cv.classList.remove("dragging");}
+  function endDrag(){pid=null;cv.classList.remove("dragging");}
   cv.addEventListener("pointerdown",function(e){
     if(inputBlocked())return;
-    down=true;moved=0;var p=pt(e);lx=p.x;ly=p.y;
-    cv.classList.add("dragging");cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);});
+    if(pid!==null)return;                       /* 이미 끌고 있으면 두 번째 포인터는 무시 */
+    if(e.pointerType==="mouse"&&e.button!==0)return;
+    pid=e.pointerId;moved=0;var p=pt(e);lx=p.x;ly=p.y;
+    cv.classList.add("dragging");
+    try{cv.setPointerCapture&&cv.setPointerCapture(e.pointerId);}catch(_){}});
   cv.addEventListener("pointermove",function(e){
     if(inputBlocked()){endDrag();return;}
     var p=pt(e);
-    if(down){var dx=p.x-lx,dy=p.y-ly;lx=p.x;ly=p.y;moved+=Math.abs(dx)+Math.abs(dy);
+    if(e.pointerId===pid){var dx=p.x-lx,dy=p.y-ly;lx=p.x;ly=p.y;moved+=Math.abs(dx)+Math.abs(dy);
       yaw+=dx*0.0034;pitch+=dy*0.0030;
       pitch=Math.max(-1.05,Math.min(1.05,pitch));}
+    else if(pid!==null)return;                  /* 끌던 중 다른 포인터는 호버 판정도 건드리지 않는다 */
     hoverThrottled(p.x,p.y);
   });
-  function up(e){if(!down)return;endDrag();
+  function up(e){if(e.pointerId!==pid)return;endDrag();
     if(moved<7){pick(lx,ly);} }
   cv.addEventListener("pointerup",up);
-  cv.addEventListener("pointercancel",function(){down=false;cv.classList.remove("dragging");});
+  cv.addEventListener("pointercancel",function(e){if(e.pointerId===pid)endDrag();});
   addEventListener("resize",resize);
   var MAPK={w:"w",a:"a",s:"s",d:"d",W:"w",A:"a",S:"s",D:"d",
     ArrowUp:"w",ArrowLeft:"a",ArrowDown:"s",ArrowRight:"d",
