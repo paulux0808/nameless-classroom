@@ -415,13 +415,19 @@
     obj.position.x += p[0] - (item.center === false ? obj.position.x : c.x);
     obj.position.z += p[2] - (item.center === false ? obj.position.z : c.z);
 
-    /* 무엇 위에 올릴지 지정했으면 그 윗면을 바닥으로 삼는다 */
+    /* 무엇 위에 올릴지 지정했으면 그 윗면을 바닥으로 삼는다.
+       바운딩박스의 꼭대기를 쓰면 안 된다 — 뚜껑이 열린 공구함은 열린
+       뚜껑 끝이 꼭대기라, 그 위에 얹으면 구급함이 허공에 뜬다.
+       놓을 자리로 광선을 내려 쏘아 진짜 얹히는 면을 찾는다. */
     var baseY = p[1];
     if (item.restOn) {
       var host = models[item.restOn];
       if (host) {
         var hb = new THREE.Box3().setFromObject(host);
-        baseY = hb.max.y;
+        var tops = shelfTops(host, hb, p[0], p[2]);
+        baseY = tops.length ? tops[0] : hb.max.y;
+        if (!tops.length)
+          console.warn("[MODEL] " + item.id + ": 얹을 면을 찾지 못해 바운딩박스 꼭대기에 올린다");
       } else {
         console.warn("[MODEL] " + item.id + ": restOn 대상 '" + item.restOn + "' 이 아직 없다");
       }
@@ -1161,7 +1167,11 @@
     /* 몇 군데인지는 알려주지 않는다 — 개수를 적어 두면 그것부터 세게 된다.
        한 일만 짧게 적고, 남은 것은 RICHARD 에게 물어야 안다. */
     var g, n;
-    if (S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING) {
+    if (openingPending()) {
+      g = "책상을 살펴보십시오.";
+    } else if (openingRunning) {
+      g = "";
+    } else if (S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING) {
       n = (S.claims || []).length;
       g = n ? "짚어 둔 자리 <b>" + n + "</b>" : "";
     } else if (S.phase === L.PHASE.CONTRADICTION) {
@@ -1342,6 +1352,8 @@
     }
   }
   function pick(x, y) {
+    /* 처음 한 번은 무엇을 눌렀든 시작 연출부터다 */
+    if (openingPending()) { playOpening(); return; }
     var o = castAt(x, y);
     if (!o || !o.userData.hot) return;
     if (lastDist > REACH) { toast("더 가까이 가십시오."); return; }
@@ -1365,7 +1377,7 @@
     if (S.phase === L.PHASE.APPROVED) { say(l.done || l.approved); return; }
     if (S.phase === L.PHASE.CONTRADICTION) { say(l.conceded); return; }
     if (S.phase === L.PHASE.REJECTED) { say(l.rejected); return; }
-    if (isVerifyPhase()) { say(pick(l.revised, l.revisedAgain)); return; }
+    if (isVerifyPhase()) { say(sayOnce(l.revised, l.revisedAgain)); return; }
 
     if (!S.greeted) {
       say(l.submission, function () { S.greeted = true; save(); });
@@ -1395,8 +1407,10 @@
     });
   }
 
-  /* 두 번째부터는 짧게 — 같은 설명을 되풀이하면 대사가 안내문이 된다 */
-  function pick(first, again) {
+  /* 두 번째부터는 짧게 — 같은 설명을 되풀이하면 대사가 안내문이 된다.
+     ※ 이름은 pick 이 아니어야 한다. 조준 판정 pick(x, y) 와 겹치면
+        함수 선언이 그것을 덮어써서 클릭이 통째로 죽는다. */
+  function sayOnce(first, again) {
     if (!again) return first;
     if (S._said) return again;
     S._said = true;
@@ -1531,12 +1545,33 @@
       setDoor(false);
       return;
     }
-    /* 처음 시작 — 똑똑똑, 문이 열리고, 걸어 들어와서, 말한다 */
+    /* 처음 시작 — 아직 아무 일도 일어나지 않는다.
+       폰은 세로로 켰다가 가로로 돌린다. 켜자마자 연출이 돌아 버리면
+       돌려서 볼 때쯤엔 이미 지나가 있고, 시작한 줄도 모른다.
+       플레이어가 처음 무언가를 살펴볼 때 그때 문 밖에서 노크가 난다. */
     showNPC(false);
     setDoor(false);
+  }
+
+  /* 아직 시작 연출을 보지 않았는가 */
+  var openingRunning = false;
+  function openingPending() {
+    return !openingRunning && !S.greeted && S.phase === L.PHASE.SUBMITTED;
+  }
+
+  /* 똑똑똑 → 문이 열리고 → 걸어 들어와서 → 말한다 */
+  function playOpening() {
+    if (openingRunning) return;
+    openingRunning = true;
+    renderHUD();
     knock(function () {
       npcEnter(function () {
-        say(chapter.lines.submission, function () { S.greeted = true; save(); });
+        say(chapter.lines.submission, function () {
+          S.greeted = true;
+          openingRunning = false;
+          save();
+          renderHUD();
+        });
       });
     });
   }
