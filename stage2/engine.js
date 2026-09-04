@@ -602,6 +602,30 @@
     if (npcHit) npcHit.visible = !!on;
   }
 
+  /* 노크 — 말이 아니라 소리다. 한 줄씩 늘어나며 문 쪽으로 눈이 가게 한다. */
+  function knock(onDone) {
+    var beats = (chapter.lines && chapter.lines.knock) || [];
+    if (!beats.length) { if (onDone) onDone(); return; }
+    var box = $("#dialogue"), i = 0;
+    box.classList.add("blocking");
+    box.classList.remove("hidden");
+    box.onclick = null;
+    (function step() {
+      if (i >= beats.length) {
+        setTimeout(function () {
+          box.classList.add("hidden");
+          box.classList.remove("blocking");
+          if (onDone) onDone();
+        }, 620);
+        return;
+      }
+      box.innerHTML = "";
+      box.appendChild(el("p", "knock", safeText(beats[i])));
+      i++;
+      setTimeout(step, 520);
+    })();
+  }
+
   /* 문을 열고 들어와 책상 앞까지. 들어온 뒤 문은 닫는다. */
   function npcEnter(onDone) {
     var doorway = pathPoint("doorway"), stand = pathPoint("stand");
@@ -773,23 +797,21 @@
   }
 
   /* ── 편지 세 장 ───────────────────────────────────────────────────────
-     화면에는 종이 세 장뿐이다. 탭도, 안내문도, 목록도 없다. 무엇을 해야
-     하는지는 리처드가 말한다 — 설명을 화면에 늘어놓으면 그만큼 읽을
-     자리가 줄고, 결국 편지가 작아진다.
+     화면에는 종이 세 장뿐이다. 탭도, 안내문도, 셈 줄도 없다.
 
-     세 장은 책상에 부려 놓은 것처럼 조금씩 기울어 겹쳐 있고, 장마다
-     스크롤이 따로 논다. 문장을 누르면 짚인다. */
+     보고서는 줄글이고 그 안의 문장만 누를 수 있다. 장마다 하나씩 세 문장을
+     고르면 "이 셋은 같은 것을 말하는데 하나가 어긋난다" 는 주장이 된다.
+     누르는 것만으로는 옳은지 알 수 없다 — 짝만 맞추면 저절로 풀리는
+     문제라면 판단할 이유가 없어지기 때문이다. 판정은 RICHARD 가 한다. */
 
   function reportsNow() { return L.reportsFor(chapter, S.phase); }
   function isVerifyPhase() {
     return S.phase === L.PHASE.REVISED || S.phase === L.PHASE.VERIFIED;
   }
-  function isMarkPhase() {
+  function isClaimPhase() {
     return S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING;
   }
-  /* 문장을 누를 수 있는 국면인가 — 조사할 때도, 수정본을 확인할 때도
-     하는 짓은 같다. 문장을 누른다. */
-  function canPick() { return isMarkPhase() || S.phase === L.PHASE.REVISED; }
+  function canPick() { return isClaimPhase() || S.phase === L.PHASE.REVISED; }
 
   function openDocs() { renderReader(); }
 
@@ -802,6 +824,26 @@
     });
   }
 
+  /* 이 문장이 이미 결론난 세트에 속하는가.
+     null 이면 아직 손댈 수 있는 문장이다 — 수정본에서 반려한 자리를 다시
+     짚어야 하므로, 원본에서 주장했다는 이유로 굳어 있으면 안 된다. */
+  function stateOf(st) {
+    if ((S.verified || []).indexOf(st.set) >= 0) return "ok";
+    var claimed = (S.claims || []).indexOf(st.set) >= 0;
+    if (!claimed) return null;
+    if (isClaimPhase()) return "claimed";
+    /* 어긋남을 전부 짚어 낸 순간, 어느 장이 어긋났는지 드러난다 */
+    if (S.phase === L.PHASE.CONTRADICTION) {
+      var set = L.setById(chapter, st.set);
+      if (set && !set.agree) return set.odd === stReport(st.id) ? "bad" : "ok";
+    }
+    return null;
+  }
+  function stReport(id) {
+    var hit = L.stById(reportsNow(), id);
+    return hit ? hit.report.id : null;
+  }
+
   function letterPage(r) {
     var page = el("article", "letter");
     var head = el("header", "letter-head");
@@ -812,24 +854,33 @@
 
     var scroll = el("div", "letter-body scrolls");
     (r.body || []).forEach(function (para) {
-      var pel = el("p", "para", safeText(para.text));
-      pel.dataset.para = para.id;
-      if ((S.marks || []).indexOf(para.id) >= 0) pel.classList.add("marked");
-      if ((S.verified || []).indexOf(para.claim) >= 0) pel.classList.add("checked");
-      if (canPick()) {
-        pel.classList.add("markable");
-        pel.setAttribute("role", "button");
-        pel.tabIndex = 0;
-        pel.onclick = function () { pickPara(para.id); };
-        pel.onkeydown = function (e) {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickPara(para.id); }
-        };
-      }
+      var pel = el("p", "prose");
+      (para || []).forEach(function (chunk) {
+        if (typeof chunk === "string") {
+          pel.appendChild(document.createTextNode(safeText(chunk) + " "));
+          return;
+        }
+        var sp = el("span", "stmt", safeText(chunk.t));
+        sp.dataset.st = chunk.id;
+        var mark = stateOf(chunk);
+        if (mark) sp.classList.add(mark);
+        if ((S.sel || []).indexOf(chunk.id) >= 0) sp.classList.add("sel");
+        if (canPick() && !mark) {
+          sp.classList.add("pickable");
+          sp.setAttribute("role", "button");
+          sp.tabIndex = 0;
+          sp.onclick = function () { toggleStatement(chunk.id); };
+          sp.onkeydown = function (e) {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleStatement(chunk.id); }
+          };
+        }
+        pel.appendChild(sp);
+        pel.appendChild(document.createTextNode(" "));
+      });
       scroll.appendChild(pel);
     });
     page.appendChild(scroll);
 
-    /* 눌러서 앞으로 끌어올린다 — 겹친 자리의 글자를 읽으려면 필요하다 */
     page.addEventListener("pointerdown", function () {
       [].slice.call(page.parentNode.children).forEach(function (n) {
         n.classList.remove("front");
@@ -839,44 +890,57 @@
     return page;
   }
 
-  function pickPara(paraId) {
-    if (isVerifyPhase()) return verifyByPara(paraId);
-
+  /* 문장을 골랐다 뺐다 한다. 한 장에서는 하나만 — 다음 것을 고르면 앞의
+     것이 빠진다. 세 장이 다 차면 그때 판정한다. */
+  function toggleStatement(id) {
     var reps = reportsNow();
-    var res = L.applyMark(chapter, S.marks, S.found, paraId, reps);
-    if (!res.ok) { toast("여기는 어긋나지 않습니다."); return; }
-    if (!res.isNew) { toast("이미 짚었습니다."); return; }
+    var sel = (S.sel || []).slice();
+    var at = sel.indexOf(id);
+    if (at >= 0) { sel.splice(at, 1); S.sel = sel; save(); renderReader(); return; }
 
-    S.marks = res.marks;
-    S.found = res.found;
-    advancePhase();
+    var mine = L.stById(reps, id);
+    if (!mine) return;
+    sel = sel.filter(function (other) {
+      var o = L.stById(reps, other);
+      return !o || o.report.id !== mine.report.id;
+    });
+    sel.push(id);
+    S.sel = sel;
+
+    if (sel.length < reps.length) { save(); renderReader(); return; }
+
+    var res = L.judgeSelection(chapter, reps, sel);
+    if (!res.ok) {
+      S.sel = [];
+      save(); renderReader();
+      toast("이 셋은 같은 것을 말하지 않습니다.");
+      return;
+    }
+    S.sel = [];
+    if (isVerifyPhase()) return verifySet(res.set.id);
+
+    var add = L.applyClaim(chapter, S.claims, res.set.id);
+    if (!add.isNew) { save(); renderReader(); toast("이미 짚어 둔 자리입니다."); return; }
+    S.claims = add.claims;
     save();
-    var left = L.marksLeft(chapter, S.found);
-    toast(safeText(res.claim.label) + (left ? " — " + left + "곳 남았습니다." : " — 다 찾았습니다."),
-          "good");
     renderReader();
     renderHUD();
+    /* 옳은지는 말하지 않는다. 표시만 남는다. */
+    toast("짚어 두었습니다.");
   }
 
-  /* 수정본에서는 같은 자리를 눌러 이제 세 장이 같은 말을 하는지 본다.
-     확인 버튼을 따로 두면 화면에 또 UI 가 생긴다. */
-  function verifyByPara(paraId) {
-    var reps = reportsNow();
-    var hit = L.paraById(reps, paraId);
-    if (!hit || !hit.para.claim) { toast("여기는 반려한 자리가 아닙니다."); return; }
-
-    var res = L.applyClaimVerify(chapter, S.verified, hit.para.claim, reps);
-    if (!res.claim) return;
-    if (res.stillBroken) { toast("아직 갈립니다: " + safeText(res.claim.label), "bad"); return; }
-    if (!res.isNew) { toast("이미 확인했습니다."); return; }
-
+  /* 수정본에서는 무엇을 확인해야 하는지 이미 알고 있으므로 즉시 판정한다 */
+  function verifySet(setId) {
+    var res = L.applyVerifySet(chapter, S.verified, setId, reportsNow());
+    if (!res.set) { renderReader(); return; }
+    if (res.stillBroken) { renderReader(); toast("아직 갈립니다.", "bad"); return; }
+    if (!res.isNew) { renderReader(); toast("이미 확인했습니다."); return; }
     S.verified = res.verified;
     advancePhase();
     save();
-    var left = L.marksLeft(chapter, S.verified);
-    toast(safeText(res.claim.ok) + (left ? " (" + left + "곳 남음)" : ""), "good");
     renderReader();
     renderHUD();
+    toast(safeText(res.set.ok), "good");
   }
 
   function refreshSheet() {
@@ -894,7 +958,7 @@
   function advancePhase() {
     /* 재검증 국면에서는 플레이어가 실제로 확인한 것만 센다.
        엔진이 알아서 세어 버리면 확인하는 행위 자체가 사라진다. */
-    var done = isVerifyPhase() ? (S.verified || []) : S.found;
+    var done = isVerifyPhase() ? (S.verified || []) : (S.claims || []);
     setPhase(L.nextPhase(S.phase, L.requiredClaims(chapter), done));
   }
 
@@ -931,13 +995,11 @@
         npcExit(false, function () {
           setTimeout(function () {
             S.verified = [];
-            S.marks = [];
+            S.sel = [];
             setPhase(L.PHASE.REVISED);
             save();
-            npcEnter(function () {
-              say(chapter.lines.revised, function () {
-                toast("수정본이 책상에 놓였습니다. 다시 확인하십시오.");
-              });
+            knock(function () {
+              npcEnter(function () { say(chapter.lines.revised); });
             });
           }, RETURN_DELAY);
         });
@@ -1096,16 +1158,19 @@
     $("#bar-fill").style.width = pct + "%";
     $("#bar-pct").textContent = pct + "%";
 
-    /* 한 줄로 짧게. 설명은 자료를 열면 거기서 한다. */
-    var g, need = L.requiredClaims(chapter).length;
+    /* 몇 군데인지는 알려주지 않는다 — 개수를 적어 두면 그것부터 세게 된다.
+       한 일만 짧게 적고, 남은 것은 RICHARD 에게 물어야 안다. */
+    var g, n;
     if (S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING) {
-      g = "어긋난 문장 <b>" + (S.found || []).length + " / " + need + "</b>";
+      n = (S.claims || []).length;
+      g = n ? "짚어 둔 자리 <b>" + n + "</b>" : "";
     } else if (S.phase === L.PHASE.CONTRADICTION) {
       g = "<b>도장</b>";
     } else if (S.phase === L.PHASE.REJECTED) {
       g = "수정본을 기다립니다";
     } else if (S.phase === L.PHASE.REVISED) {
-      g = "맞대어 확인 <b>" + (S.verified || []).length + " / " + need + "</b>";
+      n = (S.verified || []).length;
+      g = n ? "확인한 자리 <b>" + n + "</b>" : "";
     } else if (S.phase === L.PHASE.VERIFIED) {
       g = "<b>도장</b>";
     } else {
@@ -1293,28 +1358,49 @@
   /* 인물과의 대화는 국면과 진행에 따라 갈린다.
      어긋난 장을 짚은 뒤 처음 말을 걸면 세 장을 나란히 펼쳐 준다 —
      찍기는 그 뒤에만 열린다. */
+  /* 말을 거는 것이 판정이다. 문장을 눌러 두는 것만으로는 옳은지 알 수 없고,
+     여기서 한 번에 알려 주는 것도 많아야 하나다 — 잘못 짚은 것 하나. */
   function talkToNPC() {
     var l = chapter.lines;
     if (S.phase === L.PHASE.APPROVED) { say(l.done || l.approved); return; }
     if (S.phase === L.PHASE.CONTRADICTION) { say(l.conceded); return; }
     if (S.phase === L.PHASE.REJECTED) { say(l.rejected); return; }
-    if (isVerifyPhase()) { say(l.revised); return; }
+    if (isVerifyPhase()) { say(pick(l.revised, l.revisedAgain)); return; }
 
-    /* 어긋남을 하나라도 짚어 온 뒤 말을 걸면 세 장을 펼쳐 준다.
-       그 전까지는 두 장씩 맞대어 읽어야 한다. */
-    if ((S.found || []).length && !S.confronted) {
-      say(l.confront, function () {
-        S.confronted = true;
-        setPhase(L.PHASE.INSPECTING);
-        save();
-        renderHUD();
-        openDocs();
-      });
+    if (!S.greeted) {
+      say(l.submission, function () { S.greeted = true; save(); });
       return;
     }
-    if ((S.found || []).length) { say(l.picked || l.probing); return; }
-    if (S.phase === L.PHASE.SUBMITTED) { say(l.submission); return; }
-    say(l.probing);
+
+    var res = L.judgeClaims(chapter, S.claims);
+    if (res.verdict === "none") { say(l.probing); return; }
+
+    if (res.verdict === "wrong") {
+      /* 잘못 짚은 것 하나만 물린다. 어느 것이 더 틀렸는지는 말하지 않는다. */
+      var lines = (l.pushback || []).concat([safeText(res.set.same)],
+                                            l.pushbackTail || []);
+      S.claims = L.dropClaim(S.claims, res.set.id);
+      save();
+      say(lines, function () { renderHUD(); refreshSheet(); });
+      return;
+    }
+
+    if (res.verdict === "short") { say(l.notYet); return; }
+
+    /* 어긋난 자리를 전부, 그것만 짚었다 */
+    say(l.conceded, function () {
+      setPhase(L.PHASE.CONTRADICTION);
+      save();
+      renderHUD();
+    });
+  }
+
+  /* 두 번째부터는 짧게 — 같은 설명을 되풀이하면 대사가 안내문이 된다 */
+  function pick(first, again) {
+    if (!again) return first;
+    if (S._said) return again;
+    S._said = true;
+    return first;
   }
 
   /* ── 이동 ──────────────────────────────────────────────────────────── */
@@ -1432,7 +1518,7 @@
     if (S.phase === L.PHASE.REJECTED) {
       /* 나가 있는 도중에 새로고침한 경우 — 수정본을 들고 돌아온다 */
       showNPC(false);
-      S.verified = []; S.marks = [];
+      S.verified = []; S.sel = [];
       setPhase(L.PHASE.REVISED);
       save();
       npcEnter(function () { say(chapter.lines.revised); });
@@ -1445,7 +1531,14 @@
       setDoor(false);
       return;
     }
-    npcEnter(function () { say(chapter.lines.submission); });
+    /* 처음 시작 — 똑똑똑, 문이 열리고, 걸어 들어와서, 말한다 */
+    showNPC(false);
+    setDoor(false);
+    knock(function () {
+      npcEnter(function () {
+        say(chapter.lines.submission, function () { S.greeted = true; save(); });
+      });
+    });
   }
 
   global.N2Engine = {
