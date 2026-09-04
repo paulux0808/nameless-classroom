@@ -824,12 +824,20 @@
   function isClaimPhase() {
     return S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING;
   }
-  function canPick() { return isClaimPhase() || S.phase === L.PHASE.REVISED; }
+  function canPick() { return isClaimPhase(); }
 
   function openDocs() { renderReader(); }
 
   function renderReader() {
     var reps = reportsNow();
+    /* 다시 해 온 것은 읽으면 그만이다. 맞는 자리를 한 번 더 짚게 하면
+       절차만 늘어나고, 이미 아는 것을 확인하는 손짓이 된다. */
+    if (S.phase === L.PHASE.REVISED) {
+      S.verified = L.requiredClaims(chapter).slice();
+      advancePhase();
+      save();
+      renderHUD();
+    }
     openLetters(function (body) {
       var wrap = el("div", "letters");
       reps.forEach(function (r) { wrap.appendChild(letterPage(r)); });
@@ -926,12 +934,10 @@
     if (!res.ok) {
       S.sel = [];
       save(); renderReader();
-      toast("이 셋은 같은 얘기가 아닙니다.");
+      toast("이 셋은 같은 자리가 아닙니다.");
       return;
     }
     S.sel = [];
-    if (isVerifyPhase()) return verifySet(res.set.id);
-
     var add = L.applyClaim(chapter, S.claims, res.set.id);
     if (!add.isNew) { save(); renderReader(); toast("이미 고른 자리입니다."); return; }
     S.claims = add.claims;
@@ -940,20 +946,6 @@
     renderHUD();
     /* 옳은지는 말하지 않는다. 표시만 남는다. */
     toast("골라 뒀습니다.");
-  }
-
-  /* 수정본에서는 무엇을 확인해야 하는지 이미 알고 있으므로 즉시 판정한다 */
-  function verifySet(setId) {
-    var res = L.applyVerifySet(chapter, S.verified, setId, reportsNow());
-    if (!res.set) { renderReader(); return; }
-    if (res.stillBroken) { renderReader(); toast("이 자리는 아직 다릅니다.", "bad"); return; }
-    if (!res.isNew) { renderReader(); toast("이미 확인했습니다."); return; }
-    S.verified = res.verified;
-    advancePhase();
-    save();
-    renderReader();
-    renderHUD();
-    toast(safeText(res.set.ok), "good");
   }
 
   function refreshSheet() {

@@ -301,25 +301,6 @@
     return (claims || []).filter(function (id) { return id !== setId; });
   }
 
-  /* ── 재검증 ────────────────────────────────────────────────────────────
-     수정본에서는 반려한 자리가 이제 같은 말을 하는지 본다. 같은 동작으로
-     문장 셋을 누르되, 이번에는 누르는 즉시 판정된다 — 무엇을 확인해야
-     하는지 이미 알고 있기 때문이다. */
-  function applyVerifySet(chapter, verified, setId, reports) {
-    var list = (verified || []).slice();
-    var set = setById(chapter, setId);
-    if (!set) return { verified: list, set: null, isNew: false, stillBroken: false };
-    /* agree 는 원본에 대한 선언이다. 수정본은 스스로 수정본이라고 말한다 —
-       그렇지 않으면 반려한 자리를 영영 확인할 수 없다. */
-    var onRevised = !!((reports || [])[0] && reports[0].revised);
-    if (!set.agree && !onRevised)
-      return { verified: list, set: set, isNew: false, stillBroken: true };
-    if (list.indexOf(setId) >= 0)
-      return { verified: list, set: set, isNew: false, stillBroken: false };
-    list.push(setId);
-    return { verified: list, set: set, isNew: true, stillBroken: false };
-  }
-
   /* ── 챕터 데이터 감사 ──────────────────────────────────────────────────
      퍼즐이 실제로 성립하는지 켜지기 전에 검사한다. */
   function auditChapter(chapter) {
@@ -530,7 +511,6 @@
     brokenSets: brokenSets, requiredClaims: requiredClaims,
     judgeSelection: judgeSelection, applyClaim: applyClaim,
     judgeClaims: judgeClaims, dropClaim: dropClaim,
-    applyVerifySet: applyVerifySet,
     freshState: freshState, isValidState: isValidState,
     repairState: repairState, normalizeState: normalizeState,
     damp: damp

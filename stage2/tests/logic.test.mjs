@@ -232,41 +232,41 @@ test("같은 것을 저마다 다르게 말한다 — 표현이 같으면 세트
     `${ch01.sets.length - varied} 개 세트에서 문장이 그대로 겹친다`);
 });
 
-test("말을 섞지 않는다 — '같은 얘기' 하나로만 쓴다", () => {
-  /* 같은 얘기 / 같은 값 / 같은 수치를 섞어 쓰면, 숫자가 없는 자리에서
-     무엇을 견주라는 건지 알 수 없다. */
+test("자리와 어긋남을 섞어 부르지 않는다", () => {
+  /* C-114 / C-117 / C-114 는 같은 자리를 두고 적은 것이되 어긋나 있다.
+     그걸 "같은 얘기를 하는 자리" 라고 부르면 말이 꼬인다. */
   const blob = JSON.stringify(ch01);
-  for (const mixed of ["수치", "같은 값", "값이 같", "동일"]) {
+  for (const mixed of ["수치", "같은 값", "값이 같", "동일", "같은 얘기"]) {
     assert.ok(!blob.includes(mixed), `"${mixed}" 이 섞여 있다`);
   }
-  assert.ok(blob.includes("같은 얘기"), "쓰기로 한 말이 정작 안 쓰인다");
 });
 
-test("리처드가 규칙을 제대로 설명한다 — 화면에 안내문이 없으므로", () => {
-  const first = ch01.lines.submission.join(" ");
-  for (const must of ["세 장", "한 문장씩", "딴소리", "부르십시오"]) {
-    assert.ok(first.includes(must), `첫 설명에 "${must}" 가 없다`);
+test("리처드는 규칙을 읊지 않는다 — 세 장이 같다고 믿고 들어온다", () => {
+  const first = ch01.lines.submission;
+  const joined = first.join(" ");
+  assert.ok(first.length <= 7, `첫 대사가 ${first.length} 줄이다. 설명이 길다`);
+  assert.ok(joined.length < 220, `첫 대사가 ${joined.length} 자다. 설명이 길다`);
+  for (const meta of ["보시는 법", "예를 들어", "고르시면 됩니다", "골라 주십시오"]) {
+    assert.ok(!joined.includes(meta), `게임 설명이 남아 있다: "${meta}"`);
   }
-  /* 세 번 다 괜찮다는 말을 들었다는 전제가 있어야 반려가 뒤집기가 된다 */
-  assert.ok(/괜찮다/.test(first), "세 번 다 괜찮다고 했다는 말이 없다");
-  assert.ok(first.length > 260, "첫 설명이 너무 짧다");
+  assert.ok(/같은 기록|같을 겁니다|똑같/.test(joined),
+    "세 장이 같다는 주장이 없다 — 그게 뒤집을 대상이다");
+});
+
+test("틀린 걸 짚어 주면 사과부터 한다", () => {
+  /* 자기 실수를 지적당한 사람의 말이어야 한다.
+     "여기까지는 맞습니다" 는 퀴즈 진행자의 말이지 이 사람의 말이 아니다. */
+  const notYet = ch01.lines.notYet.join(" ");
+  assert.ok(/죄송|잘못|틀린/.test(notYet), `사과가 없다: "${notYet}"`);
+  assert.ok(!/맞습니다|정답|맞았/.test(notYet), `채점하는 말이 남아 있다: "${notYet}"`);
 });
 
 test("두 번째부터는 짧게 말한다", () => {
   const first = ch01.lines.submission.join(" ").length;
-  for (const key of ["probing", "notYet", "revisedAgain"]) {
+  for (const key of ["probing", "notYet", "revisedAgain", "rejected"]) {
     const later = ch01.lines[key].join(" ").length;
     assert.ok(later < first / 2,
-      `${key} 가 첫 설명만큼 길다 (${later} vs ${first})`);
-  }
-});
-
-test("어려운 말을 골라 쓰지 않는다", () => {
-  /* 굳이 전문 용어로 바꿔 쓸 이유가 없던 것들 */
-  const blob = JSON.stringify(ch01.reports) + JSON.stringify(ch01.revisedReports);
-  for (const stiff of ["투입값", "산출", "기준표", "배전 계통", "판독",
-                       "자릿수", "입회", "묶음 C-", "개정 A", "개정 B"]) {
-    assert.ok(!blob.includes(stiff), `보고서에 "${stiff}" 가 남아 있다`);
+      `${key} 가 첫 대사만큼 길다 (${later} vs ${first})`);
   }
 });
 
@@ -294,19 +294,19 @@ test("텍스트만 보고는 못 푼다 — 어느 문장도 스스로 답을 �
   }
 });
 
-test("수정본에는 반려한 자리만 실리고, 이제 셋이 같은 말을 한다", () => {
+test("수정본에는 반려한 자리만 실린다 — 다시 읽는 것으로 확인이 끝난다", () => {
   const rev = L.reportsFor(ch01, L.PHASE.REVISED);
   assert.equal(rev, ch01.revisedReports);
   for (const id of ch01.revisedSets) {
     const ms = L.setMembers(rev, id);
     assert.equal(ms.length, rev.length, `${id} 가 수정본에 다 없다`);
-    const r = L.applyVerifySet(ch01, [], id, rev);
-    assert.ok(!r.stillBroken === false || true);
   }
-  /* 수정본에 반려하지 않은 세트가 섞여 있으면 안 된다 */
   for (const r of rev)
     for (const st of L.statementsOf(r))
       assert.ok(ch01.revisedSets.includes(st.set), `수정본에 ${st.set} 이 있다`);
+  /* 맞는 자리를 한 번 더 짚게 하지 않는다 — 확인 절차는 읽는 것뿐이다 */
+  assert.equal(typeof L.applyVerifySet, "undefined",
+    "재검증 클릭이 되살아났다. 절차만 늘어난다");
 });
 
 test("auditChapter는 함정 없는 데이터를 잡아낸다", () => {
@@ -363,16 +363,10 @@ test("CH01 전 구간 — 조사에서 승인까지 국면이 끊기지 않는�
   phase = PHASE.REVISED;
   const rev = L.reportsFor(ch01, phase);
 
-  // 3. 같은 자리를 다시 짚어 확인
-  for (const id of req) {
-    const ids = L.setMembers(rev, id).map(m => m.st.id);
-    const j = L.judgeSelection(ch01, rev, ids);
-    assert.ok(j.ok, `${id} 를 수정본에서 짚을 수 없다`);
-    const r = L.applyVerifySet(ch01, verified, id, rev);
-    assert.ok(r.isNew, `${id} 를 재검증할 수 없다 — 여기서 막힌다`);
-    verified = r.verified;
-    phase = L.nextPhase(phase, req, verified);
-  }
+  // 3. 다시 해 온 것은 읽으면 확인이 끝난다
+  for (const id of ch01.revisedSets) assert.ok(L.setMembers(rev, id).length === rev.length);
+  verified = req.slice();
+  phase = L.nextPhase(phase, req, verified);
   assert.equal(phase, PHASE.VERIFIED);
   assert.equal(L.activeStamp(phase), "APPROVED");
   assert.equal(L.progressFor(1), 8);
