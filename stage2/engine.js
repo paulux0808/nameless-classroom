@@ -926,27 +926,27 @@
     if (!res.ok) {
       S.sel = [];
       save(); renderReader();
-      toast("이 셋은 같은 것을 말하지 않습니다.");
+      toast("이 셋은 같은 얘기가 아닙니다.");
       return;
     }
     S.sel = [];
     if (isVerifyPhase()) return verifySet(res.set.id);
 
     var add = L.applyClaim(chapter, S.claims, res.set.id);
-    if (!add.isNew) { save(); renderReader(); toast("이미 짚어 둔 자리입니다."); return; }
+    if (!add.isNew) { save(); renderReader(); toast("이미 고른 자리입니다."); return; }
     S.claims = add.claims;
     save();
     renderReader();
     renderHUD();
     /* 옳은지는 말하지 않는다. 표시만 남는다. */
-    toast("짚어 두었습니다.");
+    toast("골라 뒀습니다.");
   }
 
   /* 수정본에서는 무엇을 확인해야 하는지 이미 알고 있으므로 즉시 판정한다 */
   function verifySet(setId) {
     var res = L.applyVerifySet(chapter, S.verified, setId, reportsNow());
     if (!res.set) { renderReader(); return; }
-    if (res.stillBroken) { renderReader(); toast("아직 갈립니다.", "bad"); return; }
+    if (res.stillBroken) { renderReader(); toast("이 자리는 아직 다릅니다.", "bad"); return; }
     if (!res.isNew) { renderReader(); toast("이미 확인했습니다."); return; }
     S.verified = res.verified;
     advancePhase();
@@ -981,14 +981,14 @@
     if (!kind) {
       /* 스펙: 도장은 도덕 선택지가 아니다. 검증 전에는 열리지 않는다. */
       toast(S.phase === L.PHASE.REVISED
-        ? "수정본을 먼저 확인하십시오."
-        : "아직 근거가 부족합니다.", "bad");
+        ? "다시 해 온 걸 먼저 봐야 합니다."
+        : "아직 판단할 게 남았습니다.", "bad");
       return;
     }
     openSheet("도장", kind === "REJECTED" ? "반려" : "승인", function (body) {
       body.appendChild(el("p", "hint", kind === "REJECTED"
-        ? "다음 단계로 넘길 수 없습니다."
-        : "다음 단계로 넘겨도 됩니다."));
+        ? "이대로는 넘길 수 없습니다."
+        : "이대로 넘겨도 됩니다."));
       var b = el("button", "stamp-btn " + kind.toLowerCase(), kind);
       b.type = "button";
       b.onclick = function () { applyStamp(kind); };
@@ -1175,23 +1175,23 @@
        한 일만 짧게 적고, 남은 것은 RICHARD 에게 물어야 안다. */
     var g, n;
     if (openingPending()) {
-      g = "책상을 살펴보십시오.";
+      g = "책상을 살펴본다";
     } else if (openingRunning) {
       g = "";
     } else if (S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING) {
       n = (S.claims || []).length;
-      g = n ? "짚어 둔 자리 <b>" + n + "</b>" : "";
+      g = n ? "골라 둔 자리 <b>" + n + "</b>" : "";
     } else if (S.phase === L.PHASE.CONTRADICTION) {
       g = "<b>도장</b>";
     } else if (S.phase === L.PHASE.REJECTED) {
-      g = "수정본을 기다립니다";
+      g = "다시 해 오기를 기다린다";
     } else if (S.phase === L.PHASE.REVISED) {
       n = (S.verified || []).length;
       g = n ? "확인한 자리 <b>" + n + "</b>" : "";
     } else if (S.phase === L.PHASE.VERIFIED) {
       g = "<b>도장</b>";
     } else {
-      g = "<b>문</b>으로 나가십시오";
+      g = "<b>문</b>으로 나간다";
     }
     $("#objective").innerHTML = g;
   }

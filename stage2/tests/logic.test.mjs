@@ -232,6 +232,44 @@ test("같은 것을 저마다 다르게 말한다 — 표현이 같으면 세트
     `${ch01.sets.length - varied} 개 세트에서 문장이 그대로 겹친다`);
 });
 
+test("말을 섞지 않는다 — '같은 얘기' 하나로만 쓴다", () => {
+  /* 같은 얘기 / 같은 값 / 같은 수치를 섞어 쓰면, 숫자가 없는 자리에서
+     무엇을 견주라는 건지 알 수 없다. */
+  const blob = JSON.stringify(ch01);
+  for (const mixed of ["수치", "같은 값", "값이 같", "동일"]) {
+    assert.ok(!blob.includes(mixed), `"${mixed}" 이 섞여 있다`);
+  }
+  assert.ok(blob.includes("같은 얘기"), "쓰기로 한 말이 정작 안 쓰인다");
+});
+
+test("리처드가 규칙을 제대로 설명한다 — 화면에 안내문이 없으므로", () => {
+  const first = ch01.lines.submission.join(" ");
+  for (const must of ["세 장", "한 문장씩", "딴소리", "부르십시오"]) {
+    assert.ok(first.includes(must), `첫 설명에 "${must}" 가 없다`);
+  }
+  /* 세 번 다 괜찮다는 말을 들었다는 전제가 있어야 반려가 뒤집기가 된다 */
+  assert.ok(/괜찮다/.test(first), "세 번 다 괜찮다고 했다는 말이 없다");
+  assert.ok(first.length > 260, "첫 설명이 너무 짧다");
+});
+
+test("두 번째부터는 짧게 말한다", () => {
+  const first = ch01.lines.submission.join(" ").length;
+  for (const key of ["probing", "notYet", "revisedAgain"]) {
+    const later = ch01.lines[key].join(" ").length;
+    assert.ok(later < first / 2,
+      `${key} 가 첫 설명만큼 길다 (${later} vs ${first})`);
+  }
+});
+
+test("어려운 말을 골라 쓰지 않는다", () => {
+  /* 굳이 전문 용어로 바꿔 쓸 이유가 없던 것들 */
+  const blob = JSON.stringify(ch01.reports) + JSON.stringify(ch01.revisedReports);
+  for (const stiff of ["투입값", "산출", "기준표", "배전 계통", "판독",
+                       "자릿수", "입회", "묶음 C-", "개정 A", "개정 B"]) {
+    assert.ok(!blob.includes(stiff), `보고서에 "${stiff}" 가 남아 있다`);
+  }
+});
+
 test("줄글이다 — 문장 사이에 잇는 말이 있다", () => {
   let glue = 0;
   for (const r of ch01.reports)
