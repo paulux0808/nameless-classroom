@@ -772,194 +772,111 @@
     return m;
   }
 
-  /* ── 보고서 열람 ──────────────────────────────────────────────────────
-     보기 방식은 셋이다.
-       one    한 장을 크게
-       pair   두 장을 화면 반반으로
-       three  세 장을 나란히 — 리처드가 펼쳐 준 뒤에 열린다
+  /* ── 편지 세 장 ───────────────────────────────────────────────────────
+     화면에는 종이 세 장뿐이다. 탭도, 안내문도, 목록도 없다. 무엇을 해야
+     하는지는 리처드가 말한다 — 설명을 화면에 늘어놓으면 그만큼 읽을
+     자리가 줄고, 결국 편지가 작아진다.
 
-     장마다 스크롤이 따로 논다. 셋을 한 통에 넣고 굴리면 좁은 화면에서
-     같은 자리를 맞대어 볼 수가 없다. */
-  var view = { mode: "one", a: "r1", b: "r2" };
+     세 장은 책상에 부려 놓은 것처럼 조금씩 기울어 겹쳐 있고, 장마다
+     스크롤이 따로 논다. 문장을 누르면 짚인다. */
 
   function reportsNow() { return L.reportsFor(chapter, S.phase); }
   function isVerifyPhase() {
     return S.phase === L.PHASE.REVISED || S.phase === L.PHASE.VERIFIED;
   }
-  /* 문장을 짚는 국면인가 */
   function isMarkPhase() {
     return S.phase === L.PHASE.SUBMITTED || S.phase === L.PHASE.INSPECTING;
   }
+  /* 문장을 누를 수 있는 국면인가 — 조사할 때도, 수정본을 확인할 때도
+     하는 짓은 같다. 문장을 누른다. */
+  function canPick() { return isMarkPhase() || S.phase === L.PHASE.REVISED; }
 
-  function openDocs() {
-    if (S.confronted && view.mode === "one") view.mode = "three";
-    if (isVerifyPhase()) view.mode = "three";
-    renderReader();
-  }
+  function openDocs() { renderReader(); }
 
   function renderReader() {
     var reps = reportsNow();
-    var need = L.requiredClaims(chapter).length;
-    var done = (isVerifyPhase() ? S.verified : S.found) || [];
-    openSheet("제출 자료", chapter.npc + " · 보고서 " + reps.length + "장",
-      function (body) {
-        body.appendChild(counterBar(done.length, need));
-        body.appendChild(viewBar(reps));
-        body.appendChild(readerPages(reps));
-        body.appendChild(claimPanel(reps));
-      }, true);
-  }
-
-  /* 안내는 한 줄이면 된다. 셈은 숫자로, 할 일은 짧게. */
-  function counterBar(done, need) {
-    var bar = el("div", "counter");
-    var what = isVerifyPhase() ? "맞대어 확인" : "어긋난 문장";
-    bar.appendChild(el("span", "c-n", done + " / " + need));
-    bar.appendChild(el("span", "c-t", what));
-    if (isMarkPhase() && !S.confronted)
-      bar.appendChild(el("span", "c-h", "두 장을 맞대어 읽고, 혼자 다른 말을 하는 문장을 누르십시오."));
-    else if (isMarkPhase())
-      bar.appendChild(el("span", "c-h", "혼자 다른 말을 하는 문장을 누르십시오."));
-    else if (S.phase === L.PHASE.CONTRADICTION)
-      bar.appendChild(el("span", "c-h", "책상의 <b>도장</b>을 쓰십시오."));
-    else if (isVerifyPhase())
-      bar.appendChild(el("span", "c-h", "자리마다 <b>확인</b>을 한 번씩."));
-    return bar;
-  }
-
-  function viewBar(reps) {
-    var bar = el("nav", "viewbar");
-    function tab(label, on, fn, dis) {
-      var b = el("button", "vtab" + (on ? " on" : ""), label);
-      b.type = "button";
-      if (dis) { b.disabled = true; b.title = "아직 열리지 않았습니다"; }
-      else b.onclick = fn;
-      bar.appendChild(b);
-    }
-    var three = S.confronted || isVerifyPhase() || S.phase === L.PHASE.APPROVED;
-
-    reps.forEach(function (r) {
-      tab(r.no, view.mode === "one" && view.a === r.id, function () {
-        view.mode = "one"; view.a = r.id; renderReader();
-      });
+    openLetters(function (body) {
+      var wrap = el("div", "letters");
+      reps.forEach(function (r) { wrap.appendChild(letterPage(r)); });
+      body.appendChild(wrap);
     });
-    (chapter.comparePairs || []).forEach(function (pr) {
-      var A = L.reportById(reps, pr[0]), B = L.reportById(reps, pr[1]);
-      if (!A || !B) return;
-      tab(A.no + "·" + B.no,
-          view.mode === "pair" && view.a === pr[0] && view.b === pr[1],
-          function () {
-            view.mode = "pair"; view.a = pr[0]; view.b = pr[1]; renderReader();
-          });
-    });
-    tab("세 장", view.mode === "three", function () {
-      view.mode = "three"; renderReader();
-    }, !three);
-    return bar;
   }
 
-  function readerPages(reps) {
-    var wrap = el("div", "pages " + view.mode);
-    var show = view.mode === "three" ? reps.map(function (r) { return r.id; })
-             : view.mode === "pair"  ? [view.a, view.b]
-             : [view.a];
-    show.forEach(function (id) {
-      var r = L.reportById(reps, id);
-      if (r) wrap.appendChild(reportPage(r));
-    });
-    return wrap;
-  }
-
-  function reportPage(r) {
-    var page = el("article", "page");
-    var head = el("header", "page-head");
-    head.appendChild(el("span", "page-no", r.no));
+  function letterPage(r) {
+    var page = el("article", "letter");
+    var head = el("header", "letter-head");
+    head.appendChild(el("span", "letter-no", r.no));
     head.appendChild(el("h3", null, safeText(r.title)));
-    head.appendChild(el("p", "page-meta", safeText(r.head)));
+    head.appendChild(el("p", "letter-meta", safeText(r.head)));
     page.appendChild(head);
 
-    /* 본문만 따로 구른다 — 장마다 스크롤이 독립이어야 같은 자리를 맞댈 수 있다 */
-    var scroll = el("div", "page-body scrolls");
+    var scroll = el("div", "letter-body scrolls");
     (r.body || []).forEach(function (para) {
       var pel = el("p", "para", safeText(para.text));
       pel.dataset.para = para.id;
       if ((S.marks || []).indexOf(para.id) >= 0) pel.classList.add("marked");
-      if (isMarkPhase()) {
+      if ((S.verified || []).indexOf(para.claim) >= 0) pel.classList.add("checked");
+      if (canPick()) {
         pel.classList.add("markable");
         pel.setAttribute("role", "button");
         pel.tabIndex = 0;
-        pel.onclick = function () { markPara(para.id); };
+        pel.onclick = function () { pickPara(para.id); };
         pel.onkeydown = function (e) {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); markPara(para.id); }
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickPara(para.id); }
         };
       }
       scroll.appendChild(pel);
     });
     page.appendChild(scroll);
+
+    /* 눌러서 앞으로 끌어올린다 — 겹친 자리의 글자를 읽으려면 필요하다 */
+    page.addEventListener("pointerdown", function () {
+      [].slice.call(page.parentNode.children).forEach(function (n) {
+        n.classList.remove("front");
+      });
+      page.classList.add("front");
+    });
     return page;
   }
 
-  /* 혼자 다른 말을 하는 문장을 직접 짚는다. 어느 장인지 고르는 단계는 없다 —
-     세 장 중 하나를 찍는 건 세 번 눌러 보면 맞기 때문이다. */
-  function markPara(paraId) {
+  function pickPara(paraId) {
+    if (isVerifyPhase()) return verifyByPara(paraId);
+
     var reps = reportsNow();
     var res = L.applyMark(chapter, S.marks, S.found, paraId, reps);
-    if (!res.ok) { toast("여기서는 어긋남을 찾지 못했습니다."); return; }
-    if (!res.isNew) { toast("이미 짚은 문장입니다."); return; }
+    if (!res.ok) { toast("여기는 어긋나지 않습니다."); return; }
+    if (!res.isNew) { toast("이미 짚었습니다."); return; }
 
     S.marks = res.marks;
     S.found = res.found;
     advancePhase();
     save();
     var left = L.marksLeft(chapter, S.found);
-    toast(safeText(res.claim.label) + (left ? " — " + left + "곳 남았습니다." : " — 전부 찾았습니다."),
+    toast(safeText(res.claim.label) + (left ? " — " + left + "곳 남았습니다." : " — 다 찾았습니다."),
           "good");
     renderReader();
     renderHUD();
   }
 
-  /* 수정본 재검증 — 자리마다 한 번씩 세 장을 맞댄다 */
-  function verifyClaim(claimId) {
-    var res = L.applyClaimVerify(chapter, S.verified, claimId, reportsNow());
+  /* 수정본에서는 같은 자리를 눌러 이제 세 장이 같은 말을 하는지 본다.
+     확인 버튼을 따로 두면 화면에 또 UI 가 생긴다. */
+  function verifyByPara(paraId) {
+    var reps = reportsNow();
+    var hit = L.paraById(reps, paraId);
+    if (!hit || !hit.para.claim) { toast("여기는 반려한 자리가 아닙니다."); return; }
+
+    var res = L.applyClaimVerify(chapter, S.verified, hit.para.claim, reps);
     if (!res.claim) return;
     if (res.stillBroken) { toast("아직 갈립니다: " + safeText(res.claim.label), "bad"); return; }
     if (!res.isNew) { toast("이미 확인했습니다."); return; }
+
     S.verified = res.verified;
     advancePhase();
     save();
-    toast("확인 — " + safeText(res.claim.ok || res.claim.label), "good");
+    var left = L.marksLeft(chapter, S.verified);
+    toast(safeText(res.claim.ok) + (left ? " (" + left + "곳 남음)" : ""), "good");
     renderReader();
-  }
-
-  /* 찾은 것만 적는다. 못 찾은 자리를 빈 줄로 늘어놓으면 읽을 자리를
-     그만큼 빼앗고, 개수 말고는 알려 주는 것도 없다 — 개수는 위에 있다.
-     재검증은 자리마다 누를 것이 있으므로 전부 내놓는다. */
-  function claimPanel() {
-    var verifying = isVerifyPhase();
-    var need = L.requiredClaims(chapter);
-    var done = (verifying ? S.verified : S.found) || [];
-    var show = verifying ? need : need.filter(function (id) { return done.indexOf(id) >= 0; });
-    if (!show.length) return document.createComment("");
-
-    var box = el("section", "findings scrolls");
-    var ul = el("ul");
-    show.forEach(function (id) {
-      var c = L.claimById(chapter, id);
-      var got = done.indexOf(id) >= 0;
-      var li = el("li", got ? "got" : "pending");
-      li.appendChild(el("b", null, safeText(c.label)));
-      if (verifying && !got) {
-        var vb = el("button", "verify-btn", "확인");
-        vb.type = "button";
-        vb.onclick = function () { verifyClaim(id); };
-        li.appendChild(vb);
-      } else {
-        li.appendChild(el("span", null, safeText(got && verifying ? c.ok : c.wrong)));
-      }
-      ul.appendChild(li);
-    });
-    box.appendChild(ul);
-    return box;
+    renderHUD();
   }
 
   function refreshSheet() {
@@ -1140,13 +1057,10 @@
   }
 
   /* ── 시트(모달) ────────────────────────────────────────────────────── */
-  /* fill: 화면 높이를 꽉 채운다. 보고서처럼 칸마다 따로 굴러야 하는 화면은
-     바깥이 같이 구르면 안 된다 — 스크롤이 겹치면 어느 쪽이 움직이는지
-     알 수 없다. */
-  function openSheet(title, sub, build, fill) {
+  function openSheet(title, sub, build) {
+    $("#sheet").classList.remove("bare");
     $("#sheet-title").textContent = title;
     $("#sheet-sub").textContent = sub || "";
-    document.querySelector(".sheet-card").classList.toggle("fill", !!fill);
     var b = $("#sheet-body");
     b.innerHTML = "";
     build(b);
@@ -1155,8 +1069,21 @@
     var first = b.querySelector("button") || $("#sheet-close");
     if (first) try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
   }
+  /* 편지를 펼칠 때는 머리말도 테두리도 없다. 종이 세 장만 남긴다. */
+  function openLetters(build) {
+    var sheet = $("#sheet");
+    sheet.classList.add("bare");
+    var b = $("#sheet-body");
+    b.innerHTML = "";
+    build(b);
+    sheet.classList.remove("hidden");
+    refreshScrollHints();
+  }
+
   function closeSheet() {
-    $("#sheet").classList.add("hidden");
+    var sheet = $("#sheet");
+    sheet.classList.add("hidden");
+    sheet.classList.remove("bare");
     hideAllEdges();
   }
 
@@ -1238,7 +1165,10 @@
     addEventListener("resize", refreshScrollHints);
 
     document.addEventListener("click", function (e) {
-      if (e.target && e.target.closest && e.target.closest("[data-close]")) closeSheet();
+      if (!e.target || !e.target.closest) return;
+      if (e.target.closest("[data-close]")) { closeSheet(); return; }
+      /* 종이 바깥의 어두운 데를 누르면 닫힌다 — 편지 화면에는 버튼이 없다 */
+      if (e.target.id === "sheet" || e.target.id === "sheet-body") closeSheet();
     });
 
     if (IS_TOUCH) document.body.classList.add("touch");
@@ -1375,7 +1305,6 @@
     if ((S.found || []).length && !S.confronted) {
       say(l.confront, function () {
         S.confronted = true;
-        view.mode = "three";
         setPhase(L.PHASE.INSPECTING);
         save();
         renderHUD();
