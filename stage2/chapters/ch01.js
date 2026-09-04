@@ -235,6 +235,9 @@
     /* ── 대사 ───────────────────────────────────────────────────────────
        편지 화면에는 안내문이 없다. 무엇을 해야 하는지는 여기서 말한다. */
     lines: {
+      /* 문 밖에서. 말이 아니라 소리다 — 한 줄씩 늘어난다. */
+      knock: ["똑.", "똑. 똑.", "똑. 똑. 똑."],
+
       /* 문을 열고 들어와 책상 앞까지 걸어온 뒤 */
       submission: [
         "박사님. 계산부 RICHARD 입니다.",
@@ -305,12 +308,14 @@
     room: { W: 5.4, D: 6.6, H: 2.9 },
 
     /* 문 — RICHARD 가 드나드는 곳이자 플레이어가 나가는 곳.
-       pos 는 벽에 뚫린 자리(문틀 중심), z 는 +z 벽 안쪽이다. */
-    door: { pos: [-1.5, 0, 3.3], width: 1.05, height: 2.12 },
+       플레이어는 책상 이쪽(+z)에서 -z 를 보고 시작한다. 문은 그 시선 끝,
+       RICHARD 가 서는 자리 뒤에 있어야 한다 — 노크 소리가 나고 문이 열리고
+       걸어 들어오는 것이 처음부터 끝까지 보여야 하기 때문이다. */
+    door: { pos: [-0.75, 0, -3.3], width: 1.05, height: 2.12 },
 
     /* NPC 이동 경로. 문 안쪽에서 책상 건너편까지. */
     npcPath: {
-      doorway: [-1.5, 0, 3.05],
+      doorway: [-0.75, 0, -2.90],
       stand:   [0.12, 0, -0.62]
     },
 
@@ -327,18 +332,19 @@
          통째로 가린다. 폭으로 맞춰 뒤쪽 구석에 세워 둔다.
          ※ 사무용 의자를 구하면 책상 앞으로 되돌린다 — docs/ASSETS.md 참고. */
       { id: "chair",  path: "WoodenChair_01/WoodenChair_01.gltf",
-        pos: [-2.02, 0, -2.28], rot: [0, Math.PI * 0.72, 0], fitWidth: 0.46,
+        pos: [2.30, 0, -1.15], rot: [0, -Math.PI * 0.42, 0], fitWidth: 0.46,
         solid: true },
       /* 램프는 책상 오른쪽 안쪽. 상판은 z 0.05~0.95 안에서만 물건을 받는다 —
          그 밖에 두면 허공에 뜬다. 도장 자리(왼쪽 앞)와도 떨어뜨린다. */
       { id: "lamp",   path: "desk_lamp_arm_01/desk_lamp_arm_01.gltf",
         pos: [0.58, 0, 0.22],   rot: [0, -Math.PI * 0.32, 0], fitHeight: 0.44,
         restOn: "desk" },
+      /* 문 자리(x -1.28 ~ -0.23)를 비켜 세운다 */
       { id: "board",  path: "standing_chalkboard_01/standing_chalkboard_01.gltf",
-        pos: [-0.95, 0, -2.45], rot: [0, Math.PI * 0.13, 0], fitHeight: 1.62,
+        pos: [-2.05, 0, -2.30], rot: [0, Math.PI * 0.30, 0], fitHeight: 1.62,
         solid: true },
       { id: "shelf",  path: "wooden_bookshelf_worn/wooden_bookshelf_worn.gltf",
-        pos: [1.95, 0, -2.55],  rot: [0, 0, 0],              fitHeight: 1.82,
+        pos: [1.75, 0, -2.55],  rot: [0, 0, 0],              fitHeight: 1.82,
         solid: true },
       { id: "cabinet", path: "metal_tool_chest/metal_tool_chest.gltf",
         pos: [-2.28, 0, -0.60], rot: [0, Math.PI * 0.5, 0],  fitHeight: 0.92,
@@ -374,7 +380,7 @@
       { id: "books4", path: "books/book_encyclopedia_set_01.gltf",
         pos: [0.24, 0, -0.02],  rot: [0, 0.16, 0], fitWidth: 0.32, shelfOf: "shelf", shelf: 3 },
       { id: "clock",  path: "mantel_clock_01/mantel_clock_01.gltf",
-        pos: [1.95, 0, -2.55],  rot: [0, 0, 0],              fitHeight: 0.24,
+        pos: [1.75, 0, -2.55],  rot: [0, 0, 0],              fitHeight: 0.24,
         restOn: "shelf" },
       { id: "sconceL", path: "industrial_wall_lamp/industrial_wall_lamp.gltf",
         pos: [-2.66, 2.05, -0.6], rot: [0, Math.PI * 0.5, 0], fitHeight: 0.30, align: "none" },
