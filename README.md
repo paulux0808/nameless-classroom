@@ -13,7 +13,8 @@ GitHub Pages에서는 루트 스테이지 선택 화면에서 각 스테이지�
 ## Test
 
 ```sh
-npm test        # stage1 단위 테스트 (의존성 없음, node:test)
+npm install     # 개발용 DOM 테스트 의존성
+npm test        # stage1/stage2 로직·프론트엔드 테스트 + 스포일러 감사
 ```
 
 ## Structure
@@ -27,6 +28,7 @@ stage1/tests/               node:test 단위 테스트
 stage2/index.html           Stage 2 — 챕터 선택 허브
 stage2/logic.js             순수 로직 (진행도·스포일러·검증 상태기계)
 stage2/engine.js            공용 런타임 (씬·입력·문서·도장·대사)
+stage2/reader.js            문서 표시 (나란히/확대·글자 크기·선택 표시)
 stage2/chapters/            챕터별 데이터 (씬 배치·모순 규칙·대사)
 stage2/spec/                설계 스펙 — story/연출의 권위
 stage2/tests/               node:test 단위 테스트
@@ -34,6 +36,12 @@ docs/ASSETS.md              에셋 준비 목록
 assets/vendor/              three.js r128 코어 및 애드온 로컬 사본
 backup/                     index.html 시점별 스냅샷 (실행 안 함)
 ```
+
+UI만 확인할 때는 로컬 서버에서 `stage2/tests/ui-preview.html`을 엽니다.
+화면 크기를 바꿔 보고서·대화·도장·로딩·수정본을 확인할 수 있습니다.
+미리보기는 실제 `reader.js`와 `chapter.css`를 사용하며 게임 저장에는 쓰지 않습니다.
+DOM 회귀 테스트는 선택 시 스크롤·초점 유지와 엔진 연동을 검증합니다.
+3D 렌더링과 실제 화면 배치는 WebGL을 지원하는 브라우저에서 별도 확인합니다.
 
 Stage 1의 three.js 애드온(GLTFLoader·포스트프로세싱)은 CDN이 아니라
 `assets/vendor/`의 로컬 사본에서 불러옵니다. 인라인된 코어와 같은 리비전입니다.

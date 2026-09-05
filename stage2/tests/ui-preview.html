@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CH01 UI preview</title>
+<style>
+body{margin:0;background:#0d120f;color:#e8e5d7;font:13px system-ui}header.preview-controls{display:flex;flex-wrap:wrap;gap:8px;padding:12px 20px;align-items:center;border-bottom:1px solid #394435}header.preview-controls strong{margin-right:16px}button,select{font:inherit;color:inherit;background:#253024;border:1px solid #58634b;padding:8px 12px;border-radius:3px;cursor:pointer}main.preview-stage{display:flex;justify-content:center;padding:20px;overflow:auto}iframe{flex:none;border:1px solid #46533e;background:#141917;max-width:none}
+</style>
+<body>
+<script>
+const params = new URLSearchParams(location.search);
+if (!params.has('frame')) {
+  document.body.innerHTML = `<header class="preview-controls"><strong>CH01 · UI preview</strong><label>화면 <select aria-label="화면 크기"><option value="1280,800">데스크톱 1280 × 800</option><option value="1024,768">태블릿 1024 × 768</option><option value="844,390">모바일 가로 844 × 390</option><option value="390,844">모바일 세로 390 × 844</option><option value="320,568">작은 화면 320 × 568</option></select></label><button data-surface="reader">보고서</button><button data-surface="dialogue">대화</button><button data-surface="stamp">도장</button><button data-surface="loading">로딩</button><button data-surface="revised">수정본</button></header><main class="preview-stage"><iframe title="CH1 화면 미리보기" width="1280" height="800" src="?frame=1&surface=reader"></iframe></main>`;
+  const frame = document.querySelector('iframe');
+  document.querySelector('select').onchange = event => {
+    const [w,h] = event.target.value.split(','); frame.width = w; frame.height = h;
+  };
+  document.querySelectorAll('[data-surface]').forEach(button => button.onclick = () => {
+    frame.src = '?frame=1&surface=' + button.dataset.surface;
+  });
+} else {
+  const css = document.createElement('link'); css.rel='stylesheet'; css.href='../chapter.css'; document.head.appendChild(css);
+  const load = src => new Promise(resolve => { const script=document.createElement('script');script.src=src;script.onload=resolve;document.head.appendChild(script); });
+  (async () => {
+    await load('../reader.js'); await load('../chapters/ch01.js');
+    const chapter=N2_CHAPTERS.ch01, surface=params.get('surface');
+    document.body.innerHTML=`<div id="hud"><div class="hud-row"><div class="tag"><b>CHAPTER 01</b><span id="hud-title">계산 사슬</span><span class="npc">RICHARD</span></div><div class="hud-right"><div id="progress"><div id="bar"><div id="bar-fill"></div></div><span id="bar-pct">0%</span></div><button class="icon-btn" aria-label="전체 화면">⛶</button></div></div><div id="objective">책상을 살펴본다</div></div>`;
+    if(surface==='reader'||surface==='revised'){
+      document.body.classList.add('reader-open','sheet-open');
+      const sheet=document.createElement('div');sheet.id='sheet';sheet.className='bare';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-modal','true');sheet.setAttribute('aria-labelledby','reader-title');
+      sheet.innerHTML='<div class="sheet-card"><div id="sheet-body" class="sheet-body"></div></div>';document.body.appendChild(sheet);
+      let selection=[];
+      const revised=surface==='revised';
+      const reader=N2Reader.create({host:document.getElementById('sheet-body'),title:chapter.title,subtitle:'RICHARD / CHAPTER 01',safeText:text=>text,onClose:()=>{sheet.hidden=true;document.body.classList.remove('reader-open','sheet-open');},onSelect:id=>{selection=selection.includes(id)?selection.filter(x=>x!==id):selection.concat(id);render();}});
+      function render(){reader.render(revised?chapter.revisedReports:chapter.reports,{canPick:!revised,selection,mark:()=>revised?'ok':null});}
+      render();
+    }else if(surface==='dialogue'){
+      const dialogue=document.createElement('div');dialogue.id='dialogue';dialogue.tabIndex=0;dialogue.setAttribute('role','button');dialogue.setAttribute('aria-label','다음 대사');let line=0;
+      function next(){dialogue.innerHTML='<div class="who">RICHARD</div><p class="line"></p><div class="more">계속 ▸</div>';dialogue.querySelector('.line').textContent=chapter.lines.submission[line++%chapter.lines.submission.length];}
+      dialogue.onclick=next;next();document.body.appendChild(dialogue);
+      if(innerWidth<1000){document.body.classList.add('touch');document.body.insertAdjacentHTML('beforeend','<div id="joy"><div id="joyk"></div></div><button id="act">조사</button>');}
+    }else if(surface==='stamp'){
+      document.body.classList.add('sheet-open');document.body.insertAdjacentHTML('beforeend','<div id="sheet"><div class="sheet-card"><div class="sheet-head"><div><h2>도장</h2><div class="sub">반려</div></div><button class="btn">닫기</button></div><div class="sheet-body"><p class="hint">이대로는 넘길 수 없습니다.</p><button class="stamp-btn rejected">REJECTED</button></div></div></div>');
+    }else if(surface==='loading'){
+      document.body.insertAdjacentHTML('beforeend','<div id="loading"><div class="load-chapter">CHAPTER 01</div><div class="load-brand">NAMELESS <span>Ⅱ</span></div><div class="load-rule"></div><div id="load-status">연구시설을 여는 중…</div><div id="load-detail">오브젝트 배치 중 (12/20)</div></div>');
+    }
+  })();
+}
+</script>
+</body>
+</html>

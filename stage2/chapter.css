@@ -1,347 +1,237 @@
-/* NAMELESS Ⅱ — 챕터 공통 스타일. 모든 챕터가 이 한 벌을 쓴다. */
+/* NAMELESS II — shared chapter presentation. No chapter verdicts live here. */
 :root{
-  --bg:#0d0f12;
-  --panel:rgba(18,21,26,0.94);
-  --line:rgba(168,182,200,0.22);
-  --line-hi:rgba(196,212,232,0.45);
-  --text:#e8edf4;
-  --dim:#93a0b2;
-  --danger:#e0705c;
-  --ok:#6fbf95;
-  --ink:#1a1d22;
-  --paper:#efe9db;
-  --stamp-red:#b1352c;
-  --stamp-green:#2f7d55;
-  --font-ui:"Pretendard","Gothic A1","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  color-scheme:dark;
+  --bg:#141917;--panel:rgba(24,29,26,.96);--line:rgba(207,193,155,.2);
+  --line-hi:#c7b17a;--text:#eee9dc;--dim:#aba99a;--danger:#e59b87;--ok:#9bbc9b;
+  --ink:#302f28;--paper:#ece5d4;--stamp-red:#9c483e;--stamp-green:#426652;
+  --font-ui:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  --font-serif:"Noto Serif KR","Batang","AppleMyungjo",Georgia,serif;
   --font-mono:ui-monospace,SFMono-Regular,Consolas,monospace;
-
-  --fs-read:20px;
-  --fs-body:16px;
-  --fs-title:24px;
-  --fs-label:13px;
-  --fs-meta:15px;
-
-  --sa-t:env(safe-area-inset-top,0px);
-  --sa-b:env(safe-area-inset-bottom,0px);
-  --sa-l:env(safe-area-inset-left,0px);
-  --sa-r:env(safe-area-inset-right,0px);
+  --fs-read:20px;--fs-meta:14px;--fs-label:11px;
+  --sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);
+  --sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px);
   --tap:44px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);overscroll-behavior:none}
-body{font-family:var(--font-ui);color:var(--text);-webkit-font-smoothing:antialiased;
-  -webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-ui);color:var(--text);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
 button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
-.hidden{display:none!important}
-:focus-visible{outline:2px solid var(--line-hi);outline-offset:2px}
-
-#scene{position:fixed;inset:0;display:block;touch-action:none;cursor:grab}
+button,[tabindex]{-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default;opacity:.45}
+.hidden,[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--line-hi);outline-offset:4px}
+#scene{position:fixed;inset:0;display:block;touch-action:none;cursor:grab;outline-offset:-4px}
 #scene.dragging{cursor:grabbing}
-#grade{position:fixed;inset:0;z-index:5;pointer-events:none;
-  background:radial-gradient(130% 110% at 50% 45%,transparent 44%,rgba(6,8,11,0.42) 78%,rgba(3,4,6,0.8) 100%)}
+#grade{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse at 50% 44%,transparent 38%,rgba(10,15,12,.28) 72%,rgba(6,10,8,.72))}
 
-/* ── HUD ─────────────────────────────────────────────────────────────── */
-#hud{position:fixed;inset:0;z-index:30;pointer-events:none;display:flex;
-  flex-direction:column;justify-content:space-between;padding:16px;gap:12px}
-#hud>*{pointer-events:auto}
-.hud-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
-.hud-right{display:flex;gap:8px;align-items:center}
-.icon-btn{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;
-  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);
-  font-size:17px;line-height:1;color:#c8d6e8}
-.icon-btn:hover{border-color:var(--line-hi);color:#fff}
-.icon-btn.on{border-color:#9fc6ea;color:#9fc6ea}
-.tag{display:inline-flex;align-items:center;gap:10px;padding:8px 18px;border-radius:26px;
-  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);
-  font-size:var(--fs-meta);font-weight:600;white-space:nowrap}
-.tag b{padding:3px 10px;border-radius:12px;background:linear-gradient(135deg,#8ea6c4,#5b7ba0);
-  color:#10141a;font-weight:900;font-size:var(--fs-label);letter-spacing:.12em}
-.tag .npc{color:var(--dim);letter-spacing:.08em}
-
-#progress{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:26px;
-  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);min-width:200px}
-#bar{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.1);overflow:hidden}
-#bar-fill{height:100%;width:0;border-radius:3px;
-  background:linear-gradient(90deg,#5b8fc4,#8fd0b0);transition:width .8s cubic-bezier(.3,0,0,1)}
-#bar-pct{font-family:var(--font-mono);font-size:var(--fs-label);color:var(--dim);min-width:38px;text-align:right}
-
-#objective{align-self:flex-start;max-width:min(640px,92vw);padding:14px 22px;border-radius:14px;
-  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(10px);
-  font-size:var(--fs-meta);line-height:1.6;color:#dbe4f0}
-#objective:empty{display:none}
-#objective b{color:#9fc6ea}
-
-#reticle{position:fixed;z-index:31;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;
-  border-radius:50%;background:rgba(226,236,248,.6);pointer-events:none;transition:all .15s ease}
-#reticle.far{width:16px;height:16px;margin:-8px 0 0 -8px;background:transparent;
-  border:2px solid rgba(226,236,248,.4)}
-#reticle.hot{width:28px;height:28px;margin:-14px 0 0 -14px;background:transparent;
-  border:2px solid #9fc6ea;box-shadow:0 0 16px rgba(159,198,234,.5)}
-#label{position:fixed;z-index:32;transform:translate(-50%,-230%);padding:6px 14px;border-radius:8px;
-  background:rgba(10,13,18,.92);border:1px solid var(--line);font-size:var(--fs-label);
-  color:#dbe4f0;pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
+/* Quiet, architectural HUD. The room keeps the centre of the screen. */
+#hud{position:fixed;inset:0;z-index:30;pointer-events:none;display:flex;flex-direction:column;
+  justify-content:space-between;padding:calc(var(--sa-t) + 26px) calc(var(--sa-r) + 30px) calc(var(--sa-b) + 26px) calc(var(--sa-l) + 30px)}
+.hud-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.hud-right{display:flex;align-items:center;gap:16px}
+.icon-btn{pointer-events:auto;display:grid;place-items:center;width:44px;height:44px;
+  border:1px solid var(--line);border-radius:3px;background:var(--panel);color:var(--text);font-size:21px}
+.icon-btn:hover,.icon-btn.on{border-color:var(--line-hi);color:var(--line-hi)}
+.tag{display:grid;grid-template-columns:auto auto;column-gap:14px;row-gap:8px;
+  padding:14px 20px 15px;border-left:2px solid var(--line-hi);background:linear-gradient(90deg,rgba(19,25,21,.92),rgba(19,25,21,.65));backdrop-filter:blur(8px)}
+.tag b{grid-column:1/-1;color:var(--line-hi);font:10px var(--font-mono);font-weight:500;letter-spacing:.19em}
+#hud-title{font:22px var(--font-serif);letter-spacing:-.03em}
+.tag .npc{align-self:end;padding-bottom:3px;color:var(--dim);font:10px var(--font-mono);letter-spacing:.12em}
+#progress{display:flex;align-items:center;gap:12px;width:132px;padding:15px 0}
+#bar{flex:1;height:2px;background:rgba(232,221,197,.25);overflow:hidden}
+#bar-fill{height:100%;width:0;background:var(--line-hi);transition:width .6s ease}
+#bar-pct{font:11px var(--font-mono);color:var(--text);min-width:30px;text-align:right}
+#objective{align-self:flex-start;max-width:min(560px,90vw);padding:11px 16px;
+  background:var(--panel);border-left:2px solid var(--line-hi);font-size:14px;line-height:1.6;color:var(--text)}
+#objective:empty{display:none}#objective b{font-weight:600;color:var(--line-hi)}
+#reticle{position:fixed;z-index:31;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;
+  border-radius:50%;background:rgba(244,235,208,.8);pointer-events:none;transition:width .15s,height .15s,margin .15s}
+#reticle.hot,#reticle.far{width:24px;height:24px;margin:-12px;background:transparent;border:1px solid var(--line-hi);box-shadow:0 0 0 4px rgba(199,177,122,.08)}
+#reticle.far{width:16px;height:16px;margin:-8px;border-color:var(--dim);box-shadow:none}
+#label{position:fixed;z-index:32;transform:translate(-50%,-180%);padding:8px 13px;
+  background:var(--panel);border:1px solid var(--line);border-radius:2px;font-size:12px;color:var(--text);
+  pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap}
 #label.show{opacity:1}
+body.sheet-open #hud,body.sheet-open #reticle,body.sheet-open #label,body.sheet-open #joy,body.sheet-open #act{visibility:hidden}
 
-/* ── 시트(모달) ──────────────────────────────────────────────────────── */
+/* Stamps and chapter transitions share a restrained paper panel. */
 #sheet{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:24px;
-  background:rgba(6,8,11,.78);backdrop-filter:blur(10px);overflow:auto}
-.sheet-card{width:min(1080px,100%);max-height:calc(100dvh - 48px);display:flex;flex-direction:column;
-  border:1px solid var(--line);border-radius:14px;overflow:hidden;
-  background:linear-gradient(165deg,#1b1f26,#12151a);box-shadow:0 30px 70px rgba(0,0,0,.7)}
-.sheet-head{flex:none;display:flex;justify-content:space-between;align-items:center;gap:18px;
-  padding:18px 26px;border-bottom:1px solid var(--line);background:rgba(12,15,20,.96)}
-.sheet-head h2{margin:0;font-size:var(--fs-title);font-weight:800}
-.sheet-head .sub{color:var(--dim);font-size:var(--fs-label);letter-spacing:.1em;margin-top:4px}
-.sheet-body{padding:22px 26px;overflow:auto;overscroll-behavior:contain}
-
-
-.btn{padding:10px 20px;border-radius:9px;border:1px solid var(--line);
-  background:rgba(255,255,255,.05);font-size:var(--fs-meta);font-weight:600;min-height:var(--tap)}
-.btn:hover{background:rgba(255,255,255,.11);border-color:var(--line-hi)}
-p.hint{margin:0 0 18px;color:var(--dim);font-size:var(--fs-meta);line-height:1.7}
-p.hint b{color:#9fc6ea}
-
-/* ── 편지 세 장 ──────────────────────────────────────────────────────
-   화면에 종이 세 장뿐이다. 머리말도 탭도 안내문도 없다 — 그런 것이 붙는
-   만큼 편지가 작아지고, 작아지면 읽을 수가 없다. 무엇을 할지는 리처드가
-   말한다.
-
-   책상에 부려 놓은 것처럼 조금씩 기울어 겹쳐 두되, 겹치는 자리는 여백만
-   물리게 해서 글자는 하나도 가리지 않는다. */
-#sheet.bare{padding:0;background:rgba(6,8,11,.86)}
-/* 카드 껍데기를 지운다. 감추면 안에 든 본문까지 같이 사라진다. */
-#sheet.bare .sheet-card{width:100%;max-width:none;height:100dvh;max-height:none;
-  border:0;border-radius:0;background:none;box-shadow:none;overflow:visible}
-#sheet.bare .sheet-head{display:none}
-#sheet.bare .sheet-body{display:block;width:100%;height:100dvh;
-  padding:calc(var(--sa-t) + 14px) calc(var(--sa-r) + 16px)
-          calc(var(--sa-b) + 14px) calc(var(--sa-l) + 16px);
-  overflow:hidden;background:none;border:0}
-
-.letters{display:flex;align-items:stretch;justify-content:center;
-  width:100%;height:100%;perspective:1400px}
-
-/* 나가는 길 하나. 종이 위에 얹히므로 눈에 띄지 않을 만큼만 둔다.
-   바깥의 어두운 데를 눌러도, Esc 로도 닫힌다. */
+  background:rgba(10,15,12,.82);backdrop-filter:blur(12px);overflow:auto}
+.sheet-card{width:min(620px,100%);max-height:calc(100dvh - 48px);display:flex;flex-direction:column;
+  color:var(--ink);color-scheme:light;background:var(--paper);border:1px solid #d1c5aa;border-radius:3px;
+  box-shadow:0 24px 80px rgba(0,0,0,.45)}
+.sheet-head{display:flex;flex:none;justify-content:space-between;align-items:center;gap:18px;padding:22px 28px;border-bottom:1px solid #c9c0ac}
+.sheet-head h2{margin:0;font:24px var(--font-serif)}
+.sheet-head .sub{margin-top:7px;color:#696858;font:11px var(--font-mono);letter-spacing:.12em}
+.sheet-body{padding:30px 28px;overflow:auto;overscroll-behavior:contain}
+.btn{min-height:44px;padding:9px 16px;border:1px solid currentColor;border-radius:2px;background:transparent;font-size:13px}
+.btn:hover{background:rgba(126,116,86,.12)}
+p.hint{margin:0 0 28px;text-align:center;color:#666451;font-size:15px;line-height:1.7}
+.stamp-btn{display:block;margin:12px auto 18px;width:min(330px,100%);min-height:86px;padding:20px 14px;
+  border:3px double currentColor;border-radius:2px;font:700 clamp(22px,3vw,32px) var(--font-mono);
+  letter-spacing:.16em;background:transparent;transform:rotate(-2deg);transition:transform .15s,background .15s}
+.stamp-btn.rejected{color:var(--stamp-red)}.stamp-btn.approved{color:var(--stamp-green)}
+.stamp-btn:hover{background:rgba(126,116,86,.09);transform:rotate(0)}
+.stamp-btn:active{transform:scale(.97)}
 .sheet-x{display:none}
-#sheet.bare .sheet-x{position:fixed;z-index:80;display:grid;place-items:center;
-  top:calc(var(--sa-t) + 9px);right:calc(var(--sa-r) + 10px);
-  width:38px;height:38px;border-radius:50%;
-  background:rgba(8,10,14,.5);border:1px solid rgba(226,236,248,.2);
-  color:rgba(226,236,248,.62);font-size:19px;line-height:1;opacity:.5;
-  backdrop-filter:blur(4px);transition:opacity .15s}
-#sheet.bare .sheet-x:hover,#sheet.bare .sheet-x:focus-visible{opacity:1}
 
-.letter{flex:1 1 0;min-width:0;display:flex;flex-direction:column;
-  background:linear-gradient(176deg,#f3ece0,#e8dfcd 62%,#e2d8c3);
-  color:var(--ink);border-radius:2px;
-  box-shadow:0 18px 44px rgba(0,0,0,.62),0 2px 6px rgba(0,0,0,.4);
-  transition:box-shadow .18s ease}
-.letter:nth-child(1){transform:rotate(-1.6deg) translateY(7px);z-index:1;margin-right:-16px}
-.letter:nth-child(2){transform:rotate(0.9deg);z-index:2}
-.letter:nth-child(3){transform:rotate(-1.1deg) translateY(10px);z-index:1;margin-left:-16px}
-/* 겹치는 자리는 여백만 물리게 한다. 글자는 한 자도 가리지 않는다 —
-   기울어져 있어 실제로 물리는 폭은 겹침 값보다 크다. */
-.letter:nth-child(1)>*{padding-right:34px}
-.letter:nth-child(3)>*{padding-left:34px}
-/* 눌러서 앞으로 끌어올린 장 */
-.letter.front{z-index:6;box-shadow:0 26px 60px rgba(0,0,0,.72),0 3px 10px rgba(0,0,0,.5)}
-.letter:focus-within{z-index:6}
-
-.letter-head{flex:none;padding:16px 22px 11px;
-  border-bottom:1.5px solid rgba(40,32,20,.24)}
-.letter-no{display:inline-block;padding:2px 10px;border-radius:3px;margin-bottom:6px;
-  background:rgba(40,32,20,.13);font-family:var(--font-mono);font-weight:800;
-  font-size:clamp(9.5px,.82vw,12px);letter-spacing:.18em}
-.letter-head h3{margin:0;font-weight:800;letter-spacing:.01em;
-  font-size:clamp(12px,1.15vw,17px)}
-.letter-meta{margin:4px 0 0;font-family:var(--font-mono);color:#6b6152;
-  font-size:clamp(9px,.78vw,12px);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* 장마다 따로 구른다 */
-.letter-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 22px 18px}
-
-/* 본문은 줄글이다. 그 안의 문장만 누를 수 있다 — 문단마다 상자를 두르면
-   표가 되고, 표가 되면 어느 것이 한 세트인지 줄만 보고도 짐작된다. */
-.prose{margin:0 0 15px;font-size:clamp(12.5px,1.16vw,18px);line-height:2;
-  word-break:keep-all}
+/* Documents keep their own scroll containers and DOM identity while selected. */
+#sheet.bare{padding:0;background:radial-gradient(ellipse at 50% 0,rgba(65,70,55,.9),rgba(16,22,18,.96) 80%)}
+#sheet.bare .sheet-card{width:100%;height:100dvh;max-height:none;border:0;border-radius:0;background:none;box-shadow:none;color:var(--text);color-scheme:dark;overflow:hidden}
+#sheet.bare .sheet-head{display:none}
+#sheet.bare .sheet-body{flex:1;min-height:0;padding:0;overflow:hidden}
+.reader{height:100%;max-width:1600px;margin:auto;display:flex;flex-direction:column;
+  padding:calc(var(--sa-t) + 18px) calc(var(--sa-r) + 28px) calc(var(--sa-b) + 24px) calc(var(--sa-l) + 28px)}
+.reader-toolbar{display:flex;flex:none;align-items:center;justify-content:space-between;gap:20px;padding:0 0 18px}
+.reader-identity{min-width:0}.reader-kicker{color:#b5b69e;font:10px var(--font-mono);letter-spacing:.14em}
+.reader-title{margin:6px 0 0;font:23px var(--font-serif);color:#f1ecdd;letter-spacing:-.035em}
+.reader-actions{display:flex;align-items:center;gap:8px;flex:none}
+.reader-tool{min-height:44px;padding:9px 14px;border:1px solid rgba(215,206,174,.26);border-radius:2px;background:rgba(14,20,16,.2);font-size:12px;white-space:nowrap;color:#e4dfcf}
+.reader-tool:hover{background:rgba(215,206,174,.09);border-color:var(--line-hi)}
+.reader-size{min-width:44px;font-family:var(--font-serif);font-size:17px}
+.reader-size[aria-pressed=true]{border-color:var(--line-hi);color:var(--line-hi)}
+.reader-close{margin-left:8px;border-color:transparent;color:#c9cbbb}
+.reader-close:hover{color:#fff}
+.letters{display:flex;flex:1;min-height:0;align-items:stretch;justify-content:center;gap:18px}
+.letter{position:relative;display:flex;flex:1 1 0;flex-direction:column;min-width:0;min-height:0;overflow:hidden;
+  color:var(--ink);color-scheme:light;background:linear-gradient(112deg,rgba(255,255,255,.24),transparent 45%),var(--paper);
+  border:1px solid #cfc4a9;border-radius:2px;box-shadow:0 12px 26px rgba(0,0,0,.18)}
+.letter::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:#a1936e;opacity:.7;pointer-events:none}
+.letter::after{content:"";position:absolute;left:0;right:10px;bottom:0;height:24px;
+  background:linear-gradient(transparent,#ece5d4);pointer-events:none;opacity:0;transition:opacity .12s}
+.letter.more-below::after{opacity:1}
+.letter-head{flex:none;margin:0 26px;padding:20px 0 17px;border-bottom:1px solid #bbb39f}
+.letter-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;min-height:24px}
+.letter-no{font:11px var(--font-mono);font-weight:600;letter-spacing:.1em;color:#777254}
+.letter-expand{border:0;background:transparent;color:#67644f;font-size:11px;min-height:32px;padding:5px 0 5px 12px}
+.letter-expand:hover{color:#222d23;text-decoration:underline;text-underline-offset:4px}
+.letter-head h3{margin:0;font:600 clamp(17px,1.5vw,23px) var(--font-serif);line-height:1.4;letter-spacing:-.04em}
+.letter-meta{margin:9px 0 0;font-size:11px;color:#736e5d;line-height:1.6;overflow-wrap:anywhere}
+.letter-body{flex:1;min-height:0;overflow-y:auto;padding:22px 26px 30px;overscroll-behavior:contain;scrollbar-gutter:stable;outline-offset:-5px}
+.prose{margin:0 0 20px;font-size:clamp(15px,1.14vw,17px);line-height:1.95;letter-spacing:-.025em;word-break:keep-all;overflow-wrap:break-word}
 .prose:last-child{margin-bottom:0}
+.stmt{padding:1px 0;border-radius:1px;box-decoration-break:clone;-webkit-box-decoration-break:clone;transition:background .12s,box-shadow .12s}
+.stmt.pickable{cursor:pointer;text-decoration:underline;text-decoration-color:rgba(90,82,56,.24);text-underline-offset:4px;text-decoration-thickness:1px}
+@media(hover:hover){.stmt.pickable:hover{background:rgba(160,140,88,.17);text-decoration-color:#8e7a4e}}
+.stmt:focus-visible{outline:2px solid #64735d;outline-offset:3px}
+.stmt.sel{background:rgba(160,128,54,.24);box-shadow:inset 0 -2px #917336;text-decoration:none}
+.stmt.claimed{background:rgba(155,81,60,.1);box-shadow:inset 0 -1px rgba(138,60,44,.62);text-decoration:none}
+.stmt.bad{background:rgba(155,66,51,.17);box-shadow:inset 0 -2px var(--stamp-red)}
+.stmt.ok{background:rgba(64,111,72,.12);box-shadow:inset 0 -2px var(--stamp-green)}
+.reader-pages{display:flex;flex:none;align-items:center;justify-content:center;gap:8px;padding-top:14px}
+.reader-page{position:relative;min-width:76px;min-height:44px;border:1px solid var(--line);border-radius:2px;background:transparent;font:12px var(--font-ui);color:#bfc2b2}
+.reader-page[aria-current=page]{background:#d9ceb0;border-color:#d9ceb0;color:#2c352a}
+.reader-page.has-selection::after{content:"";position:absolute;right:9px;top:9px;width:4px;height:4px;border-radius:50%;background:currentColor}
+.reader.single-page .letter{flex:0 1 760px}
+.reader.single-page .letter-head{margin-inline:42px}
+.reader.single-page .letter-body{padding-inline:42px}
+.reader.single-page .prose{font-size:17px;line-height:2}
+.reader.large-type .prose{font-size:19px;line-height:2}
 
-.stmt{border-radius:3px;padding:1px 2px;
-  box-decoration-break:clone;-webkit-box-decoration-break:clone;
-  transition:background .12s,box-shadow .12s}
-.stmt.pickable{cursor:pointer;box-shadow:inset 0 -1px 0 rgba(40,32,20,.3)}
-.stmt.pickable:hover{background:rgba(40,32,20,.1);
-  box-shadow:inset 0 -1px 0 rgba(40,32,20,.6)}
-/* 고르는 중 */
-.stmt.sel{background:rgba(60,109,142,.22);
-  box-shadow:inset 0 -2px 0 rgba(45,90,125,.8)}
-/* 어긋났다고 짚어 둔 자리 — 옳은지 그른지는 아직 모른다 */
-.stmt.claimed{background:rgba(177,53,44,.13);
-  box-shadow:inset 0 -2px 0 rgba(177,53,44,.62)}
-/* 반려 뒤에 드러난 것 */
-.stmt.bad{background:rgba(177,53,44,.2);box-shadow:inset 0 -2px 0 var(--stamp-red)}
-.stmt.ok{background:rgba(47,125,85,.15);box-shadow:inset 0 -2px 0 rgba(47,125,85,.62)}
-
-/* 노크 — 사람 말이 아니므로 이름표도 화살표도 없다 */
-#dialogue .knock{margin:0;text-align:center;letter-spacing:.5em;
-  font-size:var(--fs-read);color:#c7d4e4}
-
-/* ── 도장 ────────────────────────────────────────────────────────────── */
-.stamp-btn{display:block;margin:8px auto 4px;width:min(320px,100%);padding:26px;border-radius:12px;
-  font-family:var(--font-mono);font-size:30px;font-weight:900;letter-spacing:.2em;
-  border:3px solid currentColor;background:transparent;transition:transform .1s}
-.stamp-btn.rejected{color:var(--stamp-red)}
-.stamp-btn.approved{color:var(--stamp-green)}
-.stamp-btn:hover{background:rgba(255,255,255,.05)}
-.stamp-btn:active{transform:scale(.96)}
-
-/* ── 대사 ────────────────────────────────────────────────────────────── */
-#dialogue{position:fixed;left:50%;bottom:calc(var(--sa-b) + 8vh);transform:translateX(-50%);
-  z-index:55;width:min(680px,92vw);padding:20px 26px;border-radius:14px;cursor:pointer;
-  background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(12px);
-  box-shadow:0 20px 50px rgba(0,0,0,.6)}
-#dialogue .who{font-size:var(--fs-label);letter-spacing:.18em;color:#9fc6ea;font-weight:800;
-  margin-bottom:9px}
-#dialogue .line{margin:0;font-size:var(--fs-read);line-height:1.65}
-#dialogue .more{margin-top:12px;text-align:right;font-size:var(--fs-label);color:var(--dim)}
-
-#toast{position:fixed;left:50%;bottom:calc(var(--sa-b) + 28px);z-index:90;
-  transform:translate(-50%,14px);opacity:0;pointer-events:none;transition:all .22s ease;
-  padding:14px 30px;border-radius:12px;max-width:min(70vw,600px);text-align:center;
-  background:rgba(14,17,22,.95);border:1px solid var(--line);font-size:var(--fs-meta);
-  font-weight:600;line-height:1.5}
+/* Dialogue: a nameplate, readable line, and one unobtrusive advance affordance. */
+#dialogue{position:fixed;left:50%;bottom:calc(var(--sa-b) + 40px);transform:translateX(-50%);z-index:55;
+  width:min(760px,calc(100vw - 64px));padding:23px 30px 18px;border:1px solid var(--line);border-top:2px solid #a99a71;
+  border-radius:3px;cursor:pointer;background:linear-gradient(110deg,rgba(23,30,24,.98),rgba(21,27,23,.94));
+  backdrop-filter:blur(12px);box-shadow:0 18px 56px rgba(0,0,0,.32)}
+#dialogue .who{font:11px var(--font-mono);letter-spacing:.18em;color:#c8b684;margin-bottom:12px}
+#dialogue .line{margin:0;font-size:20px;line-height:1.75;letter-spacing:-.025em;color:#f0ecdf;word-break:keep-all;overflow-wrap:break-word}
+#dialogue .more{margin-top:14px;text-align:right;font-size:11px;letter-spacing:.06em;color:#aaa996}
+#dialogue .knock{margin:0;text-align:center;font-size:18px;color:#d1c7ac;letter-spacing:.5em}
+#toast{position:fixed;left:50%;bottom:calc(var(--sa-b) + 22px);z-index:90;transform:translate(-50%,8px);opacity:0;pointer-events:none;
+  transition:opacity .18s,transform .18s;padding:12px 20px;max-width:min(88vw,560px);text-align:center;background:#222b23;
+  border:1px solid #6f735b;border-radius:3px;font-size:13px;color:#e6e2d3;line-height:1.6;box-shadow:0 6px 20px rgba(0,0,0,.2)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
-#toast.good{border-color:rgba(111,191,149,.5)}
-#toast.bad{border-color:var(--danger);color:#f4d6d0}
+#toast.good{border-color:#8ca483}#toast.bad{border-color:#bd8270;color:#f0c3b4}
+body.reader-open #toast{bottom:calc(var(--sa-b) + 85px)}
 
-/* ── 스크롤 표시 ──────────────────────────────────────────────────────
-   넘치면 스크롤할 수 있다는 걸 반드시 눈에 보이게 한다. macOS/iOS 는
-   만지기 전까지 스크롤바를 숨기고, 자식이 불투명 배경을 가지면 CSS
-   그라디언트는 가려진다. 그래서 실제 요소를 위에 덮는다.
-   위치는 engine.js 의 markScrollables() 가 잡는다. */
-.scrolls{scrollbar-width:thin;
-  scrollbar-color:rgba(168,182,200,0.5) rgba(255,255,255,0.06);
-  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-.scrolls::-webkit-scrollbar{width:10px;height:10px}
-.scrolls::-webkit-scrollbar-track{background:rgba(255,255,255,0.06);border-radius:6px}
-.scrolls::-webkit-scrollbar-thumb{background:rgba(168,182,200,0.45);border-radius:6px;
-  border:2px solid transparent;background-clip:content-box}
-.scrolls.can-y{scrollbar-gutter:stable}
+/* Scrollbar and legacy stamp-panel edge hints. */
+.scrolls,.letter-body{scrollbar-width:thin;scrollbar-color:#a99e82 transparent;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.scrolls::-webkit-scrollbar,.letter-body::-webkit-scrollbar{width:7px;height:7px}
+.scrolls::-webkit-scrollbar-thumb,.letter-body::-webkit-scrollbar-thumb{background:#b1a78e;border:2px solid transparent;background-clip:content-box;border-radius:5px}
+.scroll-edge{position:fixed;z-index:70;pointer-events:none;opacity:0}.scroll-edge.on{opacity:1}
+.scroll-edge.top{background:linear-gradient(rgba(126,116,86,.12),transparent)}
+.scroll-edge.bottom{background:linear-gradient(transparent,rgba(126,116,86,.12))}
+.scroll-edge.left{background:linear-gradient(90deg,rgba(126,116,86,.12),transparent)}
+.scroll-edge.right{background:linear-gradient(90deg,transparent,rgba(126,116,86,.12))}
 
-.scroll-edge{position:fixed;z-index:70;pointer-events:none;opacity:0;
-  transition:opacity .18s ease}
-.scroll-edge.on{opacity:1}
-.scroll-edge.top   {background:linear-gradient(rgba(4,6,9,.42),transparent)}
-.scroll-edge.bottom{background:linear-gradient(transparent,rgba(4,6,9,.42))}
-.scroll-edge.left  {background:linear-gradient(90deg,rgba(4,6,9,.38),transparent)}
-.scroll-edge.right {background:linear-gradient(90deg,transparent,rgba(4,6,9,.38))}
-.scroll-edge.bottom::after,
-.scroll-edge.right::after{
-  content:"▾";position:absolute;left:50%;bottom:6px;transform:translateX(-50%);
-  display:grid;place-items:center;width:26px;height:26px;border-radius:50%;
-  font-size:13px;line-height:1;color:#dce7f4;
-  background:rgba(14,18,24,0.9);border:1px solid rgba(168,182,200,0.45);
-  box-shadow:0 2px 8px rgba(0,0,0,0.5);animation:edgeBob 1.8s ease-in-out infinite}
-.scroll-edge.right::after{content:"▸";left:auto;right:4px;bottom:50%;
-  transform:translateY(50%);animation:none}
-@keyframes edgeBob{0%,100%{transform:translateX(-50%) translateY(0)}
-                   50%{transform:translateX(-50%) translateY(3px)}}
+/* Loading is an intentional title card, including a recoverable error state. */
+#loading{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:30px;text-align:center;background:radial-gradient(ellipse at 50% 42%,#283128,#111814 78%);color:#c7c6b2}
+.load-chapter{font:10px var(--font-mono);letter-spacing:.3em;color:#a99c73;margin-bottom:24px}
+.load-brand{font:clamp(30px,6vw,58px) Georgia,serif;letter-spacing:.2em;color:#eee6d1;margin-left:.2em}
+.load-brand span{color:#b8a36f}
+.load-rule{width:130px;height:1px;background:#4e5745;position:relative;overflow:hidden;margin:32px 0 23px}
+.load-rule::after{content:"";position:absolute;width:50px;height:1px;background:#cabb8b;animation:loading 1.6s ease-in-out infinite}
+@keyframes loading{from{transform:translateX(-50px)}to{transform:translateX(130px)}}
+#load-status{font-size:14px;line-height:1.7}
+#load-detail{min-height:18px;margin-top:9px;font-size:12px;line-height:1.6;color:#9fa58f;max-width:380px}
+#loading.failed .load-rule::after{animation:none;width:100%;background:#b1836d}
+#loading .btn{margin-top:24px;color:#d1c299;border-color:#727a60}
 
-#loading{position:fixed;inset:0;z-index:200;display:grid;place-items:center;gap:10px;
-  background:#07090c;color:var(--dim);font-size:var(--fs-meta);letter-spacing:.08em;
-  text-align:center;align-content:center}
-#load-detail{font-size:var(--fs-label);color:#5f6b7a;font-family:var(--font-mono)}
+/* Touch controls stay out of the document and dialogue reading areas. */
+#joy,#act{display:none;position:fixed;z-index:40;touch-action:none;user-select:none;opacity:.65;transition:opacity .15s}
+body.touch #joy{display:block}body.touch #act{display:grid}
+#joy{left:calc(var(--sa-l) + 22px);bottom:calc(var(--sa-b) + 22px);width:100px;height:100px;border-radius:50%;
+  background:rgba(22,31,23,.5);border:1px solid rgba(221,214,186,.35);box-shadow:inset 0 0 0 12px rgba(221,214,186,.03)}
+#joyk{position:absolute;left:50%;top:50%;width:40px;height:40px;margin:-20px;border-radius:50%;background:rgba(211,201,168,.55);border:1px solid #bdb58f}
+#joy.hot,#joy:active,#act:active{opacity:1}
+#act{right:calc(var(--sa-r) + 22px);bottom:calc(var(--sa-b) + 30px);width:76px;height:76px;place-items:center;border-radius:50%;
+  border:1px solid #b9b089;outline:1px solid rgba(210,204,175,.15);outline-offset:5px;background:rgba(30,42,30,.8);color:#eee7d2;font-size:14px}
+#act:active{transform:scale(.96)}
+body.touch #hud{justify-content:flex-start}body.touch #objective{margin-top:14px}
+body.touch #dialogue{bottom:calc(var(--sa-b) + 144px);width:min(680px,calc(100vw - 48px))}
+body.touch #toast{bottom:calc(var(--sa-b) + 134px)}
+#rotate{position:fixed;inset:0;z-index:175;display:none;place-items:center;text-align:center;padding:24px;background:#141c16;color:#c1c4af;font-size:14px;line-height:2}
+#rotate b{display:block;font-size:38px;color:#bcad80;margin-bottom:14px}
+body.touch.portrait:not(.reader-open) #rotate{display:grid}
 
-/* ── 모바일 ──────────────────────────────────────────────────────────── */
-/* 조작판은 손가락이 닿을 만큼은 크되, 방을 가리지 않아야 한다.
-   쉬는 동안에는 흐려 두고 만지는 동안에만 또렷해진다. */
-#joy,#act{display:none;position:fixed;z-index:40;touch-action:none;user-select:none;
-  opacity:.42;transition:opacity .18s ease}
-body.touch #joy,body.touch #act{display:block}
-#joy.hot,#act:active,#joy:active{opacity:.95}
-#joy{left:calc(var(--sa-l) + 16px);bottom:calc(var(--sa-b) + 14px);width:104px;height:104px;
-  border-radius:50%;background:radial-gradient(circle,rgba(30,36,44,.42),rgba(10,13,18,.62));
-  border:2px solid rgba(168,182,200,.28);backdrop-filter:blur(6px)}
-#joyk{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;
-  border-radius:50%;background:radial-gradient(circle at 35% 30%,#c8d8ea,#6c8aa8 60%,#40546b);
-  border:2px solid rgba(226,236,248,.6);transition:transform .06s}
-#act{right:calc(var(--sa-r) + 16px);bottom:calc(var(--sa-b) + 14px);width:82px;height:82px;
-  border-radius:50%;font-size:15px;font-weight:800;letter-spacing:.1em;color:#fff;
-  background:radial-gradient(circle at 38% 30%,#3c6d8e,#22485f 60%,#132b3a);
-  border:2px solid rgba(140,190,225,.45);display:grid;place-items:center}
-#act:active{transform:scale(.94)}
-
-/* 조작판이 있는 화면에서는 아래쪽이 손가락 자리다. 할 일 안내와 대사·알림을
-   그 위로 올린다 — 지금까지 목표 문장이 조이스틱 밑에 깔려 있었다. */
-body.touch #hud{justify-content:flex-start}
-body.touch #objective{margin-top:10px}
-body.touch #dialogue{
-  left:calc(var(--sa-l) + 130px);right:calc(var(--sa-r) + 100px);
-  transform:none;width:auto;max-width:none;bottom:calc(var(--sa-b) + 16px)}
-body.touch #toast{bottom:calc(var(--sa-b) + 128px)}
-
-#rotate{position:fixed;inset:0;z-index:175;display:none;place-items:center;text-align:center;
-  padding:24px;background:#07090c;color:var(--dim);font-size:14px;line-height:2}
-#rotate b{display:block;font-size:40px;color:#9fc6ea;margin-bottom:12px}
-body.touch.portrait #rotate{display:grid}
-
-@media(max-width:900px){
-  :root{--fs-read:16px;--fs-body:14px;--fs-title:18px;--fs-label:11.5px;--fs-meta:13px}
-  #hud{padding:calc(var(--sa-t) + 8px) calc(var(--sa-r) + 12px) 8px calc(var(--sa-l) + 12px)}
-  #progress{min-width:150px}
-  .sheet-body{padding:14px 16px}
-  .sheet-head{padding:12px 16px}
-  .letter-head{padding:11px 13px 7px}
-  .letter-body{padding:11px 13px 13px}
-  .prose{margin-bottom:12px;line-height:1.9}
-  #dialogue{padding:14px 18px;bottom:calc(var(--sa-b) + 14vh)}
-  .stamp-btn{padding:18px;font-size:22px}
+@media(max-width:1100px){
+  .reader{padding-inline:18px}.letters{gap:12px}
+  .letter-head{margin-inline:18px;padding-top:14px}.letter-body{padding:18px 18px 26px}
+  .letter-head h3{font-size:18px}.prose{font-size:15px;line-height:1.9}
+}
+@media(max-width:700px){
+  #hud{padding:calc(var(--sa-t) + 16px) calc(var(--sa-r) + 16px) 18px calc(var(--sa-l) + 16px)}
+  .tag{padding:11px 14px;column-gap:10px}#hud-title{font-size:19px}.tag .npc{font-size:9px}
+  .hud-right{gap:10px}#progress{width:70px}#bar{display:none}.icon-btn{width:44px;height:44px}
+  .reader{padding:calc(var(--sa-t) + 12px) calc(var(--sa-r) + 12px) calc(var(--sa-b) + 12px) calc(var(--sa-l) + 12px)}
+  .reader-toolbar{gap:10px;padding-bottom:13px}.reader-title{font-size:20px}.reader-kicker{font-size:9px;letter-spacing:.06em}
+  .reader-actions{gap:4px}.reader-tool{padding-inline:10px}.reader-close{margin-left:0}
+  .reader.single-page .letter-head{margin-inline:24px;padding-top:18px}
+  .reader.single-page .letter-body{padding:20px 24px 28px}
+  .reader.single-page .prose{font-size:16px;line-height:1.95}.reader.large-type .prose{font-size:19px}
+  .reader-pages{padding-top:10px}.reader-page{min-width:70px}
+  #dialogue{width:calc(100vw - 32px);padding:18px 22px}#dialogue .line{font-size:17px}
+  .sheet-head{padding:18px 22px}.sheet-body{padding:24px 22px}
+}
+@media(max-height:560px){
+  #hud{padding:calc(var(--sa-t) + 12px) calc(var(--sa-r) + 16px) 12px calc(var(--sa-l) + 16px)}
+  .tag{padding:9px 14px;display:flex;align-items:center;gap:12px}.tag b{font-size:9px}
+  #hud-title{font-size:18px}.tag .npc{align-self:center;padding:0}#objective{font-size:12px;padding:7px 12px}
+  .reader{padding:calc(var(--sa-t) + 6px) calc(var(--sa-r) + 14px) calc(var(--sa-b) + 8px) calc(var(--sa-l) + 14px)}
+  .reader-toolbar{padding-bottom:6px;gap:12px}.reader-identity{display:flex;align-items:center;gap:14px}
+  .reader-title{font-size:18px;margin:0}.reader-kicker{font-size:9px}.reader-tool{min-height:44px}
+  .letter-head,.reader.single-page .letter-head{display:flex;align-items:center;gap:12px;padding:9px 0;margin-inline:20px}
+  .letter-topline{margin:0;min-height:0}.letter-expand{display:none}.letter-head h3{font:600 16px var(--font-serif)}
+  .letter-meta{margin:0;font-size:10px}.letter-body,.reader.single-page .letter-body{padding:14px 20px 22px}
+  .reader-pages{padding-top:6px;gap:6px}.reader-page{min-height:44px;min-width:70px}
+  .reader.single-page .prose{font-size:16px;line-height:1.85}.reader.large-type .prose{font-size:19px}
+  #dialogue,body.touch #dialogue{left:50%;right:auto;transform:translateX(-50%);bottom:calc(var(--sa-b) + 18px);width:min(620px,calc(100vw - 270px));padding:15px 20px}
+  #dialogue .who{margin-bottom:8px}#dialogue .line{font-size:16px;line-height:1.65}#dialogue .more{margin-top:10px}
+  #sheet{padding:12px}.sheet-card{max-height:calc(100dvh - 24px)}.sheet-head{padding:12px 20px}.sheet-body{padding:18px 20px}
+  #loading .load-brand{font-size:36px}.load-chapter{margin-bottom:14px}.load-rule{margin:22px 0 16px}
+}
+@media(max-width:440px){
+  .reader-kicker{font-size:8px}.reader-title{font-size:19px}
+  .reader-tool{padding-inline:8px}.reader.single-page .letter-head{margin-inline:20px}
+  .reader.single-page .letter-body{padding-inline:20px}
+}
+@media(max-width:639px) and (max-height:560px){
+  .reader-identity{display:block}.reader-title{margin-top:4px}
+  .letter-head,.reader.single-page .letter-head{flex-wrap:wrap;gap:5px 10px}
+  .letter-meta{flex-basis:100%}
 }
 @media(prefers-reduced-motion:reduce){
-  *{transition:none!important;animation:none!important}
-  #bar-fill{transition:width .3s linear!important}
-  /* 스크롤 표시는 연출이 아니라 정보다. 움직임만 끄고 표시는 남긴다. */
-  .scroll-edge{transition:opacity .2s linear!important}
-}
-
-/* 좁은 화면에서도 세 장은 나란히 둔다. 세로로 쌓으면 맞대어 읽을 수가
-   없고, 그게 이 챕터에서 할 일의 전부다. 겹치는 폭만 줄인다. */
-@media(max-width:820px){
-  /* 좁으면 겹침도 기울기도 줄인다. 세로 밀침은 빼야 종이가 화면 밖으로
-     삐져나가 마지막 줄이 잘리지 않는다. */
-  .letter:nth-child(1){transform:rotate(-1deg);margin-right:-9px}
-  .letter:nth-child(2){transform:rotate(0.6deg)}
-  .letter:nth-child(3){transform:rotate(-0.7deg);margin-left:-9px}
-  .letter:nth-child(1)>*{padding-right:20px}
-  .letter:nth-child(3)>*{padding-left:20px}
-  .letter-head{padding:9px 11px 6px}
-  .letter-body{padding:9px 11px 11px}
-  .prose{margin-bottom:11px;line-height:1.9}
-}
-
-/* 세로가 짧은 화면(가로로 돌린 폰, 짧은 노트북)에서는 머리말·안내·탭이
-   화면을 다 먹고 보고서가 스크롤 아래로 밀린다. 읽을 자리를 먼저 준다. */
-@media(max-height:560px){
-  #sheet{padding:8px}
-  .sheet-card{max-height:calc(100dvh - 16px)}
-  .sheet-head{padding:9px 14px}
-  .sheet-head h2{font-size:15px}
-  .sheet-head .sub{display:none}
-  .sheet-body{padding:10px 14px}
-  /* 세로가 없으면 읽을 자리부터 지킨다. 머리말을 한 줄로 접는다. */
-  #sheet.bare .sheet-body{padding:calc(var(--sa-t) + 8px) calc(var(--sa-r) + 10px)
-                                  calc(var(--sa-b) + 8px) calc(var(--sa-l) + 10px)}
-  .letter-head{display:flex;align-items:baseline;gap:7px;
-    padding:7px 11px 6px;border-bottom-width:1px}
-  .letter-no{margin:0;flex:none}
-  .letter-head h3{flex:0 1 auto;min-width:0;white-space:nowrap;
-    overflow:hidden;text-overflow:ellipsis}
-  .letter-meta{display:none}
-  .letter-body{padding:9px 11px 11px}
-  .prose{margin-bottom:10px;line-height:1.85}
-
-  #dialogue{padding:11px 16px;bottom:calc(var(--sa-b) + 10px)}
-  #dialogue .line{font-size:14px;line-height:1.5}
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .load-rule::after{width:100%;transform:none}
 }
