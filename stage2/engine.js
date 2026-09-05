@@ -609,6 +609,7 @@
   function showNPC(on) {
     if (npc) npc.visible = !!on;
     if (npcHit) npcHit.visible = !!on;
+    if (!on && hoveredHotspot === npcHit) clearHover();
   }
 
   /* 노크 — 말이 아니라 소리다. 한 줄씩 늘어나며 문 쪽으로 눈이 가게 한다. */
@@ -1329,11 +1330,14 @@
   }
 
   /* ── 조준 / 선택 ───────────────────────────────────────────────────── */
-  var lastDist = 0, REACH = 2.6;
+  var lastDist = 0, REACH = 2.6, hoveredHotspot = null;
   function castAt(x, y) {
     ray.setFromCamera(
       new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), camera);
-    var hits = ray.intersectObjects(hotspots, false);
+    /* r128의 Raycaster는 Object3D.visible을 검사하지 않는다.
+       투명한 판정용 재질은 유지하되 퇴장 등으로 숨긴 영역은 제외한다. */
+    var active = hotspots.filter(function (object) { return object.visible; });
+    var hits = ray.intersectObjects(active, false);
     if (!hits.length) return null;
     lastDist = hits[0].distance;
     return hits[0].object;
@@ -1347,6 +1351,7 @@
   function hover(x, y) {
     var o = castAt(x, y), r = $("#reticle"), lb = $("#label");
     if (o && o.userData.hot) {
+      hoveredHotspot = o;
       var far = lastDist > REACH;
       r.classList.toggle("hot", !far);
       r.classList.toggle("far", far);
@@ -1354,9 +1359,14 @@
       lb.style.left = x + "px"; lb.style.top = y + "px";
       lb.classList.add("show");
     } else {
-      r.classList.remove("hot", "far");
-      lb.classList.remove("show");
+      clearHover();
     }
+  }
+  function clearHover() {
+    hoveredHotspot = null;
+    $("#reticle").classList.remove("hot", "far");
+    $("#label").classList.remove("show");
+    $("#label").textContent = "";
   }
   function pick(x, y) {
     /* 처음 한 번은 무엇을 눌렀든 시작 연출부터다 */
