@@ -22,6 +22,9 @@
   var BLOCKS = [];
   var npc = null, npcMixer = null, npcClips = {}, npcAction = null;
   var deskProps = {};
+  var conditionRoom = null;
+  function isConditions() { return chapter && chapter.puzzleType === "conditions"; }
+  function chapterProgress() { return chapter.progress ? (S.phase === L.PHASE.APPROVED ? chapter.progress.exit : chapter.progress.entry) : L.progressFor(S.approved.length); }
   /* 반려하고 나간 뒤 돌아오기까지 */
   var RETURN_DELAY = 3000;
   var _dir = null, _look = null;
@@ -848,6 +851,7 @@
     return wasHidden;
   }
   function renderReader() {
+    if (isConditions()) { renderConditions(); return; }
     var reps = reportsNow();
     if (S.phase === L.PHASE.REVISED) {
       S.verified = L.requiredClaims(chapter).slice();
@@ -869,6 +873,29 @@
     documentReader.render(reps, {
       canPick: canPick(), selection: S.sel || [], mark: stateOf
     });
+    if (opening) documentReader.focus();
+  }
+
+  function renderConditions() {
+    if (S.phase === L.PHASE.REJECTED) { toast("재시험 지시서를 준비하고 있습니다."); return; }
+    var sheet = $("#sheet"); sheet.classList.add("bare");
+    sheet.setAttribute("aria-labelledby", "reader-title");
+    if (!documentReader) {
+      clearScrollEdges(); $("#sheet-body").replaceChildren();
+      documentReader = global.N2Conditions.create({
+        host: $("#sheet-body"), chapter: chapter, safeText: safeText, onClose: closeSheet,
+        onChange: function () {
+          if (isClaimPhase()) setPhase(L.PHASE.INSPECTING);
+          if (S.phase === L.PHASE.REVISED && global.N2Conditions.complete(chapter, S.conditions)) {
+            setPhase(L.PHASE.VERIFIED); toast("모든 기록의 검토가 끝났습니다. 승인 도장을 찍으십시오.", "good");
+          }
+          checkpoint(); renderHUD();
+        },
+        onSubmit: function () { closeSheet(); talkToNPC(); },
+        onStamp: openStamp
+      });
+    }
+    var opening = setSheetOpen(true); documentReader.render(S);
     if (opening) documentReader.focus();
   }
 
@@ -938,6 +965,7 @@
   function setPhase(next) {
     if (next === S.phase) return;
     S.phase = next;
+    if (conditionRoom) conditionRoom.phase(next);
     renderHUD();
   }
 
@@ -972,6 +1000,15 @@
     if (!L.canStamp(S.phase, kind)) { toast("지금은 찍을 수 없습니다.", "bad"); return; }
     closeSheet();
 
+    if (isConditions() && kind === "REJECTED") {
+      setPhase(L.PHASE.REJECTED); checkpoint();
+      say(chapter.lines.rejected, function () {
+        S.conditions.jobs = {}; S.conditions.preserved = {};
+        setPhase(L.PHASE.REVISED); checkpoint();
+        toast("작업대에서 재시험 조건을 지시하십시오.");
+      });
+      return;
+    }
     if (kind === "REJECTED") {
       setPhase(L.PHASE.REJECTED);
       checkpoint();
@@ -998,7 +1035,7 @@
     checkpoint();
     say(chapter.lines.approved, function () {
       renderHUD();
-      toast("진행도 " + L.progressFor(S.approved.length) + "%", "good");
+      toast("진행도 " + chapterProgress() + "%", "good");
       npcExit(true, function () {
         toast("문이 열려 있습니다. 나가십시오.", "good");
         renderHUD();
@@ -1013,7 +1050,7 @@
       return;
     }
     openSheet("CHAPTER " + String(chapter.number).padStart(2, "0") + " 종료",
-      "진행도 " + L.progressFor(S.approved.length) + "%", function (body) {
+      "진행도 " + chapterProgress() + "%", function (body) {
       var b = el("button", "stamp-btn approved", "복도로 나간다");
       b.type = "button";
       b.onclick = function () { location.href = "index.html"; };
@@ -1039,8 +1076,9 @@
         return;
       }
       box.innerHTML = "";
-      box.appendChild(el("div", "who", chapter.npc));
-      box.appendChild(el("p", "line", safeText(lines[i])));
+      var line = lines[i], speaker = typeof line === "object" ? line.who : chapter.npc;
+      box.appendChild(el("div", "who", safeText(speaker)));
+      box.appendChild(el("p", "line", safeText(typeof line === "object" ? line.text : line)));
       box.appendChild(el("div", "more", "계속 ▸"));
       i++;
     }
@@ -1154,7 +1192,7 @@
     $("#hud-ch").textContent = "CHAPTER " + String(chapter.number).padStart(2, "0");
     $("#hud-title").textContent = chapter.title;
     $("#hud-npc").textContent = chapter.npc;
-    var pct = L.progressFor(S.approved.length);
+    var pct = chapterProgress();
     $("#bar-fill").style.width = pct + "%";
     $("#bar-pct").textContent = pct + "%";
 
@@ -1179,6 +1217,11 @@
       g = "<b>도장</b>";
     } else {
       g = "<b>문</b>으로 나간다";
+    }
+    if (isConditions()) {
+      if (openingPending()) g = "공동 검토실을 살펴본다";
+      else if (isClaimPhase()) g = "<b>작업대</b>에서 네 팀의 조건을 배정한다 · 규정함에서 근거 확인";
+      else if (S.phase === L.PHASE.REVISED) g = "<b>작업대</b>에서 재시험 지시와 반환 기록 검토";
     }
     $("#objective").innerHTML = g;
   }
@@ -1378,6 +1421,14 @@
   }
 
   function interact(id) {
+    if (isConditions() && id === "references") {
+      S.conditions = S.conditions || global.N2Conditions.fresh(); S.conditions.source = "change"; openDocs(); return;
+    }
+    if (isConditions() && id.indexOf("team:") === 0) {
+      var team = chapter.teams.find(function (t) { return t.id === id.slice(5); });
+      if (team) say([{ who: team.name, text: S.phase === L.PHASE.APPROVED ? "확인된 조건을 다음 시험에도 함께 남기겠습니다." : team.quote }]);
+      return;
+    }
     if (id === "docs") { openDocs(); return; }
     if (id === "stamp") { openStamp(); return; }
     if (id === "door") { leaveRoom(); return; }
@@ -1401,6 +1452,13 @@
       return;
     }
 
+    if (isConditions()) {
+      S.conditions = S.conditions || global.N2Conditions.fresh();
+      var review = global.N2Conditions.judge(chapter, S.conditions.assignments);
+      if (!review.ok) { say([review.message]); return; }
+      say(l.conceded, function () { setPhase(L.PHASE.CONTRADICTION); checkpoint(); });
+      return;
+    }
     var res = L.judgeClaims(chapter, S.claims);
     if (res.verdict === "none") { say(l.probing); return; }
 
@@ -1480,6 +1538,7 @@
     stepDoor(dt);
     stepNPC();
     if (npcMixer) npcMixer.update(dt);
+    if (conditionRoom) conditionRoom.update(dt, camera);
     if (IS_TOUCH && !inputBlocked()) hoverThrottled(innerWidth / 2, innerHeight / 2);
 
     _dir.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
@@ -1500,7 +1559,8 @@
     THREE = global.THREE;
 
     /* 챕터 데이터가 스펙을 어기면 켜지기 전에 멈춘다. */
-    var problems = L.auditChapter(chapter);
+    var problems = isConditions() ? (global.N2Conditions ? global.N2Conditions.audit(chapter) : ["조건 검토 모듈 없음"]) : L.auditChapter(chapter);
+    if (isConditions()) problems = problems.concat(L.findLeaks(JSON.stringify(chapter), 0));
     if (problems.length) {
       console.error("[CHAPTER AUDIT] " + chapter.id, problems);
       $("#loading").textContent = "챕터 데이터에 문제가 있습니다. 콘솔을 확인하십시오.";
@@ -1512,6 +1572,7 @@
     S = L.freshState();
     S.chapter = chapter.number;
     S.started = true;
+    if (isConditions()) S.conditions = global.N2Conditions.fresh();
     checkpoint();
 
     _loadDone = 0;
@@ -1538,9 +1599,16 @@
     loadModels(function () {
       buildDeskProps();
       loadNPC(function () {
-        $("#loading").classList.add("hidden");
-        refreshScrollHints();
-        resumeScene();
+        function ready() {
+          $("#loading").classList.add("hidden"); refreshScrollHints(); resumeScene();
+        }
+        if (isConditions() && global.N2ConditionRoom) {
+          conditionRoom = global.N2ConditionRoom.create({
+            chapter: chapter, scene: scene,
+            hotspot: function (pos, size, id, label) { var hit = hot(invisibleHit(size[0], size[1], size[2], pos), id, label); scene.add(hit); return hit; },
+            block: function (x, z, radius) { BLOCKS.push({ x: x, z: z, hx: radius, hz: radius }); }
+          }, ready);
+        } else ready();
       });
     });
   }
@@ -1549,6 +1617,10 @@
      처음이면 문을 열고 걸어 들어오는 것부터 보여준다. */
   function resumeScene() {
     var stand = pathPoint("stand");
+    if (chapter.opening === "meeting" && S.phase === L.PHASE.SUBMITTED) {
+      if (npc) npc.position.set(stand[0], npc.position.y, stand[2]);
+      faceNPC(camera.position.x, camera.position.z); showNPC(true); setDoor(false); return;
+    }
     if (S.phase === L.PHASE.APPROVED) {
       showNPC(false);
       setDoor(true);
@@ -1589,6 +1661,10 @@
     if (openingRunning) return;
     openingRunning = true;
     renderHUD();
+    if (chapter.opening === "meeting") {
+      say(chapter.lines.submission, function () { S.greeted = true; openingRunning = false; checkpoint(); renderHUD(); });
+      return;
+    }
     knock(function () {
       npcEnter(function () {
         say(chapter.lines.submission, function () {
