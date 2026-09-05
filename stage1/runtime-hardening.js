@@ -66,6 +66,10 @@
         seen[n] = true; return true;
       });
     }
+    if (typeof global.hasAllPieces === "function" && !global.hasAllPieces(state)) {
+      state.exitReady = false; state.done = false;
+    }
+    if (typeof global.canExit === "function" && !global.canExit(state)) state.done = false;
     return state;
   }
 
@@ -317,6 +321,7 @@
   if (typeof originalNextStage === "function") {
     global.goToNextStage = function hardenedNextStage() {
       if (runtime.transitioning) return false;
+      if (typeof global.canExit === "function" && (!global.canExit(global.S) || !global.S.done)) return false;
       runtime.transitioning = true;
       resetTransient();
       try {
