@@ -69,7 +69,7 @@
       if (text != null) n.textContent = options.safeText ? options.safeText(text) : text;
       return n;
     }
-    function button(text, cls, fn) { var b = node('button', cls, text); b.type = 'button'; b.onclick = fn; return b; }
+    function button(text, cls, fn) { var b = node('button', cls, text); b.type = 'button'; b.setAttribute('data-focus', text); b.onclick = fn; return b; }
     function changed() { options.onChange(); }
     function announce(text) { status.textContent = text; }
     function select(label, choices, value, change, key, disabled) {
@@ -123,12 +123,12 @@
       if (revised) drawJob(t); else drawAssignment(t);
       drawReference();
       var footer = node('footer', 'condition-footer');
-      status = node('p', 'condition-status', revised ? '새 기록을 열기만 해서는 승인이 완료되지 않습니다.' : '아직 제출하지 않은 배정은 정답 표시 없이 기록됩니다.'); status.setAttribute('role', 'status');
+      status = node('p', 'condition-status', revised ? '새 기록을 열기만 해서는 승인이 완료되지 않습니다.' : '아직 제출하지 않은 배정은 정답 표시 없이 기록됩니다.'); status.setAttribute('role', 'status'); status.tabIndex = -1;
       footer.append(status);
       if (!revised && ['submitted', 'inspecting'].indexOf(state.phase) >= 0) footer.append(button('Enrico에게 검토 요청 →', 'btn condition-submit', options.onSubmit));
       if (state.phase === 'contradiction' || state.phase === 'verified') footer.append(button(state.phase === 'contradiction' ? '반려 도장으로 →' : '승인 도장으로 →', 'btn condition-submit', options.onStamp));
       root.append(footer);
-      if (active) { var focus = root.querySelector('[data-focus="' + active + '"]'); if (focus) focus.focus(); }
+      if (active) { var focus = root.querySelector('[data-focus="' + active + '"]'); if (focus) focus.focus(); else status.focus(); }
     }
     function drawAssignment(t) {
       var a = work.assignments[t.id] || (work.assignments[t.id] = {}), fields = node('div', 'condition-fields');

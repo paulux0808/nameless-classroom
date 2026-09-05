@@ -760,7 +760,7 @@
       var top = deskTopY(a.reportSlot[1]);
       var g = new THREE.Group();
       /* 회차마다 한 장씩, 살짝 부채꼴로 어긋나게 겹친다 */
-      var n = (chapter.reports || []).length || 3;
+      var n = (chapter.teams || chapter.reports || []).length || 3;
       for (var i = 0; i < n; i++) {
         var sh = sheetProp(0.215, 0.297, 13);
         sh.position.set(i * 0.026 - 0.026, i * 0.0026, i * 0.014 - 0.014);
@@ -1603,6 +1603,7 @@
           $("#loading").classList.add("hidden"); refreshScrollHints(); resumeScene();
         }
         if (isConditions() && global.N2ConditionRoom) {
+          $("#load-status").textContent = "네 팀의 대표를 부르는 중…";
           conditionRoom = global.N2ConditionRoom.create({
             chapter: chapter, scene: scene,
             hotspot: function (pos, size, id, label) { var hit = hot(invisibleHit(size[0], size[1], size[2], pos), id, label); scene.add(hit); return hit; },
