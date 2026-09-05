@@ -12,7 +12,6 @@
   var THREE = global.THREE;
 
   var MODEL_BASE = "../assets/models/";
-  var SAVE_KEY = "nameless2-v1";
 
   /* ── 상태 ──────────────────────────────────────────────────────────── */
   var chapter = null, S = null;
@@ -29,22 +28,19 @@
   var _hoverAt = 0;
   var IS_TOUCH = ("ontouchstart" in global) || navigator.maxTouchPoints > 0;
 
-  /* ── 저장 ──────────────────────────────────────────────────────────── */
-  var memoryOnly = null;
-  function loadState() {
-    var raw = null;
-    try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
-    var parsed = null;
-    try { parsed = raw ? JSON.parse(raw) : null; } catch (e) {}
-    return L.normalizeState(parsed) || memoryOnly || L.freshState();
-  }
-  function save() {
+  /* ── 현재 페이지의 진행 상태 ─────────────────────────────────────────
+     브라우저 저장소에는 접근하지 않는다. 클리어 코드 연동 전까지는
+     챕터를 열 때마다 새로 시작하고, 진행 중의 상태만 S에 유지한다. */
+  function checkpoint() {
     var clean = L.normalizeState(JSON.parse(JSON.stringify(S)));
-    if (!clean) { toast("진행을 저장하지 못했습니다.", "bad"); return false; }
-    memoryOnly = clean;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(clean)); return true; }
-    catch (e) { return false; }
+    if (!clean) { toast("진행 상태를 확인하지 못했습니다.", "bad"); return false; }
+    return true;
   }
+
+  /* 뒤로/앞으로 가기의 페이지 캐시도 이전 플레이 상태를 복원하지 않는다. */
+  addEventListener("pageshow", function (event) {
+    if (event.persisted) location.reload();
+  });
 
   /* ── DOM 도우미 ────────────────────────────────────────────────────── */
   function $(s) { return document.querySelector(s); }
@@ -854,7 +850,7 @@
     var reps = reportsNow();
     if (S.phase === L.PHASE.REVISED) {
       S.verified = L.requiredClaims(chapter).slice();
-      advancePhase(); save(); renderHUD();
+      advancePhase(); checkpoint(); renderHUD();
     }
     var sheet = $("#sheet");
     sheet.classList.add("bare");
@@ -901,7 +897,7 @@
     var reps = reportsNow();
     var sel = (S.sel || []).slice();
     var at = sel.indexOf(id);
-    if (at >= 0) { sel.splice(at, 1); S.sel = sel; save(); renderReader(); return; }
+    if (at >= 0) { sel.splice(at, 1); S.sel = sel; checkpoint(); renderReader(); return; }
 
     var mine = L.stById(reps, id);
     if (!mine) return;
@@ -912,20 +908,20 @@
     sel.push(id);
     S.sel = sel;
 
-    if (sel.length < reps.length) { save(); renderReader(); return; }
+    if (sel.length < reps.length) { checkpoint(); renderReader(); return; }
 
     var res = L.judgeSelection(chapter, reps, sel);
     if (!res.ok) {
       S.sel = [];
-      save(); renderReader();
+      checkpoint(); renderReader();
       toast("이 셋은 같은 자리가 아닙니다.");
       return;
     }
     S.sel = [];
     var add = L.applyClaim(chapter, S.claims, res.set.id);
-    if (!add.isNew) { save(); renderReader(); toast("이미 고른 자리입니다."); return; }
+    if (!add.isNew) { checkpoint(); renderReader(); toast("이미 고른 자리입니다."); return; }
     S.claims = add.claims;
-    save();
+    checkpoint();
     renderReader();
     renderHUD();
     /* 옳은지는 말하지 않는다. 표시만 남는다. */
@@ -977,7 +973,7 @@
 
     if (kind === "REJECTED") {
       setPhase(L.PHASE.REJECTED);
-      save();
+      checkpoint();
       /* 반려 → 걸어 나간다 → 3초 → 다시 걸어 들어온다 → 수정본 */
       say(chapter.lines.rejected, function () {
         npcExit(false, function () {
@@ -985,7 +981,7 @@
             S.verified = [];
             S.sel = [];
             setPhase(L.PHASE.REVISED);
-            save();
+            checkpoint();
             knock(function () {
               npcEnter(function () { say(chapter.lines.revised); });
             });
@@ -998,7 +994,7 @@
     /* APPROVED — 사과하고 나간다. 문은 열어 둔다: 플레이어가 나갈 차례다. */
     setPhase(L.PHASE.APPROVED);
     if (S.approved.indexOf(chapter.number) < 0) S.approved.push(chapter.number);
-    save();
+    checkpoint();
     say(chapter.lines.approved, function () {
       renderHUD();
       toast("진행도 " + L.progressFor(S.approved.length) + "%", "good");
@@ -1391,7 +1387,7 @@
     if (isVerifyPhase()) { say(sayOnce(l.revised, l.revisedAgain)); return; }
 
     if (!S.greeted) {
-      say(l.submission, function () { S.greeted = true; save(); });
+      say(l.submission, function () { S.greeted = true; checkpoint(); });
       return;
     }
 
@@ -1403,7 +1399,7 @@
       var lines = (l.pushback || []).concat([safeText(res.set.same)],
                                             l.pushbackTail || []);
       S.claims = L.dropClaim(S.claims, res.set.id);
-      save();
+      checkpoint();
       say(lines, function () { renderHUD(); refreshSheet(); });
       return;
     }
@@ -1413,7 +1409,7 @@
     /* 어긋난 자리를 전부, 그것만 짚었다 */
     say(l.conceded, function () {
       setPhase(L.PHASE.CONTRADICTION);
-      save();
+      checkpoint();
       renderHUD();
     });
   }
@@ -1503,14 +1499,10 @@
 
     if (chapter.room) ROOM = chapter.room;
 
-    S = loadState();
-    if (S.chapter !== chapter.number) {
-      /* 저장본이 다른 챕터를 가리키면 이 챕터를 새로 시작한다. */
-      S = L.freshState();
-      S.chapter = chapter.number;
-    }
+    S = L.freshState();
+    S.chapter = chapter.number;
     S.started = true;
-    save();
+    checkpoint();
 
     _loadDone = 0;
     _loadTotal = (chapter.models || []).length + (chapter.npcModel ? 1 : 0);
@@ -1557,7 +1549,7 @@
       showNPC(false);
       S.verified = []; S.sel = [];
       setPhase(L.PHASE.REVISED);
-      save();
+      checkpoint();
       npcEnter(function () { say(chapter.lines.revised); });
       return;
     }
@@ -1592,7 +1584,7 @@
         say(chapter.lines.submission, function () {
           S.greeted = true;
           openingRunning = false;
-          save();
+          checkpoint();
           renderHUD();
         });
       });
