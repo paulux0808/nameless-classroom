@@ -65,21 +65,6 @@
   var ROOM = { minX: -4.4, maxX: 4.4, minZ: -2.2, maxZ: 3.5 };
   var BLOCK_PAD = 0.18;
 
-  /* Rendering and collision use the same desk coordinates. The middle front
-     desk is removed and the reading desk is offset to open the central aisle. */
-  function deskAt(row, column) {
-    return {x: column === 1 ? 1 : (column - 1) * 2.3, z: -0.5 + row * 1.85};
-  }
-  function hasAllPieces(state) {
-    return !!state && Array.isArray(state.pieces) && state.pieces.length === 8 &&
-      new Set(state.pieces).size === 8 && state.pieces.every(function(n) {
-        return Number.isInteger(n) && n >= 1 && n <= 8;
-      });
-  }
-  function canExit(state) {
-    return hasAllPieces(state) && state.ch === 9 && state.exitReady === true &&
-      Array.isArray(state.stack) && state.stack.join(",") === stackOrder().join(",");
-  }
   function buildBlocks() {
     var b = [
       { x: 0, z: -2.90, hx: 0.95, hz: 0.50 },
@@ -87,12 +72,8 @@
       { x: -2.6, z: 3.75, hx: 1.30, hz: 0.35 },
       { x: 4.45, z: 3.40, hx: 0.25, hz: 0.25 }
     ];
-    for (var r = 0; r < 2; r++) for (var c = 0; c < 3; c++) {
-      if (r === 0 && c === 1) continue;
-      var p = deskAt(r, c);
-      b.push({ x: p.x, z: p.z, hx: 0.42, hz: 0.28 });
-      b.push({ x: p.x, z: p.z + 0.42, hx: 0.25, hz: 0.25 });
-    }
+    for (var r = 0; r < 2; r++) for (var c = 0; c < 3; c++)
+      b.push({ x: (c - 1) * 2.3, z: -0.5 + r * 1.85, hx: 0.42, hz: 0.48 });
     return b;
   }
 
@@ -163,9 +144,6 @@
     finalName: finalName,
     rotSig: rotSig,
     ROOM: ROOM,
-    deskAt: deskAt,
-    hasAllPieces: hasAllPieces,
-    canExit: canExit,
     buildBlocks: buildBlocks,
     canStand: canStand,
     collisionNormal: collisionNormal,

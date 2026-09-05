@@ -65,7 +65,7 @@ test("canStand는 방 경계와 가구를 막는다", () => {
   assert.ok(L.canStand(B, 0, 2.5));
   assert.ok(!L.canStand(B, 0, -2.21), "앞벽 바깥");
   assert.ok(!L.canStand(B, -4.41, 0), "왼쪽 벽 바깥");
-  assert.ok(!L.canStand(B, -2.3, -0.5), "책상 안");
+  assert.ok(!L.canStand(B, 0, -0.5), "책상 안");
   assert.ok(!L.canStand(B, 0, -2.9), "교탁 안");
 });
 
