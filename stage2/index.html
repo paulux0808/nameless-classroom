@@ -23,9 +23,6 @@ h1{margin:0 0 8px;font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:
 .ch .t{font-size:var(--fs-body);font-weight:700}
 .ch .who{font-size:var(--fs-label);color:var(--dim);letter-spacing:.1em}
 .ch .soon{font-size:var(--fs-label);color:#66707d;font-style:italic}
-.gate{margin-top:30px;padding:18px 22px;border-radius:12px;border:1px solid var(--line);
-  background:rgba(255,255,255,.03);font-size:var(--fs-meta);line-height:1.75;color:var(--dim)}
-.gate b{color:#9fc6ea}
 </style>
 </head>
 <body>
@@ -39,10 +36,8 @@ h1{margin:0 0 8px;font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:
 
   <div class="chapters" id="chapters"></div>
 
-  <div class="gate" id="gate"></div>
 </main>
 
-<script src="logic.js"></script>
 <script>
 (function(){
   /* CH1~8 동안은 인물의 성(姓)도 사건명도 쓰지 않는다. 큐시트 §2.1 */
@@ -59,10 +54,6 @@ h1{margin:0 0 8px;font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:
     {n:10,id:"ch10", npc:"",        title:"HOME",           ready:false}
   ];
 
-  var saved=null;
-  try{ saved=N2.normalizeState(JSON.parse(localStorage.getItem("nameless2-v1"))); }catch(e){}
-  var approved=saved?saved.approved.length:0;
-
   var host=document.getElementById("chapters");
   CHAPTERS.forEach(function(c){
     var b=document.createElement("button");
@@ -75,10 +66,6 @@ h1{margin:0 0 8px;font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:
     host.appendChild(b);
   });
 
-  var pct=N2.progressFor(approved);
-  document.getElementById("gate").innerHTML=
-    '연구 진행도 <b>'+pct+'%</b> · 승인한 챕터 '+approved+'개'+
-    (saved&&saved.started?'':' — 아직 시작하지 않았습니다.');
 })();
 </script>
 </body>

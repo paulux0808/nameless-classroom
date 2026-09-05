@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#171b19">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>NAMELESS Ⅱ — CHAPTER 01</title>
@@ -16,7 +17,7 @@
 </head>
 <body>
 
-<canvas id="scene"></canvas>
+<canvas id="scene" tabindex="0" aria-label="연구실 — 방향키로 이동, 드래그로 둘러보기, 물건을 눌러 조사"></canvas>
 <div id="grade" aria-hidden="true"></div>
 <div id="reticle" aria-hidden="true"></div>
 <div id="label" aria-hidden="true"></div>
@@ -32,7 +33,7 @@
       <button id="fs" class="icon-btn" aria-label="전체 화면" title="전체 화면 (F)">⛶</button>
     </div>
   </div>
-  <div id="objective"></div>
+  <div id="objective" role="status"></div>
 </div>
 
 <div id="sheet" class="hidden" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
@@ -50,20 +51,24 @@
 </div>
 
 <div id="dialogue" class="hidden"></div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <div id="joy"><div id="joyk"></div></div>
 <button id="act" aria-label="조사">조사</button>
 <div id="rotate"><div><b>⟳</b>기기를 가로로 돌려주세요</div></div>
 
-<div id="loading">
-  <div>연구시설을 여는 중…</div>
+<div id="loading" role="status" aria-live="polite">
+  <div class="load-chapter">CHAPTER 01</div>
+  <div class="load-brand" aria-hidden="true">NAMELESS <span>Ⅱ</span></div>
+  <div class="load-rule" aria-hidden="true"></div>
+  <div id="load-status">연구시설을 여는 중…</div>
   <div id="load-detail"></div>
 </div>
 
 <script src="../assets/vendor/three.min.js"></script>
 <script src="../assets/vendor/GLTFLoader.js"></script>
 <script src="logic.js"></script>
+<script src="reader.js"></script>
 <script src="engine.js"></script>
 <script src="chapters/ch01.js"></script>
 <script>
@@ -74,7 +79,7 @@
   }
   addEventListener("resize",orient); orient();
 
-  if(window.N2Engine && window.N2_CHAPTERS && window.N2_CHAPTERS.ch01){
+  if(window.N2Engine && window.N2Reader && window.N2_CHAPTERS && window.N2_CHAPTERS.ch01){
     N2Engine.boot(window.N2_CHAPTERS.ch01);
   }else{
     document.getElementById("loading").textContent="런타임을 불러오지 못했습니다.";

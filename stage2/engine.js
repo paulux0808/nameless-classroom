@@ -12,7 +12,6 @@
   var THREE = global.THREE;
 
   var MODEL_BASE = "../assets/models/";
-  var SAVE_KEY = "nameless2-v1";
 
   /* ── 상태 ──────────────────────────────────────────────────────────── */
   var chapter = null, S = null;
@@ -29,22 +28,19 @@
   var _hoverAt = 0;
   var IS_TOUCH = ("ontouchstart" in global) || navigator.maxTouchPoints > 0;
 
-  /* ── 저장 ──────────────────────────────────────────────────────────── */
-  var memoryOnly = null;
-  function loadState() {
-    var raw = null;
-    try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {}
-    var parsed = null;
-    try { parsed = raw ? JSON.parse(raw) : null; } catch (e) {}
-    return L.normalizeState(parsed) || memoryOnly || L.freshState();
-  }
-  function save() {
+  /* ── 현재 페이지의 진행 상태 ─────────────────────────────────────────
+     브라우저 저장소에는 접근하지 않는다. 클리어 코드 연동 전까지는
+     챕터를 열 때마다 새로 시작하고, 진행 중의 상태만 S에 유지한다. */
+  function checkpoint() {
     var clean = L.normalizeState(JSON.parse(JSON.stringify(S)));
-    if (!clean) { toast("진행을 저장하지 못했습니다.", "bad"); return false; }
-    memoryOnly = clean;
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(clean)); return true; }
-    catch (e) { return false; }
+    if (!clean) { toast("진행 상태를 확인하지 못했습니다.", "bad"); return false; }
+    return true;
   }
+
+  /* 뒤로/앞으로 가기의 페이지 캐시도 이전 플레이 상태를 복원하지 않는다. */
+  addEventListener("pageshow", function (event) {
+    if (event.persisted) location.reload();
+  });
 
   /* ── DOM 도우미 ────────────────────────────────────────────────────── */
   function $(s) { return document.querySelector(s); }
@@ -301,7 +297,7 @@
   function loadStep() {
     _loadDone++;
     var d = $("#load-detail");
-    if (d) d.textContent = "오브젝트 배치 중 (" + _loadDone + "/" + _loadTotal + ")";
+    if (d) d.textContent = "준비 중 · " + _loadDone + " / " + _loadTotal;
   }
 
   function loadModels(done) {
@@ -622,7 +618,10 @@
     var box = $("#dialogue"), i = 0;
     box.classList.add("blocking");
     box.classList.remove("hidden");
-    box.onclick = null;
+    box.onclick = null; box.onkeydown = null;
+    box.removeAttribute("role"); box.removeAttribute("tabindex");
+    box.removeAttribute("aria-label");
+    pauseWorldInput();
     (function step() {
       if (i >= beats.length) {
         setTimeout(function () {
@@ -828,21 +827,48 @@
 
   function openDocs() { renderReader(); }
 
+  var documentReader = null, sheetReturnFocus = null;
+  function pauseWorldInput() {
+    keys = {}; joy.x = joy.z = 0;
+    var knob = $("#joyk");
+    if (knob) knob.style.transform = "";
+  }
+  function setSheetOpen(reading) {
+    var sheet = $("#sheet"), wasHidden = sheet.classList.contains("hidden");
+    if (wasHidden) sheetReturnFocus = document.activeElement;
+    pauseWorldInput();
+    document.body.classList.add("sheet-open");
+    document.body.classList.toggle("reader-open", reading);
+    ["#scene", "#hud", "#joy", "#act", "#dialogue"].forEach(function (selector) {
+      var item = $(selector);
+      if (item) item.inert = true;
+    });
+    sheet.classList.remove("hidden");
+    return wasHidden;
+  }
   function renderReader() {
     var reps = reportsNow();
-    /* 다시 해 온 것은 읽으면 그만이다. 맞는 자리를 한 번 더 짚게 하면
-       절차만 늘어나고, 이미 아는 것을 확인하는 손짓이 된다. */
     if (S.phase === L.PHASE.REVISED) {
       S.verified = L.requiredClaims(chapter).slice();
-      advancePhase();
-      save();
-      renderHUD();
+      advancePhase(); checkpoint(); renderHUD();
     }
-    openLetters(function (body) {
-      var wrap = el("div", "letters");
-      reps.forEach(function (r) { wrap.appendChild(letterPage(r)); });
-      body.appendChild(wrap);
+    var sheet = $("#sheet");
+    sheet.classList.add("bare");
+    sheet.setAttribute("aria-labelledby", "reader-title");
+    if (!documentReader) {
+      clearScrollEdges();
+      $("#sheet-body").replaceChildren();
+      documentReader = global.N2Reader.create({
+        host: $("#sheet-body"), title: chapter.title,
+        subtitle: chapter.npc + " / CHAPTER " + String(chapter.number).padStart(2, "0"),
+        safeText: safeText, onSelect: toggleStatement, onClose: closeSheet
+      });
+    }
+    var opening = setSheetOpen(true);
+    documentReader.render(reps, {
+      canPick: canPick(), selection: S.sel || [], mark: stateOf
     });
+    if (opening) documentReader.focus();
   }
 
   /* 이 문장이 이미 결론난 세트에 속하는가.
@@ -865,59 +891,13 @@
     return hit ? hit.report.id : null;
   }
 
-  function letterPage(r) {
-    var page = el("article", "letter");
-    var head = el("header", "letter-head");
-    head.appendChild(el("span", "letter-no", r.no));
-    head.appendChild(el("h3", null, safeText(r.title)));
-    head.appendChild(el("p", "letter-meta", safeText(r.head)));
-    page.appendChild(head);
-
-    var scroll = el("div", "letter-body scrolls");
-    (r.body || []).forEach(function (para) {
-      var pel = el("p", "prose");
-      (para || []).forEach(function (chunk) {
-        if (typeof chunk === "string") {
-          pel.appendChild(document.createTextNode(safeText(chunk) + " "));
-          return;
-        }
-        var sp = el("span", "stmt", safeText(chunk.t));
-        sp.dataset.st = chunk.id;
-        var mark = stateOf(chunk);
-        if (mark) sp.classList.add(mark);
-        if ((S.sel || []).indexOf(chunk.id) >= 0) sp.classList.add("sel");
-        if (canPick() && !mark) {
-          sp.classList.add("pickable");
-          sp.setAttribute("role", "button");
-          sp.tabIndex = 0;
-          sp.onclick = function () { toggleStatement(chunk.id); };
-          sp.onkeydown = function (e) {
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleStatement(chunk.id); }
-          };
-        }
-        pel.appendChild(sp);
-        pel.appendChild(document.createTextNode(" "));
-      });
-      scroll.appendChild(pel);
-    });
-    page.appendChild(scroll);
-
-    page.addEventListener("pointerdown", function () {
-      [].slice.call(page.parentNode.children).forEach(function (n) {
-        n.classList.remove("front");
-      });
-      page.classList.add("front");
-    });
-    return page;
-  }
-
   /* 문장을 골랐다 뺐다 한다. 한 장에서는 하나만 — 다음 것을 고르면 앞의
      것이 빠진다. 세 장이 다 차면 그때 판정한다. */
   function toggleStatement(id) {
     var reps = reportsNow();
     var sel = (S.sel || []).slice();
     var at = sel.indexOf(id);
-    if (at >= 0) { sel.splice(at, 1); S.sel = sel; save(); renderReader(); return; }
+    if (at >= 0) { sel.splice(at, 1); S.sel = sel; checkpoint(); renderReader(); return; }
 
     var mine = L.stById(reps, id);
     if (!mine) return;
@@ -928,20 +908,20 @@
     sel.push(id);
     S.sel = sel;
 
-    if (sel.length < reps.length) { save(); renderReader(); return; }
+    if (sel.length < reps.length) { checkpoint(); renderReader(); return; }
 
     var res = L.judgeSelection(chapter, reps, sel);
     if (!res.ok) {
       S.sel = [];
-      save(); renderReader();
+      checkpoint(); renderReader();
       toast("이 셋은 같은 자리가 아닙니다.");
       return;
     }
     S.sel = [];
     var add = L.applyClaim(chapter, S.claims, res.set.id);
-    if (!add.isNew) { save(); renderReader(); toast("이미 고른 자리입니다."); return; }
+    if (!add.isNew) { checkpoint(); renderReader(); toast("이미 고른 자리입니다."); return; }
     S.claims = add.claims;
-    save();
+    checkpoint();
     renderReader();
     renderHUD();
     /* 옳은지는 말하지 않는다. 표시만 남는다. */
@@ -961,8 +941,7 @@
   }
 
   function advancePhase() {
-    /* 재검증 국면에서는 플레이어가 실제로 확인한 것만 센다.
-       엔진이 알아서 세어 버리면 확인하는 행위 자체가 사라진다. */
+    /* 현재 국면에 해당하는 완료 목록을 공용 상태기계에 넘긴다. */
     var done = isVerifyPhase() ? (S.verified || []) : (S.claims || []);
     setPhase(L.nextPhase(S.phase, L.requiredClaims(chapter), done));
   }
@@ -994,7 +973,7 @@
 
     if (kind === "REJECTED") {
       setPhase(L.PHASE.REJECTED);
-      save();
+      checkpoint();
       /* 반려 → 걸어 나간다 → 3초 → 다시 걸어 들어온다 → 수정본 */
       say(chapter.lines.rejected, function () {
         npcExit(false, function () {
@@ -1002,7 +981,7 @@
             S.verified = [];
             S.sel = [];
             setPhase(L.PHASE.REVISED);
-            save();
+            checkpoint();
             knock(function () {
               npcEnter(function () { say(chapter.lines.revised); });
             });
@@ -1015,7 +994,7 @@
     /* APPROVED — 사과하고 나간다. 문은 열어 둔다: 플레이어가 나갈 차례다. */
     setPhase(L.PHASE.APPROVED);
     if (S.approved.indexOf(chapter.number) < 0) S.approved.push(chapter.number);
-    save();
+    checkpoint();
     say(chapter.lines.approved, function () {
       renderHUD();
       toast("진행도 " + L.progressFor(S.approved.length) + "%", "good");
@@ -1054,6 +1033,7 @@
         box.classList.add("hidden");
         box.classList.remove("blocking");
         playNPC("idle");
+        $("#scene").focus({ preventScroll: true });
         if (done) done();
         return;
       }
@@ -1063,8 +1043,16 @@
       box.appendChild(el("div", "more", "계속 ▸"));
       i++;
     }
+    pauseWorldInput();
+    box.setAttribute("role", "button");
+    box.setAttribute("aria-label", chapter.npc + " 대화, 다음 대사");
+    box.tabIndex = 0;
     box.onclick = step;
+    box.onkeydown = function (event) {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); step(); }
+    };
     step();
+    box.focus({ preventScroll: true });
   }
 
   /* ── 스크롤 표시 ─────────────────────────────────────────────────────
@@ -1124,34 +1112,40 @@
   }
 
   /* ── 시트(모달) ────────────────────────────────────────────────────── */
+  function clearScrollEdges() {
+    Object.keys(_edges).forEach(function (key) { _edges[key].remove(); });
+    _edges = {};
+  }
   function openSheet(title, sub, build) {
-    $("#sheet").classList.remove("bare");
+    if (documentReader) { documentReader.destroy(); documentReader = null; }
+    clearScrollEdges();
+    var sheet = $("#sheet");
+    sheet.classList.remove("bare");
+    sheet.setAttribute("aria-labelledby", "sheet-title");
     $("#sheet-title").textContent = title;
     $("#sheet-sub").textContent = sub || "";
     var b = $("#sheet-body");
-    b.innerHTML = "";
-    build(b);
-    $("#sheet").classList.remove("hidden");
+    b.replaceChildren(); build(b);
+    setSheetOpen(false);
     refreshScrollHints();
     var first = b.querySelector("button") || $("#sheet-close");
-    if (first) try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
+    if (first) first.focus({ preventScroll: true });
   }
-  /* 편지를 펼칠 때는 머리말도 테두리도 없다. 종이 세 장만 남긴다. */
-  function openLetters(build) {
-    var sheet = $("#sheet");
-    sheet.classList.add("bare");
-    var b = $("#sheet-body");
-    b.innerHTML = "";
-    build(b);
-    sheet.classList.remove("hidden");
-    refreshScrollHints();
-  }
-
   function closeSheet() {
     var sheet = $("#sheet");
+    if (sheet.classList.contains("hidden")) return;
     sheet.classList.add("hidden");
-    sheet.classList.remove("bare");
-    hideAllEdges();
+    document.body.classList.remove("sheet-open", "reader-open");
+    ["#scene", "#hud", "#joy", "#act", "#dialogue"].forEach(function (selector) {
+      var item = $(selector);
+      if (item) item.inert = false;
+    });
+    pauseWorldInput(); hideAllEdges();
+    if (sheetReturnFocus && sheetReturnFocus.isConnected && sheetReturnFocus.offsetParent !== null) {
+      sheetReturnFocus.focus({ preventScroll: true });
+    } else {
+      $("#scene").focus({ preventScroll: true });
+    }
   }
 
   /* ── HUD ───────────────────────────────────────────────────────────── */
@@ -1225,6 +1219,18 @@
                 "ㅗ": "w", "ㄴ": "s", "ㅁ": "a", "ㅇ": "d" };
     addEventListener("keydown", function (e) {
       if (e.key === "Escape") { closeSheet(); return; }
+      if (e.key === "Tab" && !$("#sheet").classList.contains("hidden")) {
+        var focusable = [].slice.call($("#sheet").querySelectorAll("button, [tabindex='0']"))
+          .filter(function (n) { return !n.disabled && n.offsetParent !== null; });
+        var first = focusable[0], last = focusable[focusable.length - 1];
+        if (!first) { e.preventDefault(); return; }
+        if (e.shiftKey && (document.activeElement === first || !$("#sheet").contains(document.activeElement))) {
+          e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && (document.activeElement === last || !$("#sheet").contains(document.activeElement))) {
+          e.preventDefault(); first.focus();
+        }
+        return;
+      }
       if (e.key === "f" || e.key === "F" || e.key === "ㄹ") {
         if (!inputBlocked()) { toggleFullscreen(); return; }
       }
@@ -1241,7 +1247,7 @@
     document.addEventListener("click", function (e) {
       if (!e.target || !e.target.closest) return;
       if (e.target.closest("[data-close]")) { closeSheet(); return; }
-      /* 종이 바깥의 어두운 데를 누르면 닫힌다 — 편지 화면에는 버튼이 없다 */
+      /* 일반 패널 바깥을 눌러 닫는다. 보고서는 전용 닫기 버튼을 쓴다. */
       if (e.target.id === "sheet" || e.target.id === "sheet-body") closeSheet();
     });
 
@@ -1249,7 +1255,9 @@
     initJoystick();
     initFullscreen();
     var act = $("#act");
-    if (act) act.addEventListener("click", function () { pick(innerWidth / 2, innerHeight / 2); });
+    if (act) act.addEventListener("click", function () {
+      if (!inputBlocked()) pick(innerWidth / 2, innerHeight / 2);
+    });
   }
 
   /* ── 전체 화면 ────────────────────────────────────────────────────────
@@ -1379,7 +1387,7 @@
     if (isVerifyPhase()) { say(sayOnce(l.revised, l.revisedAgain)); return; }
 
     if (!S.greeted) {
-      say(l.submission, function () { S.greeted = true; save(); });
+      say(l.submission, function () { S.greeted = true; checkpoint(); });
       return;
     }
 
@@ -1391,7 +1399,7 @@
       var lines = (l.pushback || []).concat([safeText(res.set.same)],
                                             l.pushbackTail || []);
       S.claims = L.dropClaim(S.claims, res.set.id);
-      save();
+      checkpoint();
       say(lines, function () { renderHUD(); refreshSheet(); });
       return;
     }
@@ -1401,7 +1409,7 @@
     /* 어긋난 자리를 전부, 그것만 짚었다 */
     say(l.conceded, function () {
       setPhase(L.PHASE.CONTRADICTION);
-      save();
+      checkpoint();
       renderHUD();
     });
   }
@@ -1491,19 +1499,27 @@
 
     if (chapter.room) ROOM = chapter.room;
 
-    S = loadState();
-    if (S.chapter !== chapter.number) {
-      /* 저장본이 다른 챕터를 가리키면 이 챕터를 새로 시작한다. */
-      S = L.freshState();
-      S.chapter = chapter.number;
-    }
+    S = L.freshState();
+    S.chapter = chapter.number;
     S.started = true;
-    save();
+    checkpoint();
 
     _loadDone = 0;
     _loadTotal = (chapter.models || []).length + (chapter.npcModel ? 1 : 0);
 
-    buildScene();
+    try { buildScene(); }
+    catch (error) {
+      console.error("[SCENE]", error);
+      var loading = $("#loading");
+      loading.classList.add("failed");
+      $("#load-status").textContent = "연구실 화면을 열 수 없습니다.";
+      $("#load-detail").textContent = "브라우저의 그래픽 가속을 확인한 뒤 다시 시도해 주세요.";
+      var retry = el("button", "btn", "다시 시도");
+      retry.type = "button";
+      retry.onclick = function () { location.reload(); };
+      loading.appendChild(retry);
+      return;
+    }
     initInput();
     renderHUD();
     loop();
@@ -1533,7 +1549,7 @@
       showNPC(false);
       S.verified = []; S.sel = [];
       setPhase(L.PHASE.REVISED);
-      save();
+      checkpoint();
       npcEnter(function () { say(chapter.lines.revised); });
       return;
     }
@@ -1568,7 +1584,7 @@
         say(chapter.lines.submission, function () {
           S.greeted = true;
           openingRunning = false;
-          save();
+          checkpoint();
           renderHUD();
         });
       });

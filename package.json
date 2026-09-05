@@ -10,6 +10,7 @@
     "audit:spoiler": "node stage2/tools/spoiler-audit.mjs"
   },
   "devDependencies": {
+    "linkedom": "^0.18.13",
     "playwright": "^1.49.1"
   }
 }
