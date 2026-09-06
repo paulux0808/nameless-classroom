@@ -1,0 +1,24 @@
+{
+  "assets": [
+    {
+      "file": "richard.glb",
+      "title": "Business Man",
+      "source": "https://poly.pizza/m/JFrLIKqvCH",
+      "download": "https://static.poly.pizza/e599abbe-7d73-488c-9d7e-3ead281e705c.glb",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "sha256": "82b81257c1e94cd9ee48cb1dcbe5ff506e81c9ce67cd0c5af542d8712dca546e",
+      "notes": "Fictional stage casting, not a historical likeness. Original geometry and animations; scene sets scale and orientation."
+    },
+    {
+      "file": "enrico.glb",
+      "title": "Man in Suit",
+      "source": "https://poly.pizza/m/mQnGoME1ez",
+      "download": "https://static.poly.pizza/66b57880-bcb0-479a-8d72-5c3e88afaa39.glb",
+      "author": "Quaternius",
+      "license": "CC0-1.0",
+      "sha256": "31ff1539e7a9a209d4eb1107e696d798fedc7e35d84a58bbabfdc0f1b8b73763",
+      "notes": "Fictional stage casting, not a historical likeness. Original geometry and animations; scene sets scale and orientation."
+    }
+  ]
+}

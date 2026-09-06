@@ -1,0 +1,92 @@
+{
+  "assets": [
+    {
+      "id": "wooden_table_02",
+      "file": "wooden_table_02.glb",
+      "source": "https://polyhaven.com/a/wooden_table_02",
+      "author": "Serhii Khromov",
+      "license": "CC0-1.0",
+      "role": "CH01 writing desk",
+      "resolution": "1K",
+      "bytes": 484344,
+      "sha256": "b34bcb468265352371b0b031bf66872732ac34835b92d6fdea059719edd79cd0"
+    },
+    {
+      "id": "vintage_wooden_drawer_01",
+      "file": "vintage_wooden_drawer_01.glb",
+      "source": "https://polyhaven.com/a/vintage_wooden_drawer_01",
+      "author": "James Ray Cock",
+      "license": "CC0-1.0",
+      "role": "CH01 calculation archive drawers",
+      "resolution": "1K",
+      "bytes": 755164,
+      "sha256": "68c201be13dd46897ee5f85b547e10fa98303ae0bae5db9c10eaff1e18b40724"
+    },
+    {
+      "id": "industrial_pipe_lamp",
+      "file": "industrial_pipe_lamp.glb",
+      "source": "https://polyhaven.com/a/industrial_pipe_lamp",
+      "author": "Mateusz Sadek",
+      "license": "CC0-1.0",
+      "role": "CH01 desk light",
+      "resolution": "1K",
+      "bytes": 2405272,
+      "sha256": "cc455794aef905ee45ae9bbfb69f8cb0d57495f862a8ec288670af7095a605fc"
+    },
+    {
+      "id": "painted_wooden_table",
+      "file": "painted_wooden_table.glb",
+      "source": "https://polyhaven.com/a/painted_wooden_table",
+      "author": "Kirill Sannikov",
+      "license": "CC0-1.0",
+      "role": "CH02 shared review table",
+      "resolution": "1K",
+      "bytes": 1778456,
+      "sha256": "aa5a754a2f6df94c02f8f1b33fb3e0ef2153e4c1d0856e4800db9b07868967b8"
+    },
+    {
+      "id": "painted_wooden_stool",
+      "file": "painted_wooden_stool.glb",
+      "source": "https://polyhaven.com/a/painted_wooden_stool",
+      "author": "Kirill Sannikov",
+      "license": "CC0-1.0",
+      "role": "CH02 team seating",
+      "resolution": "1K",
+      "bytes": 1873796,
+      "sha256": "123bfc215cd2e18e511bf89761ebed2984279430f3a68eb3c4d63ad5c4ad90f0"
+    },
+    {
+      "id": "hanging_industrial_lamp",
+      "file": "hanging_industrial_lamp.glb",
+      "source": "https://polyhaven.com/a/hanging_industrial_lamp",
+      "author": "Kuutti Siitonen",
+      "license": "CC0-1.0",
+      "role": "CH02 overhead work lights",
+      "resolution": "1K",
+      "bytes": 3241672,
+      "sha256": "4eddf0a56bf760bd8a47c1548eea259818d91f154cafe1e204f400e0ffa7c244"
+    },
+    {
+      "id": "WoodenTable_03",
+      "file": "WoodenTable_03.glb",
+      "source": "https://polyhaven.com/a/WoodenTable_03",
+      "author": "Gabriel Radi\u0107",
+      "license": "CC0-1.0",
+      "role": "CH02 equipment workbench",
+      "resolution": "1K",
+      "bytes": 634244,
+      "sha256": "b2e66afc1d9d0551b402fe28a63e3841409cbae9bb30edbaff528a4a2d34f140"
+    },
+    {
+      "id": "worn_metal_rack",
+      "file": "worn_metal_rack.glb",
+      "source": "https://polyhaven.com/a/worn_metal_rack",
+      "author": "Luca B",
+      "license": "CC0-1.0",
+      "role": "CH02 spare-parts rack",
+      "resolution": "1K",
+      "bytes": 2008100,
+      "sha256": "2ac279adbc978819aa0ae6d88938b620b3d85ab99fb24e255a40e807b246d670"
+    }
+  ]
+}

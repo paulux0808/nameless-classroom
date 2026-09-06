@@ -32,16 +32,18 @@ test('changing a dial invalidates previous output and accepted paper',()=>{
  C.act(ch,s,{type:'wait'});assert.equal(s.conditions.run,null);assert.equal(s.conditions.receipt,false);assert.equal(C.complete(ch,s.conditions),false);
 });
 function setup(){
+ let clock=0;
  const {document,window:dom}=parseHTML(readFileSync(new URL('../ch02.html',import.meta.url),'utf8'));
  let focused=document.body;Object.defineProperty(document,'activeElement',{get:()=>focused});dom.HTMLElement.prototype.focus=function(){focused=this;};
  Object.defineProperty(dom.HTMLElement.prototype,'offsetParent',{configurable:true,get(){return this.closest('.hidden')?null:document.body;}});
  const context={document,navigator:{maxTouchPoints:0},innerWidth:844,innerHeight:390,console:{error(){},warn(){}},addEventListener(){},removeEventListener(){},setTimeout(){return 1;},clearTimeout(){},THREE:{WebGLRenderer(){throw Error('DOM test');}},location:{},matchMedia(){return {matches:false};}};
  for(const k of ['localStorage','sessionStorage'])Object.defineProperty(context,k,{get(){throw Error('storage accessed');}});
  Object.defineProperty(document,'cookie',{get(){throw Error('cookie accessed');},set(){throw Error('cookie accessed');}});
- context.window=context;vm.createContext(context);for(const f of ['logic.js','conditions.js','reader.js','chapters/ch02.js','engine.js'])vm.runInContext(readFileSync(new URL('../'+f,import.meta.url),'utf8'),context);
+ context.Date=class extends Date {static now(){return clock;}};
+ context.window=context;vm.createContext(context);for(const f of ['logic.js','conditions.js','reader.js','dialogue.js','chapters/ch02.js','engine.js'])vm.runInContext(readFileSync(new URL('../'+f,import.meta.url),'utf8'),context);
  const engine=context.N2Engine;engine.boot(context.N2_CHAPTERS.ch02);engine._setState(engine._state());const $=v=>document.querySelector(v);
  const click=k=>{const e=$('[data-focus="'+k+'"]');assert.ok(e,'missing '+k);assert.equal(e.disabled,false,'disabled '+k);e.click();};
- function advance(){let n=0;while(!$('#dialogue').classList.contains('hidden')&&n++<30)$('#dialogue').click();assert.ok(n<30);}
+ function advance(){let n=0;while(!$('#dialogue').classList.contains('hidden')&&n++<30){clock+=1000;$('#dialogue').click();}assert.ok(n<30);}
  return {engine,document,$,click,advance};
 }
 test('complete escape through actual object UI: collect, unlock, route, reject, crank, approve, use key',()=>{

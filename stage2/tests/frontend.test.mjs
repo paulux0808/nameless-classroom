@@ -46,7 +46,7 @@ function setup(width = 1280, options = {}) {
   });
   context.window = context;
   vm.createContext(context);
-  for (const file of ['logic.js', 'reader.js', 'chapters/ch01.js', 'engine.js']) {
+  for (const file of ['logic.js', 'reader.js', 'dialogue.js', 'chapters/ch01.js', 'engine.js']) {
     vm.runInContext(readFileSync(new URL('../' + file, import.meta.url), 'utf8'), context, { filename: file });
   }
   context.N2Engine.boot(context.N2_CHAPTERS.ch01);

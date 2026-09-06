@@ -241,9 +241,11 @@ test("자리와 어긋남을 섞어 부르지 않는다", () => {
   }
 });
 
+const spoken = beats => beats.map(beat => typeof beat === 'string' ? beat : beat.text).join(' ');
+
 test("리처드는 규칙을 읊지 않는다 — 세 장이 같다고 믿고 들어온다", () => {
   const first = ch01.lines.submission;
-  const joined = first.join(" ");
+  const joined = spoken(first);
   assert.ok(first.length <= 7, `첫 대사가 ${first.length} 줄이다. 설명이 길다`);
   assert.ok(joined.length < 220, `첫 대사가 ${joined.length} 자다. 설명이 길다`);
   for (const meta of ["보시는 법", "예를 들어", "고르시면 됩니다", "골라 주십시오"]) {
@@ -253,18 +255,20 @@ test("리처드는 규칙을 읊지 않는다 — 세 장이 같다고 믿고 �
     "세 장이 같다는 주장이 없다 — 그게 뒤집을 대상이다");
 });
 
-test("틀린 걸 짚어 주면 사과부터 한다", () => {
-  /* 자기 실수를 지적당한 사람의 말이어야 한다.
-     "여기까지는 맞습니다" 는 퀴즈 진행자의 말이지 이 사람의 말이 아니다. */
-  const notYet = ch01.lines.notYet.join(" ");
-  assert.ok(/죄송|잘못|틀린/.test(notYet), `사과가 없다: "${notYet}"`);
-  assert.ok(!/맞습니다|정답|맞았/.test(notYet), `채점하는 말이 남아 있다: "${notYet}"`);
+test("지적한 오류마다 리처드가 다르게 반응하며 채점하는 말은 하지 않는다", () => {
+  const reactions = ch01.sets.filter(set => !set.agree).map(set => {
+    assert.ok(ch01.reactions[set.id]?.length, `${set.id} 반응이 없다`);
+    return spoken(ch01.reactions[set.id]);
+  });
+  assert.equal(new Set(reactions).size, reactions.length);
+  for (const text of [spoken(ch01.lines.notYet), ...reactions])
+    assert.doesNotMatch(text, /정답|맞았|점수|다음 문제/);
 });
 
 test("두 번째부터는 짧게 말한다", () => {
-  const first = ch01.lines.submission.join(" ").length;
+  const first = spoken(ch01.lines.submission).length;
   for (const key of ["probing", "notYet", "revisedAgain", "rejected"]) {
-    const later = ch01.lines[key].join(" ").length;
+    const later = spoken(ch01.lines[key]).length;
     assert.ok(later < first / 2,
       `${key} 가 첫 대사만큼 길다 (${later} vs ${first})`);
   }
@@ -336,6 +340,8 @@ test("auditChapter는 세트가 한 장에 둘 있는 것을 잡아낸다", () =
 test("auditChapter는 스포일러 누출을 부팅 전에 잡는다", () => {
   const leaky = JSON.parse(JSON.stringify(ch01));
   leaky.lines.probing = ["오펜하이머 박사님께 올리겠습니다."];
+  assert.ok(L.auditChapter(leaky).some(p => p.includes("잠긴 표현")));
+  leaky.lines.probing = [{text:'박사님.',stage:'오펜하이머가 고개를 든다.'}];
   assert.ok(L.auditChapter(leaky).some(p => p.includes("잠긴 표현")));
 });
 

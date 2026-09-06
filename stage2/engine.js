@@ -117,6 +117,13 @@
   var doorLeaf = null, doorOpen = false, doorSpec = null;
 
   function buildRoom() {
+    if (chapter.room.kind && global.N2Architecture) {
+      BLOCKS = [];
+      var entry = chapter.door;
+      doorSpec = { x: entry.pos[0], z: entry.pos[2], w: entry.width, h: entry.height, near: false };
+      buildDoor(global.N2Architecture.build({ scene: scene, chapter: chapter }));
+      return;
+    }
     var W = ROOM.W, D = ROOM.D, H = ROOM.H;
     var WAINSCOT = 1.02;   /* 허리 높이 판벽 */
 
@@ -277,6 +284,9 @@
   }
 
   function buildLights() {
+    if (chapter.room.kind && global.N2Architecture) {
+      global.N2Architecture.lights({ scene: scene, chapter: chapter }); return;
+    }
     scene.add(new THREE.AmbientLight(0x5a6472, 0.5));
     var hemi = new THREE.HemisphereLight(0x9fb0c4, 0x3a3226, 0.45);
     scene.add(hemi);
@@ -318,7 +328,7 @@
 
     /* restOn 은 받침이 먼저 놓여 있어야 계산된다. 병렬로 받되 배치는
        매니페스트 순서대로 한다. */
-    var loaded = new Array(list.length), got = 0, placedUpTo = 0;
+    var loaded = new Array(list.length), placedUpTo = 0, sources = Object.create(null);
     function drain() {
       while (placedUpTo < list.length && loaded[placedUpTo] !== undefined) {
         var g = loaded[placedUpTo], it = list[placedUpTo];
@@ -327,11 +337,15 @@
       }
     }
     list.forEach(function (item, idx) {
-      loader.load(MODEL_BASE + item.path, function (gltf) {
-        loaded[idx] = gltf.scene; got++; drain(); step();
-      }, undefined, function () {
-        console.warn("모델 로드 실패:", item.path);
-        loaded[idx] = null; got++; drain(); step();
+      // Static repeated furniture shares geometry/textures; each placement has
+      // its own transforms. Animated cast is loaded separately by loadNPC.
+      if (!sources[item.path]) sources[item.path] = new Promise(function (resolve) {
+        loader.load(MODEL_BASE + item.path, function (gltf) { resolve(gltf.scene); }, undefined, function () {
+          console.warn("모델 로드 실패:", item.path); resolve(null);
+        });
+      });
+      sources[item.path].then(function (source) {
+        loaded[idx] = source ? source.clone(true) : null; drain(); step();
       });
     });
   }
@@ -505,6 +519,11 @@
         align: spec.align || "floor", center: spec.center
       });
       scene.add(npc);
+      npc.traverse(function (node) {
+        if (!node.isBone) return;
+        if (node.name === 'Head') actingBones.head = node;
+        if (node.name === 'Torso') actingBones.torso = node;
+      });
 
       if (gltf.animations && gltf.animations.length) {
         npcMixer = new THREE.AnimationMixer(npc);
@@ -577,6 +596,38 @@
     var dx = x - npc.position.x, dz = z - npc.position.z;
     if (Math.abs(dx) + Math.abs(dz) < 1e-4) return;
     npc.rotation.y = Math.atan2(dx, dz) + npcFaceOff;
+  }
+
+  var actingBones = {}, actingOffsets = {}, actingCue = { pose: 'listen', look: 'player' }, actingAt = 0;
+  function cueNPC(cue) {
+    actingCue = cue || { pose: 'listen', look: 'player' };
+    actingAt = Date.now();
+    playNPC(actingCue.who === '당신' ? 'idle' : 'talk');
+  }
+  function clearActingOffsets() {
+    Object.keys(actingOffsets).forEach(function (key) {
+      if (actingBones[key]) actingBones[key].quaternion.multiply(actingOffsets[key].invert());
+    });
+    actingOffsets = {};
+  }
+  function stepActing(dt) {
+    if (!npc || npcWalk) return;
+    var point = (chapter.lookPoints || {})[actingCue.look];
+    if (!point && actingCue.look === 'player') point = [camera.position.x, 0, camera.position.z];
+    if (point) {
+      var target = Math.atan2(point[0]-npc.position.x, point[2]-npc.position.z)+npcFaceOff;
+      var delta = Math.atan2(Math.sin(target-npc.rotation.y), Math.cos(target-npc.rotation.y));
+      npc.rotation.y += delta*Math.min(1,dt*4);
+    }
+    var t = (Date.now()-actingAt)/1000, pose = actingCue.pose;
+    var nod = pose === 'nod' && t < .85 ? Math.sin(t/.85*Math.PI)*.15 : 0;
+    var turn = pose === 'shake' && t < 1.05 ? Math.sin(t/1.05*Math.PI*2)*.12 : 0;
+    var down = pose === 'inspect' ? .18 : 0;
+    [['head',down+nod,turn,0],['torso',pose==='inspect'?.035:0,0,pose==='confident'?-.025:0]].forEach(function (part) {
+      if (!actingBones[part[0]]) return;
+      var q = new THREE.Quaternion().setFromEuler(new THREE.Euler(part[1],part[2],part[3]));
+      actingBones[part[0]].quaternion.multiply(q);actingOffsets[part[0]]=q;
+    });
   }
 
   /* 목표 지점까지 걸어간다. 도착하면 onDone.
@@ -1009,7 +1060,8 @@
       say(chapter.lines.rejected, function () {
         S.conditions.run = null; S.conditions.receipt = false;
         setPhase(L.PHASE.REVISED); checkpoint();
-        toast("시험대에 손잡이와 기준판을 장착하십시오.");
+        if (conditionRoom) conditionRoom.sync(S.conditions, S.phase);
+        walkNPC(pathPoint('work', pathPoint('stand')), function () { cueNPC({pose:'inspect',look:'bench'}); });
       });
       return;
     }
@@ -1041,7 +1093,7 @@
       if (isConditions()) {
         if (conditionRoom) conditionRoom.sync(S.conditions, S.phase);
         walkNPC(pathPoint("aside", [1.15, 0, -2.55]));
-        toast("시험대의 열쇠 서랍이 열렸습니다.", "good"); renderHUD(); return;
+        renderHUD(); return;
       }
       renderHUD();
       toast("진행도 " + chapterProgress() + "%", "good");
@@ -1072,39 +1124,15 @@
   }
 
   /* ── 대사 ──────────────────────────────────────────────────────────── */
+  var dialoguePlayer = null;
   function say(lines, done) {
-    var box = $("#dialogue");
-    var i = 0;
-    box.classList.add("blocking");
-    box.classList.remove("hidden");
-    playNPC("talk");
-
-    function step() {
-      if (i >= lines.length) {
-        box.classList.add("hidden");
-        box.classList.remove("blocking");
-        playNPC("idle");
-        $("#scene").focus({ preventScroll: true });
-        if (done) done();
-        return;
-      }
-      box.innerHTML = "";
-      var line = lines[i], speaker = typeof line === "object" ? line.who : chapter.npc;
-      box.appendChild(el("div", "who", safeText(speaker)));
-      box.appendChild(el("p", "line", safeText(typeof line === "object" ? line.text : line)));
-      box.appendChild(el("div", "more", "계속 ▸"));
-      i++;
-    }
+    if (!dialoguePlayer) dialoguePlayer = global.N2Dialogue.create({
+      box: $("#dialogue"), speaker: chapter.npc, safeText: safeText,
+      now: function () { return Date.now(); }, onCue: cueNPC,
+      onClose: function () { playNPC("idle"); $("#scene").focus({ preventScroll: true }); }
+    });
     pauseWorldInput();
-    box.setAttribute("role", "button");
-    box.setAttribute("aria-label", chapter.npc + " 대화, 다음 대사");
-    box.tabIndex = 0;
-    box.onclick = step;
-    box.onkeydown = function (event) {
-      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); step(); }
-    };
-    step();
-    box.focus({ preventScroll: true });
+    dialoguePlayer.run(lines, done);
   }
 
   /* ── 스크롤 표시 ─────────────────────────────────────────────────────
@@ -1461,7 +1489,7 @@
     if (isConditions()) {
       S.conditions = S.conditions || global.N2Conditions.fresh();
       var review = global.N2Conditions.judge(chapter, S.conditions);
-      if (!review.ok) { say([review.message]); return; }
+      if (!review.ok) { say((chapter.reviewLines || {})[review.kind] || [review.message]); return; }
       say(l.conceded, function () { setPhase(L.PHASE.CONTRADICTION); checkpoint(); });
       return;
     }
@@ -1478,7 +1506,12 @@
       return;
     }
 
-    if (res.verdict === "short") { say(l.notYet); return; }
+    if (res.verdict === "short") {
+      S._heardClaims = S._heardClaims || [];
+      var freshClaim = (S.claims || []).find(function (id) { return S._heardClaims.indexOf(id)<0; });
+      if (freshClaim) S._heardClaims.push(freshClaim);
+      say(freshClaim && chapter.reactions && chapter.reactions[freshClaim] || l.notYet); return;
+    }
 
     /* 어긋난 자리를 전부, 그것만 짚었다 */
     say(l.conceded, function () {
@@ -1543,7 +1576,9 @@
     moveStep(dt);
     stepDoor(dt);
     stepNPC();
+    clearActingOffsets();
     if (npcMixer) npcMixer.update(dt);
+    stepActing(dt);
     if (conditionRoom) conditionRoom.update(dt, camera);
     if (IS_TOUCH && !inputBlocked()) hoverThrottled(innerWidth / 2, innerHeight / 2);
 
@@ -1558,6 +1593,7 @@
   /* ── 부트 ──────────────────────────────────────────────────────────── */
   function boot(ch) {
     chapter = ch;
+    document.body.classList.add(ch.id);
     if (!global.THREE) {
       $("#loading").textContent = "3D 엔진을 불러오지 못했습니다.";
       return;
@@ -1611,7 +1647,7 @@
         if (isConditions() && global.N2ConditionRoom) {
           $("#load-status").textContent = "검토실을 준비하는 중…";
           conditionRoom = global.N2ConditionRoom.create({
-            chapter: chapter, scene: scene, deskTop: deskTopY(.775),
+            chapter: chapter, scene: scene, deskTop: deskTopY(.775), board: models.board,
             hotspot: function (pos, size, id, label) { var hit = hot(invisibleHit(size[0], size[1], size[2], pos), id, label); scene.add(hit); return hit; },
             block: function (x, z, radius) { BLOCKS.push({ x: x, z: z, hx: radius, hz: radius }); }
           }, ready);

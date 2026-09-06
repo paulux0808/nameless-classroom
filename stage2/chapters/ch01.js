@@ -4,13 +4,13 @@
    큐시트 §4 [CH1-01]~[CH1-07].
 
    RICHARD 가 같은 계산을 세 번 돌린 시험 보고서를 들고 온다. 세 번 다 같은
-   값이 나왔으니 문제가 없다는 것이 그의 주장이다. 그러나 세 장 중 한 장만
-   두 군데에서 다른 말을 한다 — 같은 시험이라고 적어 놓고 같은 시험이 아니다.
+   값이 나왔으니 문제가 없다는 것이 그의 주장이다. 그러나 원기록을 대조하면
+   여섯 종류의 어긋남이 세 장에 나뉘어 있다. 전사 과정에서 계산본이 섞였다.
 
    설계 원칙(04_DOCUMENT_OBJECTS §11 정답 색칠 금지, §34 False Lead):
    문단은 셋 다 표현이 다르다. 착수 시각도, 정전 시각도, 서명 형식도 다르다.
    그러나 그것들은 회차가 다르니 당연히 다른 것이다. 뜻이 갈리는 곳은
-   value 로 못 박은 두 곳뿐이고, 그 둘만이 문제다.
+   sets 의 agree/odd 로 정한 여섯 자리이며, 나머지는 표현만 다른 기록이다.
    ========================================================================== */
 (function (root, factory) {
   var api = factory();
@@ -224,189 +224,414 @@
     /* 둘씩 맞대어 볼 수 있는 짝 */
     comparePairs: [["r1", "r2"], ["r2", "r3"], ["r1", "r3"]],
 
-    /* ── 대사 ───────────────────────────────────────────────────────────
-       그는 세 장이 똑같다고 믿고 들어온다. 아니라는 걸 보이는 것이
-       플레이어의 몫이다. 규칙을 읊어 주는 대사는 두지 않는다 — 설명이
-       길어지는 만큼 이 사람이 사람이 아니게 된다. */
-    lines: {
-      knock: ["똑.", "똑. 똑.", "똑. 똑. 똑."],
-
-      /* 들어와서. 자랑이지 설명이 아니다. */
-      submission: [
-        "박사님. 계산부 RICHARD 입니다.",
-        "적분 검산, 세 번 돌린 겁니다.",
-        "기계도 같고 넣은 값도 같고, 하는 방법도 같게 했습니다.",
-        "세 번 다 2.9107. 소수점 자리까지 똑같이 나왔습니다.",
-        "세 장 다 같은 기록입니다. 어느 자리를 견주셔도 그럴 겁니다.",
-        "올려도 되겠습니까."
-      ],
-
-      /* 아직 아무것도 안 짚었을 때 */
-      probing: [
-        "어느 자리든 견줘 보십시오.",
-        "세 장이 같을 겁니다."
-      ],
-
-      /* 어긋난 자리를 옳게 짚었지만 아직 남았을 때.
-         자기 실수를 지적당한 사람의 말이어야 한다. */
-      notYet: [
-        "……어.",
-        "죄송합니다. 틀린 게 있네요.",
-        "더 있는지 봐 주시겠습니까."
-      ],
-
-      /* 어긋나지 않은 자리를 어긋났다고 짚었을 때. 뒤에 그 세트의 same 이 붙는다. */
-      pushback: [
-        "그건 같은 말입니다, 박사님."
-      ],
-      pushbackTail: [
-        "다시 봐 주십시오."
-      ],
-
-      /* 여섯 자리를 다 짚었을 때 */
-      conceded: [
-        "……잠깐만요.",
-        "표도, 눈금도, 카드 뭉치도.",
-        "전기 나간 뒤에 어떻게 했는지도. 옆에 사람이 있었는지도.",
-        "커졌다고 적은 데가 있고, 줄었다고 적은 데가 있고.",
-        "같은 걸 세 번 했다고 말씀드렸는데.",
-        "세 번 다 다른 걸 한 거였습니다.",
-        "……다시 하고 오겠습니다."
-      ],
-
-      rejected: [
-        "반려. 알겠습니다."
-      ],
-
-      /* 돌아와서 */
-      revised: [
-        "다시 했습니다.",
-        "짚어 주신 자리, 세 번 다 같게 맞췄습니다.",
-        "보십시오."
-      ],
-      revisedAgain: [
-        "보셨습니까."
-      ],
-
-      approved: [
-        "죄송합니다, 박사님.",
-        "답만 맞으면 되는 줄 알았습니다.",
-        "세 번 했다는 말이랑 세 번 똑같이 했다는 말이, 다른 말이었습니다.",
-        "……가 보겠습니다."
-      ],
-
-      done: [
-        "고생하셨습니다."
-      ]
+    "lines": {
+        "knock": [
+            "똑, 똑."
+        ],
+        "submission": [
+            {
+                "text": "박사님. 잠깐 괜찮으십니까?",
+                "pose": "listen",
+                "look": "player",
+                "stage": "리처드가 문 안쪽에서 걸음을 멈춘다.",
+                "pause": 350
+            },
+            {
+                "text": "계산부 첫 결과입니다. 세 번 돌렸는데, 끝자리까지 똑같이 나왔습니다.",
+                "pose": "confident",
+                "look": "desk"
+            },
+            {
+                "text": "세 번 다?",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "네. 이번에는 자신 있습니다.",
+                "pose": "nod",
+                "look": "player"
+            },
+            {
+                "text": "그럼 결과 앞에 있는 것부터 보지.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "얼마든지요. 원기록도 같이 가져왔습니다.",
+                "pose": "inspect",
+                "look": "desk"
+            }
+        ],
+        "probing": [
+            {
+                "text": "서두르실 것 없습니다. 저는 여기 있겠습니다.",
+                "pose": "listen",
+                "look": "player"
+            }
+        ],
+        "notYet": [
+            {
+                "text": "제가 놓친 게 또 있겠군요. 다른 장도 함께 보겠습니다.",
+                "pose": "inspect",
+                "look": "desk",
+                "stage": "그가 다시 서류로 시선을 내린다."
+            }
+        ],
+        "pushback": [
+            {
+                "text": "잠깐만요. 이 부분은 제가 설명드리겠습니다.",
+                "pose": "listen",
+                "look": "desk"
+            }
+        ],
+        "pushbackTail": [
+            {
+                "text": "표현을 제각각 적어서 헷갈리게 했군요.",
+                "pose": "nod",
+                "look": "player"
+            }
+        ],
+        "conceded": [
+            {
+                "text": "숫자만 보고 같은 계산이라고 말씀드렸군요.",
+                "pose": "inspect",
+                "look": "desk",
+                "stage": "리처드는 한동안 서류에서 눈을 떼지 못한다.",
+                "pause": 650
+            },
+            {
+                "text": "이 묶음에 서명할 수 있겠나?",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "…아니요. 처음부터 다시 돌리겠습니다.",
+                "pose": "shake",
+                "look": "player",
+                "pause": 500
+            },
+            {
+                "text": "수정한 기록은 따로 올리게.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "네. 이번에는 섞이지 않게 하겠습니다.",
+                "pose": "nod",
+                "look": "desk"
+            }
+        ],
+        "rejected": [
+            {
+                "text": "받아 가겠습니다.",
+                "pose": "nod",
+                "look": "player",
+                "stage": "리처드가 짧게 고개를 끄덕인다.",
+                "pause": 400
+            }
+        ],
+        "revised": [
+            {
+                "text": "박사님. 다시 가져왔습니다.",
+                "pose": "listen",
+                "look": "player"
+            },
+            {
+                "text": "이번에는 묶는 사람과 읽는 사람도 따로 두었습니다.",
+                "pose": "inspect",
+                "look": "desk"
+            },
+            {
+                "text": "먼저 놓아 보게.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "올리기 전에 세 장을 나란히 확인했습니다.",
+                "pose": "nod",
+                "look": "desk"
+            }
+        ],
+        "revisedAgain": [
+            {
+                "text": "천천히 보십시오. 기다리겠습니다.",
+                "pose": "listen",
+                "look": "player"
+            }
+        ],
+        "approved": [
+            {
+                "text": "이제 보내도 되겠습니까?",
+                "pose": "inspect",
+                "look": "desk",
+                "stage": "그가 서류에서 도장 쪽으로 시선을 옮긴다."
+            },
+            {
+                "text": "그래. 수고했네.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "다음에는 박사님 책상에 놓기 전에, 제가 한 번 더 의심해 보겠습니다.",
+                "pose": "nod",
+                "look": "player",
+                "pause": 450
+            }
+        ],
+        "done": [
+            {
+                "text": "계산부에서 기다리겠습니다.",
+                "pose": "listen",
+                "look": "player"
+            }
+        ]
     },
-
-    /* ── 씬 ───────────────────────────────────────────────────────────── */
-    room: { W: 5.4, D: 6.6, H: 2.9 },
-
-    /* 문 — RICHARD 가 드나드는 곳이자 플레이어가 나가는 곳.
-       플레이어는 책상 이쪽(+z)에서 -z 를 보고 시작한다. 문은 그 시선 끝,
-       RICHARD 가 서는 자리 뒤에 있어야 한다 — 노크 소리가 나고 문이 열리고
-       걸어 들어오는 것이 처음부터 끝까지 보여야 하기 때문이다. */
-    door: { pos: [-0.75, 0, -3.3], width: 1.05, height: 2.12 },
-
-    /* NPC 이동 경로. 문 안쪽에서 책상 건너편까지. */
-    npcPath: {
-      doorway: [-0.75, 0, -2.90],
-      stand:   [0.12, 0, -0.62]
+    "reactions": {
+        "zero": [
+            {
+                "text": "첫날은 전날 맞춘 눈금을 그대로 썼군요. 시작 조건부터 달랐습니다.",
+                "pose": "inspect",
+                "look": "desk",
+                "stage": "그가 첫 기록 위에서 시선을 멈춘다.",
+                "pause": 450
+            }
+        ],
+        "std": [
+            {
+                "text": "B 표요? 제가 배부한 건 A인데… 이 장은 어디서 넘어왔죠?",
+                "pose": "inspect",
+                "look": "desk",
+                "pause": 450
+            }
+        ],
+        "deck": [
+            {
+                "text": "117번은 다른 계산 묶음입니다. 전사할 때 책상 위에서 섞였나 봅니다.",
+                "pose": "shake",
+                "look": "desk"
+            }
+        ],
+        "redo": [
+            {
+                "text": "여기만 이어서 돌렸군요. 저는 전부 처음부터 다시 한 줄 알았습니다.",
+                "pose": "inspect",
+                "look": "desk"
+            }
+        ],
+        "witness": [
+            {
+                "text": "혼자 읽은 기록이 끼었네요. 맞춰 봤다는 말부터 정정해야겠습니다.",
+                "pose": "listen",
+                "look": "player"
+            }
+        ],
+        "ratio": [
+            {
+                "text": "잠깐. 1.2에서 2.6인데… 줄었다고 적었네요. 이건 제 잘못입니다.",
+                "pose": "inspect",
+                "look": "desk",
+                "pause": 500
+            }
+        ]
     },
-
-    /* 배율이 아니라 실치수(m). 표면 위 물건은 restOn 으로 올린다 —
-       높이를 손으로 적으면 모델을 바꿀 때마다 뜨거나 잠긴다.
-       shelfOf 는 선반 안쪽 칸 — 엔진이 받침 모델을 실측해 칸을 나눈다.
-       solid 는 통과 금지. ※ 아직 stage1 의 소품을 돌려 쓰는 중이다. */
-    models: [
-      { id: "desk",   path: "metal_office_desk/metal_office_desk.gltf",
-        pos: [0, 0, 0.5],       rot: [0, Math.PI, 0],        fitHeight: 0.76,
-        solid: true },
-      /* 원본 의자는 등받이가 유난히 길고(0.69 x 2.27) 장식이 많다. 전체 높이로
-         맞추면 앉는 자리가 30cm 로 쪼그라들고, 책상 앞에 두면 등받이가 상판을
-         통째로 가린다. 폭으로 맞춰 뒤쪽 구석에 세워 둔다.
-         ※ 사무용 의자를 구하면 책상 앞으로 되돌린다 — docs/ASSETS.md 참고. */
-      { id: "chair",  path: "WoodenChair_01/WoodenChair_01.gltf",
-        pos: [2.30, 0, -1.15], rot: [0, -Math.PI * 0.42, 0], fitWidth: 0.46,
-        solid: true },
-      /* 램프는 책상 오른쪽 안쪽. 상판은 z 0.05~0.95 안에서만 물건을 받는다 —
-         그 밖에 두면 허공에 뜬다. 도장 자리(왼쪽 앞)와도 떨어뜨린다. */
-      { id: "lamp",   path: "desk_lamp_arm_01/desk_lamp_arm_01.gltf",
-        pos: [0.58, 0, 0.22],   rot: [0, -Math.PI * 0.32, 0], fitHeight: 0.44,
-        restOn: "desk" },
-      /* 문 자리(x -1.28 ~ -0.23)를 비켜 세운다 */
-      { id: "board",  path: "standing_chalkboard_01/standing_chalkboard_01.gltf",
-        pos: [-2.05, 0, -2.30], rot: [0, Math.PI * 0.30, 0], fitHeight: 1.62,
-        solid: true },
-      { id: "shelf",  path: "wooden_bookshelf_worn/wooden_bookshelf_worn.gltf",
-        pos: [1.75, 0, -2.55],  rot: [0, 0, 0],              fitHeight: 1.82,
-        solid: true },
-      { id: "cabinet", path: "metal_tool_chest/metal_tool_chest.gltf",
-        pos: [-2.28, 0, -0.60], rot: [0, Math.PI * 0.5, 0],  fitHeight: 0.92,
-        solid: true },
-      /* 납작한 손가방형 케이스. 높이로 맞추면 1m 짜리가 된다 */
-      { id: "medkit", path: "medical_box/medical_box.gltf",
-        pos: [-2.28, 0, -0.60], rot: [0, Math.PI * 0.5, 0],  fitWidth: 0.42,
-        restOn: "cabinet" },
-      /* 원본 궤짝은 납작하다(0.83 x 0.35 x 0.41). 높이로 맞추면 폭이 1.2m 를
-         넘어 방을 가로막는다 — 폭 기준으로 맞춘다. */
-      { id: "crateA", path: "wooden_crate_01/wooden_crate_01.gltf",
-        pos: [2.02, 0, 2.30],   rot: [0, 0.35, 0],           fitWidth: 0.78,
-        solid: true },
-      { id: "crateB", path: "wooden_crate_01/wooden_crate_01.gltf",
-        pos: [1.98, 0, 2.26],   rot: [0, -0.22, 0],          fitWidth: 0.62,
-        restOn: "crateA" },
-      { id: "radio",  path: "vintage_radio_transceiver/vintage_radio_transceiver.gltf",
-        pos: [1.98, 0, 2.26],   rot: [0, -Math.PI * 0.62, 0], fitWidth: 0.42,
-        restOn: "crateB" },
-      /* 이 gltf 는 멀쩡한 통과 녹슨 통을 나란히 담고 있다. 녹슨 쪽을
-         걷어내지 않으면 폭이 두 배가 되어 의자를 파고든다. */
-      { id: "bin",    path: "trashcan/metal_trash_can.gltf",
-        pos: [-2.10, 0, 1.62],  rot: [0, 0.6, 0],            fitHeight: 0.62,
-        hide: ["_rust"] },
-      /* 책은 선반 칸 위에 앉힌다. 칸 번호는 위에서부터 0. 엔진이 받침을
-         실측해 나누므로 선반 모델을 바꿔도 책이 뜨지 않는다. */
-      { id: "books1", path: "books/book_encyclopedia_set_01.gltf",
-        pos: [-0.20, 0, -0.02], rot: [0, 0, 0],    fitWidth: 0.42, shelfOf: "shelf", shelf: 1 },
-      { id: "books2", path: "books/book_encyclopedia_set_01.gltf",
-        pos: [0.22, 0, -0.02],  rot: [0, 0.10, 0], fitWidth: 0.34, shelfOf: "shelf", shelf: 1 },
-      { id: "books3", path: "books/book_encyclopedia_set_01.gltf",
-        pos: [-0.17, 0, -0.02], rot: [0, -0.07, 0], fitWidth: 0.44, shelfOf: "shelf", shelf: 2 },
-      { id: "books4", path: "books/book_encyclopedia_set_01.gltf",
-        pos: [0.24, 0, -0.02],  rot: [0, 0.16, 0], fitWidth: 0.32, shelfOf: "shelf", shelf: 3 },
-      { id: "clock",  path: "mantel_clock_01/mantel_clock_01.gltf",
-        pos: [1.75, 0, -2.55],  rot: [0, 0, 0],              fitHeight: 0.24,
-        restOn: "shelf" },
-      { id: "sconceL", path: "industrial_wall_lamp/industrial_wall_lamp.gltf",
-        pos: [-2.66, 2.05, -0.6], rot: [0, Math.PI * 0.5, 0], fitHeight: 0.30, align: "none" },
-      { id: "sconceR", path: "industrial_wall_lamp/industrial_wall_lamp.gltf",
-        pos: [2.66, 2.05, 0.4],   rot: [0, -Math.PI * 0.5, 0], fitHeight: 0.30, align: "none" }
+    "room": {
+        "kind": "calculation-office",
+        "W": 7.8,
+        "D": 8.2,
+        "H": 3.3
+    },
+    "spawn": {
+        "pos": [
+            0,
+            1.62,
+            2.45
+        ],
+        "yaw": 3.141592653589793,
+        "pitch": -0.22
+    },
+    "door": {
+        "pos": [
+            -0.75,
+            0,
+            -4.1
+        ],
+        "width": 1.12,
+        "height": 2.25
+    },
+    "npcPath": {
+        "doorway": [
+            -0.75,
+            0,
+            -3.65
+        ],
+        "stand": [
+            0.05,
+            0,
+            -0.55
+        ]
+    },
+    "lookPoints": {
+        "desk": [
+            0.08,
+            0.83,
+            0.38
+        ]
+    },
+    "models": [
+        {
+            "id": "desk",
+            "path": "stage2/rooms/wooden_table_02.glb",
+            "pos": [
+                0,
+                0,
+                0.35
+            ],
+            "fitHeight": 0.82,
+            "solid": true
+        },
+        {
+            "id": "lamp",
+            "path": "stage2/rooms/industrial_pipe_lamp.glb",
+            "pos": [
+                0.4,
+                0,
+                0.11
+            ],
+            "fitHeight": 0.32,
+            "restOn": "desk"
+        },
+        {
+            "id": "files",
+            "path": "stage2/rooms/vintage_wooden_drawer_01.glb",
+            "pos": [
+                -2.1,
+                0,
+                -2.7
+            ],
+            "fitWidth": 1.4,
+            "solid": true
+        },
+        {
+            "id": "files-upper",
+            "path": "stage2/rooms/vintage_wooden_drawer_01.glb",
+            "pos": [
+                -2.1,
+                0,
+                -2.7
+            ],
+            "fitWidth": 1.32,
+            "restOn": "files"
+        },
+        {
+            "id": "shelf",
+            "path": "wooden_bookshelf_worn/wooden_bookshelf_worn.gltf",
+            "pos": [
+                1.7,
+                0,
+                -3.55
+            ],
+            "fitHeight": 2.3,
+            "solid": true
+        },
+        {
+            "id": "shelf-left",
+            "path": "wooden_bookshelf_worn/wooden_bookshelf_worn.gltf",
+            "pos": [
+                -3.4,
+                0,
+                -0.5
+            ],
+            "rot": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "fitHeight": 2.3,
+            "solid": true
+        },
+        {
+            "id": "books-a",
+            "path": "books/book_encyclopedia_set_01.gltf",
+            "pos": [
+                0,
+                0,
+                0
+            ],
+            "fitWidth": 0.95,
+            "shelfOf": "shelf",
+            "shelf": 1
+        },
+        {
+            "id": "books-b",
+            "path": "books/book_encyclopedia_set_01.gltf",
+            "pos": [
+                0,
+                0,
+                0
+            ],
+            "fitWidth": 0.8,
+            "shelfOf": "shelf",
+            "shelf": 2
+        },
+        {
+            "id": "books-c",
+            "path": "books/book_encyclopedia_set_01.gltf",
+            "pos": [
+                0,
+                0,
+                0
+            ],
+            "rot": [
+                0,
+                1.5707963267948966,
+                0
+            ],
+            "fitWidth": 0.65,
+            "shelfOf": "shelf-left",
+            "shelf": 1
+        },
+        {
+            "id": "clock",
+            "path": "mantel_clock_01/mantel_clock_01.gltf",
+            "pos": [
+                1.7,
+                0,
+                -3.55
+            ],
+            "fitHeight": 0.27,
+            "restOn": "shelf"
+        }
     ],
-
-    npcModel: {
-      path: "teacher/teacher.glb",
-      /* 리깅 모델이라 fitHeight 가 아니라 배율을 직접 준다.
-         ※ teacher.glb 는 stage1 에서 가져온 임시 배우다 — docs/ASSETS.md 참고. */
-      scale: 1.0, align: "none",
-      clips: { idle: "Rig|idle", talk: "Rig|cycle_talking", walk: "Rig|walk" }
+    "npcModel": {
+        "path": "stage2/cast/richard.glb",
+        "scale": 0.98,
+        "align": "none",
+        "center": false,
+        "hitHeight": 1.78,
+        "hitWidth": 0.64,
+        "clips": {
+            "idle": "CharacterArmature|Idle_Neutral",
+            "talk": "CharacterArmature|Idle_Neutral",
+            "walk": "CharacterArmature|Walk"
+        }
     },
-
-    /* 책상 위 자리. y 는 엔진이 책상 상판을 실측해 덮어쓴다. */
-    anchors: {
-      /* 보고서 세 장이 놓이는 자리 — 책상 오른쪽 앞 */
-      reportSlot: [0.30, 0.775, 0.32],
-      /* 도장과 잉크패드 — 책상 왼쪽 앞 */
-      stampPad:   [-0.62, 0.775, 0.38]
-    },
-
-    /* 바닥에도 세 장을 깔아 둔다 — 책상에서 밀려난 것들 */
-    floorReports: [
-      { pos: [-0.62, 0, 1.05], rot: 0.22 },
-      { pos: [-0.24, 0, 1.24], rot: -0.34 },
-      { pos: [ 0.20, 0, 1.12], rot: 0.11 }
-    ],
-
-    nextChapter: "ch02"
+    "anchors": {
+        "reportSlot": [
+            0.08,
+            0.83,
+            0.38
+        ],
+        "stampPad": [
+            -0.44,
+            0.83,
+            0.48
+        ]
+    }
   };
 });

@@ -408,8 +408,13 @@
         });
       });
       sets.forEach(function (x) { texts.push(x.label, x.wrong, x.ok, x.same); });
-      Object.keys(chapter.lines || {}).forEach(function (k) {
-        (chapter.lines[k] || []).forEach(function (t) { texts.push(t); });
+      [chapter.lines,chapter.reactions,chapter.reviewLines].forEach(function (script) {
+        Object.keys(script || {}).forEach(function (k) {
+          (script[k] || []).forEach(function (t) {
+            if (typeof t === 'string') texts.push(t);
+            else if (t) texts.push(t.text,t.stage,t.who);
+          });
+        });
       });
       texts.forEach(function (t) {
         findLeaks(t, SPOILER.CHAPTERS).forEach(function (term) {

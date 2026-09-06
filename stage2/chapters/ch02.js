@@ -34,35 +34,389 @@
         quote: '새 장비는 충분히 기다렸습니다. 값도 차분했죠. 세 번째 기록까지 같아서 거기서 끝냈습니다.',
         note: 'K-2 / 11월 12일 11:00 시작. 11:20부터 세 차례 기록. 표지에 S-12 개정 B를 기입했다.' }
     ],
-    lines: {
-      submission: [
-        '박사님, 장비를 바꾼 뒤 네 팀의 결과가 갈립니다.',
-        '제가 펼쳐 둔 봉투부터 보시겠습니까?'
-      ],
-      probing: ['메모와 명판을 함께 보십시오. 카드의 앞면과 뒷면도 다르고요.'],
-      conceded: ['그 규정은 지난 시험에서도 사용했습니다.', '……교체 날짜가 여기 있군요. 조건이 바뀌었는데 기준은 그대로였군요.', 'C팀의 과거 기록은 그대로 남기고, 나머지는 새 조건으로 다시 시험하겠습니다.'],
-      rejected: ['C팀의 원본은 남겨 두겠습니다. 나머지는 다시 돌리죠.', '시험대의 잠금을 풀었습니다.'],
-      revised: ['시험대에 기준판과 손잡이를 장착하고 조절기를 맞춰 주십시오. 손잡이를 돌리면 새 기록이 나옵니다.'],
-      revisedAgain: ['출력지에 찍힌 첫 기록 시각과 횟수를 확인하십시오. 충분히 기다렸는지도요.'],
-      approved: [
-        '이제 같은 조건끼리 비교할 수 있겠군요.',
-        '승인됐습니다. 출입 열쇠의 봉인도 풀렸습니다.'
-      ],
-      done: ['기준서는 시험대 옆에 두겠습니다. 필요할 때 바로 볼 수 있도록요.']
+    "lines": {
+        "submission": [
+            {
+                "text": "박사님, 저 칠판 좀 보십시오. 오전 내내 저 상태입니다.",
+                "pose": "listen",
+                "look": "board",
+                "stage": "엔리코가 칠판 쪽으로 몸을 돌린다."
+            },
+            {
+                "text": "결론이 넷이군.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "네. 네 팀 다 자신이 맞답니다.",
+                "pose": "shake",
+                "look": "player"
+            },
+            {
+                "text": "자료는 여기 모아 두었습니다. 저는 더 보탤 말이 없군요.",
+                "pose": "inspect",
+                "look": "desk",
+                "pause": 400
+            }
+        ],
+        "probing": [
+            {
+                "text": "봉투는 오전에 도착한 그대로입니다.",
+                "pose": "listen",
+                "look": "desk"
+            }
+        ],
+        "conceded": [
+            {
+                "text": "시험대가 바뀐 건 언제지?",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "지난 시험 뒤입니다. 하지만 규정은…",
+                "pose": "listen",
+                "look": "bench"
+            },
+            {
+                "text": "그러네요. 장비만 바꾸고 조건은 그대로 썼군요.",
+                "pose": "inspect",
+                "look": "desk",
+                "stage": "그가 기준판 쪽을 오래 바라본다.",
+                "pause": 650
+            },
+            {
+                "text": "C팀 기록까지 고칠 필요는 없겠지.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "그건 옛 장비로 끝낸 시험입니다. 원본은 남겨 두겠습니다.",
+                "pose": "nod",
+                "look": "player"
+            },
+            {
+                "text": "나머지 세 팀은 다시 불러야겠군요.",
+                "pose": "listen",
+                "look": "bench"
+            }
+        ],
+        "rejected": [
+            {
+                "text": "좋습니다. 이번엔 같은 출발선에서 해 봅시다.",
+                "pose": "nod",
+                "look": "bench",
+                "stage": "엔리코가 시험대 쪽으로 돌아선다.",
+                "pause": 400
+            }
+        ],
+        "revised": [
+            {
+                "text": "시험대는 준비됐습니다. 조건을 맞추고 돌려 보시죠.",
+                "pose": "listen",
+                "look": "bench"
+            }
+        ],
+        "revisedAgain": [
+            {
+                "text": "기록이 나왔습니까? 같이 보시죠.",
+                "pose": "listen",
+                "look": "bench"
+            }
+        ],
+        "approved": [
+            {
+                "text": "이번에는 비교가 되겠군요.",
+                "pose": "inspect",
+                "look": "bench",
+                "stage": "엔리코가 새 기록을 내려다본다.",
+                "pause": 400
+            },
+            {
+                "text": "같은 조건이라는 말이, 이제야 맞는 말이 됐군.",
+                "pose": "listen",
+                "look": "player",
+                "who": "당신"
+            },
+            {
+                "text": "그러게 말입니다. 긴 오전이었습니다.",
+                "pose": "nod",
+                "look": "player"
+            },
+            {
+                "text": "출입 열쇠는 시험대 서랍에 있습니다. 수고하셨습니다.",
+                "pose": "listen",
+                "look": "bench"
+            }
+        ],
+        "done": [
+            {
+                "text": "기준서는 장비 옆에 두겠습니다. 다음 사람이 찾을 수 있게요.",
+                "pose": "nod",
+                "look": "bench"
+            }
+        ]
     },
-    room: { W: 5.8, D: 6.2, H: 2.9 },
-    spawn: { pos: [0, 1.62, 1.95], yaw: Math.PI, pitch: -0.34 },
-    door: { pos: [-0.65, 0, -3.1], width: 1.1, height: 2.15 },
-    npcPath: { doorway: [-.65, 0, -2.7], stand: [-1.55, 0, -.7], aside: [-2.1, 0, -.7] },
-    roomObjects: { bench: [1.65, 0, -1.35], cabinet: [-1.4, 0, -1.65] },
-    models: [
-      { id: 'desk', path: 'metal_office_desk/metal_office_desk.gltf', pos: [0, 0, .2], rot: [0, Math.PI, 0], fitHeight: .76, solid: true },
-      { id: 'shelf', path: 'wooden_bookshelf_worn/wooden_bookshelf_worn.gltf', pos: [2.05, 0, -2.55], fitHeight: 1.75, solid: true },
-      { id: 'lamp', path: 'desk_lamp_arm_01/desk_lamp_arm_01.gltf', pos: [.52, 0, -.04], fitHeight: .42, restOn: 'desk' },
-      { id: 'radio', path: 'vintage_radio_transceiver/vintage_radio_transceiver.gltf', pos: [2.05, 0, -2.55], fitWidth: .38, restOn: 'shelf' },
-      { id: 'books', path: 'books/book_encyclopedia_set_01.gltf', pos: [0, 0, 0], fitWidth: .5, shelfOf: 'shelf', shelf: 1 }
+    "reviewLines": {
+        "papers": [
+            {
+                "text": "아직 봉투가 그대로군요. 가운데 놓아 두었습니다.",
+                "pose": "listen",
+                "look": "desk"
+            }
+        ],
+        "rule": [
+            {
+                "text": "그런데 비교할 기준서가 없군요. 시설부가 정리한 뒤로 늘 이렇습니다.",
+                "pose": "inspect",
+                "look": "cabinet",
+                "stage": "그가 잠긴 규정함을 돌아본다."
+            }
+        ],
+        "loose": [
+            {
+                "text": "이 장도 함께 보시겠습니까?",
+                "pose": "inspect",
+                "look": "desk",
+                "stage": "아직 분류되지 않은 기록 쪽을 바라본다."
+            }
+        ],
+        "mixed": [
+            {
+                "text": "잠깐만요. 이쪽은 장비 번호가 다른데, 한데 묶어도 괜찮겠습니까?",
+                "pose": "inspect",
+                "look": "desk",
+                "pause": 350
+            }
+        ]
+    },
+    "room": {
+        "kind": "test-hall",
+        "W": 10.4,
+        "D": 10.2,
+        "H": 4.4
+    },
+    "spawn": {
+        "pos": [
+            0,
+            1.62,
+            2.7
+        ],
+        "yaw": 3.141592653589793,
+        "pitch": -0.18
+    },
+    "door": {
+        "pos": [
+            2.4,
+            0,
+            -5.1
+        ],
+        "width": 1.3,
+        "height": 2.5
+    },
+    "npcPath": {
+        "doorway": [
+            2.4,
+            0,
+            -4.6
+        ],
+        "stand": [
+            1.4,
+            0,
+            -0.55
+        ],
+        "work": [
+            2,
+            0,
+            -1.65
+        ],
+        "aside": [
+            1.65,
+            0,
+            -2.35
+        ]
+    },
+    "lookPoints": {
+        "desk": [
+            0.12,
+            0.83,
+            0.72
+        ],
+        "board": [
+            -1.6,
+            1.7,
+            -3.8
+        ],
+        "bench": [
+            2.9,
+            1.1,
+            -0.55
+        ],
+        "cabinet": [
+            -2.8,
+            0.8,
+            -0.7
+        ]
+    },
+    "roomObjects": {
+        "bench": [
+            2.9,
+            0,
+            -0.55
+        ],
+        "cabinet": [
+            -2.8,
+            0,
+            -0.7
+        ],
+        "benchSupport": true
+    },
+    "models": [
+        {
+            "id": "desk",
+            "path": "stage2/rooms/painted_wooden_table.glb",
+            "pos": [
+                0,
+                0,
+                0.65
+            ],
+            "fitHeight": 0.82,
+            "solid": true
+        },
+        {
+            "id": "bench-support",
+            "path": "stage2/rooms/WoodenTable_03.glb",
+            "pos": [
+                2.9,
+                0,
+                -0.55
+            ],
+            "fitHeight": 0.82,
+            "solid": true
+        },
+        {
+            "id": "board",
+            "path": "standing_chalkboard_01/standing_chalkboard_01.gltf",
+            "pos": [
+                -1.6,
+                0,
+                -3.8
+            ],
+            "fitHeight": 2.55,
+            "solid": true
+        },
+        {
+            "id": "parts-rack",
+            "path": "stage2/rooms/worn_metal_rack.glb",
+            "pos": [
+                4.25,
+                0,
+                -3.65
+            ],
+            "fitHeight": 2.05,
+            "solid": true
+        },
+        {
+            "id": "lamp-left",
+            "path": "stage2/rooms/hanging_industrial_lamp.glb",
+            "pos": [
+                -2.8,
+                3.02,
+                -2.4
+            ],
+            "fitHeight": 1.35
+        },
+        {
+            "id": "lamp-right",
+            "path": "stage2/rooms/hanging_industrial_lamp.glb",
+            "pos": [
+                2.8,
+                3.02,
+                -2.4
+            ],
+            "fitHeight": 1.35
+        },
+        {
+            "id": "stool-a",
+            "path": "stage2/rooms/painted_wooden_stool.glb",
+            "pos": [
+                -1.5,
+                0,
+                0.25
+            ],
+            "fitHeight": 0.58,
+            "solid": true
+        },
+        {
+            "id": "stool-b",
+            "path": "stage2/rooms/painted_wooden_stool.glb",
+            "pos": [
+                -0.9,
+                0,
+                -1.2
+            ],
+            "rot": [
+                0,
+                0.3,
+                0
+            ],
+            "fitHeight": 0.58,
+            "solid": true
+        },
+        {
+            "id": "stool-c",
+            "path": "stage2/rooms/painted_wooden_stool.glb",
+            "pos": [
+                0.35,
+                0,
+                -1.25
+            ],
+            "rot": [
+                0,
+                -0.3,
+                0
+            ],
+            "fitHeight": 0.58,
+            "solid": true
+        },
+        {
+            "id": "stool-d",
+            "path": "stage2/rooms/painted_wooden_stool.glb",
+            "pos": [
+                1.7,
+                0,
+                0.35
+            ],
+            "fitHeight": 0.58,
+            "solid": true
+        }
     ],
-    npcModel: { path: 'teacher/teacher.glb', scale: 1, align: 'none', clips: { idle: 'Rig|idle', talk: 'Rig|cycle_talking', walk: 'Rig|walk' } },
-    anchors: { reportSlot: [.15, .775, .25], stampPad: [-.57, .775, .3] }
+    "npcModel": {
+        "path": "stage2/cast/enrico.glb",
+        "scale": 0.36,
+        "align": "none",
+        "center": false,
+        "hitHeight": 1.74,
+        "hitWidth": 0.64,
+        "clips": {
+            "idle": "HumanArmature|Man_Idle",
+            "talk": "HumanArmature|Man_Idle",
+            "walk": "HumanArmature|Man_Walk"
+        }
+    },
+    "anchors": {
+        "reportSlot": [
+            0.12,
+            0.83,
+            0.72
+        ],
+        "stampPad": [
+            -0.7,
+            0.83,
+            0.8
+        ]
+    }
   };
 });

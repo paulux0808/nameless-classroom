@@ -14,7 +14,8 @@
       function hardware(g,x,y,z){var h=new T.Group();h.position.set(x,y,z);g.add(h);box(.04,.2,.04,brass,0,.08,0,h);box(.14,.045,.04,brass,.055,.17,0,h);box(.045,.045,.09,dark,.1,.17,.04,h);return h;}
       function lamp(pos,power){var l=new T.PointLight(0xffd69a,power,4,2);l.position.fromArray(pos);scene.add(l);return l;}
       // A spread of envelopes under the desk lamp is the first thing in view.
-      var desk=group([.12,(o.deskTop||.775)+.008,.22]);desk.userData.fixture='envelopes';
+      var anchor=o.chapter.anchors.reportSlot;
+      var desk=group([anchor[0],(o.deskTop||.775)+.008,anchor[2]]);desk.userData.fixture='envelopes';
       var papers=[];
       for(var i=0;i<4;i++){
         var p=new T.Group();p.position.set((i-1.5)*.16,i*.007,0);p.rotation.y=(i-1.5)*.08;desk.add(p);papers.push(p);
@@ -23,8 +24,8 @@
       }
       var flap=box(.22,.004,.13,paperMat,-.23,.04,-.1,desk);flap.rotation.x=-.36;
       var memo=box(.18,.005,.12,new T.MeshStandardMaterial({color:0xcfc39d}),.25,.04,.18,desk);
-      o.hotspot([.12,(o.deskTop||.775)+.15,.27],[.82,.32,.66],'docs','펼친 봉투');
-      var deskLight=lamp([.35,1.22,.28],1.45);
+      o.hotspot([anchor[0],(o.deskTop||.775)+.15,anchor[2]],[.82,.32,.66],'docs','펼친 봉투');
+      var deskLight=lamp([anchor[0]+.23,1.22,anchor[2]],1.45);
       // The cabinet has a real latch and a drawer, beside the route around the desk.
       var cabinet=group(o.chapter.roomObjects.cabinet);cabinet.userData.fixture='cabinet';
       box(.82,1,.58,metal,0,.5,0,cabinet);
@@ -36,8 +37,9 @@
       o.block(cabinet.position.x,cabinet.position.z,.42);
       // A front-facing machine lets the empty sockets read from the initial approach.
       var machine=group(o.chapter.roomObjects.bench);machine.userData.fixture='bench';
+      if(o.chapter.roomObjects.benchSupport)machine.position.y=.14;
       box(.97,.48,.65,metal,0,.92,0,machine);
-      [-.39,.39].forEach(function(x){box(.065,.72,.065,dark,x,.36,0,machine);});
+      if(!o.chapter.roomObjects.benchSupport)[-.39,.39].forEach(function(x){box(.065,.72,.065,dark,x,.36,0,machine);});
       var socket=box(.055,.13,.015,dark,.27,.99,.334,machine);
       var crank=hardware(machine,.27,.96,.35);crank.visible=false;
       var plateSocket=box(.3,.15,.015,dark,-.21,1.01,.333,machine);
@@ -51,6 +53,21 @@
       var taskLight=lamp([machine.position.x,1.6,machine.position.z+.2],.25), lightTarget=.25;
       localHit(machine,[0,.96,.34],[1.08,.72,.32],'escape:bench','시험대');
       o.block(machine.position.x,machine.position.z,.5);
+      // Chalk is applied to the actual board surface, never to a floating label.
+      if(o.board){
+        o.board.updateMatrixWorld(true);var bb=new T.Box3().setFromObject(o.board),sz=bb.getSize(new T.Vector3()),center=bb.getCenter(new T.Vector3());
+        var y=bb.max.y-sz.y*.28,ray=new T.Raycaster(new T.Vector3(center.x,y,bb.max.z+2),new T.Vector3(0,0,-1));
+        var hits=ray.intersectObject(o.board,true);
+        if(hits.length){
+          var c=document.createElement('canvas');c.width=768;c.height=384;var ctx=c.getContext('2d');
+          ctx.fillStyle='#263c32';ctx.fillRect(0,0,768,384);ctx.strokeStyle='#adb8a2';ctx.lineWidth=2;
+          ctx.fillStyle='#d8dbbf';ctx.font='22px serif';ctx.fillText('JOINT TEST ROOM',38,42);
+          var headings=['A','B','C','D'],values=['K-2 / A / 10 / 3','K-2 / B / 10 / 5','K-1 / A / 10 / 3','K-2 / B / 20 / 3'];
+          for(var n=0;n<4;n++){var cy=92+n*65;ctx.font='26px serif';ctx.fillText(headings[n],40,cy);ctx.font='22px monospace';ctx.fillText(values[n],110,cy);ctx.beginPath();ctx.moveTo(34,cy+17);ctx.lineTo(720,cy+17);ctx.stroke();}
+          var texture=new T.CanvasTexture(c);texture.encoding=T.sRGBEncoding;
+          var writing=new T.Mesh(new T.PlaneGeometry(sz.x*.78,sz.y*.43),new T.MeshStandardMaterial({map:texture,roughness:1}));writing.position.set(center.x,y,hits[0].point.z+.006);scene.add(writing);
+        }
+      }
       done();
       return {
         update:function(dt){

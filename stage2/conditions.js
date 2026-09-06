@@ -13,12 +13,12 @@
   function teamBy(ch, id) { return ch.teams.find(function (t) { return t.id === id; }); }
   function ruleFor(ch, team) { return ch.rules.find(function (r) { return r.equipment === team.equipment && r.effective <= team.date; }); }
   function judge(ch, w) {
-    if (w.cards.length !== ch.teams.length) return {ok:false,message:'책상에 아직 펼치지 않은 봉투가 있습니다.'};
-    if (!w.rule) return {ok:false,message:'현재 장비의 기준판이 없습니다. 잠긴 규정함부터 확인해 주십시오.'};
+    if (w.cards.length !== ch.teams.length) return {ok:false,kind:'papers',message:'책상에 아직 펼치지 않은 봉투가 있습니다.'};
+    if (!w.rule) return {ok:false,kind:'rule',message:'현재 장비의 기준판이 없습니다. 잠긴 규정함부터 확인해 주십시오.'};
     for (var i=0;i<ch.teams.length;i++) {
       var t=ch.teams[i], route=w.routes[t.id];
-      if (!route) return {ok:false,message:'받침대 밖에 남은 카드가 있습니다. 새 시험과 보관할 원본을 나눠 주십시오.'};
-      if (route !== (t.equipment === 'K-1' ? 'archive' : 'bench')) return {ok:false,message:'시험 흐름에 서로 다른 장비의 기록이 섞여 있습니다. 카드 뒷면의 장비 번호와 시험일을 보십시오.'};
+      if (!route) return {ok:false,kind:'loose',message:'받침대 밖에 남은 카드가 있습니다. 새 시험과 보관할 원본을 나눠 주십시오.'};
+      if (route !== (t.equipment === 'K-1' ? 'archive' : 'bench')) return {ok:false,kind:'mixed',message:'시험 흐름에 서로 다른 장비의 기록이 섞여 있습니다. 카드 뒷면의 장비 번호와 시험일을 보십시오.'};
     }
     return {ok:true};
   }

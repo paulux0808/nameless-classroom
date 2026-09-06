@@ -1,34 +1,34 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><base href="../">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#171b19">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>NAMELESS Ⅱ — CHAPTER 02</title>
+<title>NAMELESS Ⅱ — CHAPTER 01</title>
 
 <!-- ============================================================
-     챕터 파일은 껍데기다. 씬·대사·퍼즐은 chapters/ch02.js?v=cast-rooms-1 에,
+     챕터 파일은 껍데기다. 씬·대사·퍼즐은 chapters/ch01.js?v=cast-rooms-1 에,
      공용 동작은 engine.js?v=cast-rooms-1 와 logic.js?v=cast-rooms-1 에 있다.
      엔진을 고쳐야 하면 엔진을 고친다. 여기서 포크하지 않는다.
      ============================================================ -->
 <link rel="stylesheet" href="chapter.css?v=cast-rooms-1">
 </head>
-<body class="ch02">
+<body class="ch01">
 
 <canvas id="scene" tabindex="0" aria-label="연구실 — 방향키로 이동, 드래그로 둘러보기, 물건을 눌러 조사"></canvas>
-<div id="grade" aria-hidden="true"></div>
+<span style="position:fixed;bottom:4px;left:4px;z-index:90;font:10px system-ui;color:#fff;background:#0008;padding:3px;pointer-events:none">CPU 배치 점검 · 실제 씬/카메라 · GPU 재질/조명 검증 아님</span><div id="grade" aria-hidden="true"></div>
 <div id="reticle" aria-hidden="true"></div>
 <div id="label" aria-hidden="true"></div>
 
 <div id="hud">
   <div class="hud-row">
-    <div class="tag"><b id="hud-ch">CHAPTER 02</b><span id="hud-title">—</span><span class="npc" id="hud-npc"></span></div>
+    <div class="tag"><b id="hud-ch">CHAPTER 01</b><span id="hud-title">—</span><span class="npc" id="hud-npc"></span></div>
     <div class="hud-right">
       <div id="progress">
         <div id="bar"><div id="bar-fill"></div></div>
-        <span id="bar-pct">8%</span>
+        <span id="bar-pct">0%</span>
       </div>
       <button id="fs" class="icon-btn" aria-label="전체 화면" title="전체 화면 (F)">⛶</button>
     </div>
@@ -58,7 +58,7 @@
 <div id="rotate"><div><b>⟳</b>기기를 가로로 돌려주세요</div></div>
 
 <div id="loading" role="status" aria-live="polite">
-  <div class="load-chapter">CHAPTER 02</div>
+  <div class="load-chapter">CHAPTER 01</div>
   <div class="load-brand" aria-hidden="true">NAMELESS <span>Ⅱ</span></div>
   <div class="load-rule" aria-hidden="true"></div>
   <div id="load-status">연구시설을 여는 중…</div>
@@ -69,12 +69,11 @@
 <script src="../assets/vendor/GLTFLoader.js"></script>
 <script src="logic.js?v=cast-rooms-1"></script>
 <script src="reader.js?v=cast-rooms-1"></script>
-<script src="conditions.js?v=cast-rooms-1"></script>
-<script src="condition-room.js?v=cast-rooms-1"></script>
 <script src="architecture.js?v=cast-rooms-1"></script>
 <script src="dialogue.js?v=cast-rooms-1"></script>
+<script src="tests/cpu-renderer.js?v=cast-rooms-1"></script>
 <script src="engine.js?v=cast-rooms-1"></script>
-<script src="chapters/ch02.js?v=cast-rooms-1"></script>
+<script src="chapters/ch01.js?v=cast-rooms-1"></script>
 <script>
 (function(){
   function orient(){
@@ -83,8 +82,8 @@
   }
   addEventListener("resize",orient); orient();
 
-  if(window.N2Engine && window.N2Conditions && window.N2ConditionRoom && window.N2_CHAPTERS && window.N2_CHAPTERS.ch02){
-    N2Engine.boot(window.N2_CHAPTERS.ch02);
+  if(window.N2Engine && window.N2Reader && window.N2_CHAPTERS && window.N2_CHAPTERS.ch01){
+    N2Engine.boot(window.N2_CHAPTERS.ch01);
   }else{
     document.getElementById("loading").textContent="런타임을 불러오지 못했습니다.";
   }

@@ -1,5 +1,9 @@
 # NAMELESS Ⅱ — 에셋 준비 목록
 
+CH1·CH2 적용분의 출처와 라이선스는 [CREDITS.md](CREDITS.md), 게임의
+[에셋 크레딧](../stage2/credits.html)에 기록한다. `stage2/cast/`의 두 인물은
+서로 다른 원본 메시·리그이며, 새 가구 8종은 `stage2/rooms/`에서 직접 로드한다.
+
 에셋을 직접 받아서 쓴다는 전제로 정리한 문서다. 도형으로 만들지 않는다.
 공간 구성은 `stage2/spec/05_FACILITY_SPACE.md`, 소품·문서는 `04_DOCUMENT_OBJECTS.md`,
 NPC 연기는 `02_DIALOGUE_NPC.md` 가 권위다.
@@ -206,8 +210,8 @@ Base posture 후보 8종: `RELAXED_STAND` `FORMAL_STAND` `WORK_STAND` `LEAN_LIGH
 
 - **Mixamo** 는 무료 + 자동 리깅 + 애니메이션이 풍부하지만 어댑터 계정이 필요하고
   복장이 현대적이다. 옷만 교체하거나 텍스처를 시대에 맞게 바꾸는 편이 빠르다.
-- 8명을 완전히 다른 모델로 만들 필요는 없다. **체형 2~3종 × 복장·머리색 변형**이면
-  스펙이 요구하는 "이름으로 구분된다"를 충족한다.
+- 주요 인물은 다른 원본 모델을 사용한다. 같은 몸체의 색상만 바꾸는 방식으로
+  인물을 늘리지 않는다. Richard와 Enrico는 이미 다른 Quaternius 모델을 적용했다.
 - 얼굴 디테일보다 **자세와 실루엣**이 중요하다. 대사창에 이름이 뜨고,
   플레이어는 대부분 중거리에서 본다.
 
