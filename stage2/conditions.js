@@ -13,7 +13,7 @@
   function teamBy(ch, id) { return ch.teams.find(function (t) { return t.id === id; }); }
   function ruleFor(ch, team) { return ch.rules.find(function (r) { return r.equipment === team.equipment && r.effective <= team.date; }); }
   function judge(ch, w) {
-    if (w.cards.length !== ch.teams.length) return {ok:false,message:'아직 오지 않은 작업카드가 있습니다. 각 팀에서 직접 받아 주십시오.'};
+    if (w.cards.length !== ch.teams.length) return {ok:false,message:'책상에 아직 펼치지 않은 봉투가 있습니다.'};
     if (!w.rule) return {ok:false,message:'현재 장비의 기준판이 없습니다. 잠긴 규정함부터 확인해 주십시오.'};
     for (var i=0;i<ch.teams.length;i++) {
       var t=ch.teams[i], route=w.routes[t.id];
@@ -32,6 +32,9 @@
     var w=s.conditions, t=a.id && teamBy(ch,a.id), editable=['submitted','inspecting'].indexOf(s.phase)>=0;
     function no(m){return {ok:false,message:m};} function yes(m){return {ok:true,message:m};}
     switch(a.type) {
+      case 'bundle':
+        if(editable && !w.cards.length){w.cards=ch.teams.map(function(t){return t.id;});w.note=true;w.selected='a';}
+        return yes('네 팀의 봉투를 펼쳤다.');
       case 'note': w.note=true; return yes('책상 메모를 수첩에 옮겼다.');
       case 'plate': w.plate=true; return yes('명판 뒤에서 교체 날짜를 발견했다.');
       case 'flip': if(!t)return no('없는 카드입니다.'); w.flipped[t.id]=!w.flipped[t.id]; return yes('카드를 뒤집었다.');
@@ -41,7 +44,7 @@
       case 'rule': if(!w.cabinet)return no('규정함이 잠겨 있다.');w.rule=true;return yes('K-2 기준판을 챙겼다. 시험대에 꽂을 수 있다.');
       case 'crank': if(!w.cabinet)return no('규정함이 잠겨 있다.');w.crank=true;return yes('황동 손잡이를 챙겼다.');
       case 'select': if(!editable||w.cards.indexOf(a.id)<0)return no('지금은 옮길 수 없다.');w.selected=a.id;return yes(t.name+' 카드 선택. 아래 받침대에 꽂는다.');
-      case 'dock': if(!editable||!w.selected||!['bench','archive','loose'].includes(a.target))return no('먼저 옮길 카드를 고른다.');w.routes[w.selected]=a.target==='loose'?null:a.target;w.selected=null;return yes('카드를 옮겼다.');
+      case 'dock': if(!editable||!w.selected||!['bench','archive','loose'].includes(a.target))return no('먼저 옮길 카드를 고른다.');w.routes[w.selected]=a.target==='loose'?null:a.target;w.selected=ch.teams.find(function(t){return !w.routes[t.id];})?.id || null;return yes('카드를 꽂았다.');
       case 'install': if(s.phase!=='revised')return no('Enrico와 기존 기록을 반려한 뒤 시험대를 가동한다.');if(!w.crank||!w.rule)return no('기준판과 손잡이가 필요하다.');w.installed=true;return yes('기준판을 꽂고 손잡이를 축에 걸었다.');
       case 'wait': case 'repeats':
         if(s.phase!=='revised'||!w.installed)return no('시험대를 아직 조작할 수 없다.');
@@ -62,17 +65,6 @@
     if(ch.teams.some(function(t){return !ruleFor(ch,t);}))return ['적용 기준이 없는 카드입니다.'];
     return [];
   }
-  function objective(s) {
-    var w=s.conditions;
-    if(s.phase==='approved')return w.key?'출입문에 열쇠를 사용한다':'시험대에서 출입 열쇠를 꺼낸다';
-    if(s.phase==='verified')return '작업대의 승인 도장을 찍는다';
-    if(s.phase==='contradiction')return '작업대의 반려 도장을 찍는다';
-    if(s.phase==='revised')return w.installed?'시험대를 조작하고 출력지를 확인한다':'시험대에 기준판과 손잡이를 장착한다';
-    if(!w.cards.length)return '각 팀에게 작업카드를 받는다';
-    if(!w.cabinet)return '명판과 메모를 살펴 규정함을 연다';
-    if(!w.rule||!w.crank)return '열린 규정함에서 물건을 챙긴다';
-    return '작업대에서 카드를 나눠 꽂고 Enrico에게 보여준다';
-  }
   function create(o) {
     var host=o.host,ch=o.chapter,s,w,root,body,status,current='desk',message='';
     function n(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=o.safeText?o.safeText(text):text;return e;}
@@ -83,12 +75,14 @@
     function card(t,reverse){
       var c=n('div','escape-paper'+(reverse?' reverse':''));
       c.append(n('small','',reverse?'원기록 / 뒷면':'공동 검토실 / 접수 11월 12일'),n('strong','',t.name+' · '+t.role));
-      if(reverse)c.append(n('p','',t.note)); else c.append(n('p','','“'+t.quote+'”'));
+      if(reverse)c.append(n('p','',t.note)); else {
+        c.append(n('p','escape-record',t.equipment+' · S-12 '+t.rule+' · 대기 '+t.wait+'분 · '+t.repeats+'회'),n('p','escape-quote',t.brief || t.quote));
+      }
       return c;
     }
     function draw(focus) {
       if(!root){root=n('section','escape-object');host.append(root);}root.replaceChildren();
-      var titles={desk:'작업대 / 카드 받침대',plate:'시험대 / 금속 명판',cabinet:'규정함 / 숫자 걸쇠',bench:'시험대 / 수동 조절기',notebook:'수첩 / 챙긴 단서'};
+      var titles={desk:'네 팀의 봉투',plate:'장비 명판',cabinet:'규정함',bench:'시험대',notebook:'모아 둔 기록'};
       var t=current.indexOf('team:')===0?teamBy(ch,current.slice(5)):null;
       var head=n('header','escape-head');var h=n('h2','',t?t.name+' / 작업카드':titles[current]);h.id='reader-title';
       head.append(h,button('닫기 ×','close',o.onClose,'escape-close'));root.append(head);
@@ -111,41 +105,49 @@
     }
     function drawCabinet(){
       if(w.cabinet){
-        paragraph('열린 서랍 안에 기준판과 황동 손잡이가 놓여 있다.');var tray=n('div','escape-loot');
-        var rule=action(w.rule?'기준판 챙김':'K-2 기준판 챙기기','rule',{type:'rule'},'escape-loot-item');rule.disabled=w.rule;
-        var crank=action(w.crank?'손잡이 챙김':'황동 손잡이 챙기기','crank',{type:'crank'},'escape-loot-item');crank.disabled=w.crank;
+        var tray=n('div','escape-loot');
+        var rule=action(w.rule?'기준판 챙김':'기준판 꺼내기','rule',{type:'rule'},'escape-loot-item');rule.disabled=w.rule;
+        var crank=action(w.crank?'손잡이 챙김':'손잡이 꺼내기','crank',{type:'crank'},'escape-loot-item');crank.disabled=w.crank;
         tray.append(rule,crank);body.append(tray);if(w.rule)paragraph(ch.rules[1].text);return;
       }
-      paragraph('철제 서랍. 네 개의 숫자 휠 아래에 손때 묻은 걸쇠가 있다.');
+      paragraph('MM · DD','escape-lock-label');
       var wheels=n('div','escape-lock');w.wheels.forEach(function(v,i){var col=n('div','escape-wheel');col.append(action('＋','wheel-'+i,{type:'wheel',index:i,delta:1}),n('output','',String(v)),action('−','wheel-down-'+i,{type:'wheel',index:i,delta:-1}));col.querySelector('output').setAttribute('aria-label',(i+1)+'번째 숫자');col.querySelector('button').setAttribute('aria-label',(i+1)+'번째 숫자 올리기');col.querySelectorAll('button')[1].setAttribute('aria-label',(i+1)+'번째 숫자 내리기');wheels.append(col);});
       body.append(wheels,action('걸쇠 당기기','unlock',{type:'unlock'},'escape-btn primary'));
     }
     function drawDesk(){
-      var toolbar=n('div','escape-toolbar');toolbar.append(action(w.note?'메모 확인됨':'접힌 메모 펼치기','note',{type:'note'}));
-      if(w.note)toolbar.append(n('span','escape-scribble',ch.escape.note));body.append(toolbar);
-      var cards=n('div','escape-cards');ch.teams.forEach(function(t){
-        var b=action(w.cards.includes(t.id)?t.name+' '+(w.routes[t.id]==='archive'?'[보관]':w.routes[t.id]==='bench'?'[시험대]':'[받침대 밖]'):t.name+' · 미수령','card-'+t.id,{type:'select',id:t.id},'escape-card');
-        b.disabled=!w.cards.includes(t.id)||!['submitted','inspecting'].includes(s.phase);b.setAttribute('aria-pressed',String(w.selected===t.id));
-        if(w.cards.includes(t.id))b.append(n('small','',w.flipped[t.id]?t.equipment+' / '+t.date.replace('-','월 ')+'일':'뒷면 미확인'));cards.append(b);
-      });body.append(cards);
-      if(w.selected){var t=teamBy(ch,w.selected),detail=n('div','escape-selected');detail.append(card(t,w.flipped[t.id]),action('뒤집기 ↶','flip-selected',{type:'flip',id:t.id}));body.append(detail);}
-      var docks=n('div','escape-docks');[['bench','현재 시험 / K-2'],['archive','원본 보관 / K-1'],['loose','카드 빼기']].forEach(function(pair){var b=action(pair[1],'dock-'+pair[0],{type:'dock',target:pair[0]},'escape-dock');b.disabled=!w.selected;docks.append(b);});body.append(docks);
-      var tools=n('div','escape-toolbar');if(['submitted','inspecting'].includes(s.phase))tools.append(button('Enrico를 부른다','submit',o.onSubmit,'escape-btn primary'));
-      if(s.phase==='contradiction'||s.phase==='verified')tools.append(button(s.phase==='contradiction'?'반려 도장':'승인 도장','stamp',o.onStamp,'escape-btn primary'));body.append(tools);
+      var tabs=n('div','escape-cards');ch.teams.forEach(function(t){
+        var b=action(t.name,'card-'+t.id,{type:'select',id:t.id},'escape-card');
+        b.disabled=!['submitted','inspecting'].includes(s.phase);b.setAttribute('aria-pressed',String(w.selected===t.id));
+        b.append(n('small','',w.routes[t.id]==='archive'?'보관':w.routes[t.id]==='bench'?'재시험':t.role));tabs.append(b);
+      });body.append(tabs);
+      if(w.selected){
+        var t=teamBy(ch,w.selected),flip=action('','flip-selected',{type:'flip',id:t.id},'escape-turn-card');
+        flip.setAttribute('aria-label',t.name+' 작업카드 뒤집기');flip.append(card(t,w.flipped[t.id]),n('span','escape-fold','↶ 뒤집기'));body.append(flip);
+        var docks=n('div','escape-docks');[['bench','재시험에 꽂기'],['archive','원본 보관에 꽂기']].forEach(function(pair){docks.append(action(pair[1],'dock-'+pair[0],{type:'dock',target:pair[0]},'escape-dock'));});body.append(docks);
+      }
+      if(w.note)body.append(n('p','escape-scribble',ch.escape.note));
+      var tools=n('div','escape-toolbar');
+      if(['submitted','inspecting'].includes(s.phase)){
+        var request=button('Enrico에게 건넨다','submit',o.onSubmit,'escape-btn primary');
+        request.disabled=ch.teams.some(function(t){return !w.routes[t.id];});tools.append(request);
+      }
+      if(s.phase==='contradiction'||s.phase==='verified')tools.append(button(s.phase==='contradiction'?'반려 도장':'승인 도장','stamp',o.onStamp,'escape-btn primary'));
+      body.append(tools);
     }
     function drawBench(){
       if(s.phase==='approved'){paragraph('승인된 출력지 아래의 작은 서랍이 열렸다. 안에 출입 열쇠가 있다.');body.append(action(w.key?'열쇠를 챙겼다':'출입 열쇠 꺼내기','key',{type:'key'},'escape-btn primary'));return;}
       if(!w.installed){
-        var empty=n('div','escape-machine empty');empty.append(n('strong','','K–2'),n('p','','기준판 슬롯 ▱     손잡이 축 ◉'));
-        body.append(empty,button('측면 명판 살펴보기','inspect-plate',function(){current='plate';w.view='plate';draw();}));paragraph('축만 남은 시험대. 측면 명판에 경첩이 보인다. 규정함에서 맞는 부품을 찾아야 한다.');
-        body.append(action('기준판과 손잡이 장착','install',{type:'install'},'escape-btn primary'));return;
+        var empty=n('div','escape-machine empty');empty.append(n('strong','','K–2'),n('p','','비어 있는 슬롯과 손잡이 축'));
+        body.append(empty,button('K-2 · 느슨한 명판 ↶','inspect-plate',function(){current='plate';w.view='plate';draw();}));
+        if(w.crank&&w.rule){var install=action('빈 자리에 부품 끼우기','install',{type:'install'},'escape-btn primary');install.disabled=s.phase!=='revised';body.append(install);}
+        return;
       }
       var machine=n('div','escape-machine');var legend=n('div','escape-legend');legend.append(n('b','','S-12 / B'),n('span','','K-2 · 안정화 20분 이상 · 기록 5회 이상'));machine.append(legend);
       var dials=n('div','escape-dials');[['wait','안정화',w.wait+' min'],['repeats','기록 수',w.repeats+' 회']].forEach(function(v){var dial=action('↻ '+v[2],'dial-'+v[0],{type:v[0]},'escape-dial');dial.setAttribute('aria-label',v[1]+' 조절: '+v[2]);var col=n('div');col.append(n('small','',v[1]),dial);dials.append(col);});
       var crank=action('⤾ 손잡이 돌리기','run',{type:'run'},'escape-crank');crank.disabled=s.phase!=='revised';dials.append(crank);machine.append(dials);body.append(machine);
       if(w.run){var receipt=n('div','escape-output');receipt.append(n('b','','A · B · D / 재시험 출력'),n('span','','시작 09:00 → '+w.run.entries.map(function(v){return '09:'+String(v).padStart(2,'0');}).join(' · ')));
         var take=action(w.receipt?'출력지 확인됨':'출력지 떼어내기','receipt',{type:'receipt'},'escape-btn');take.disabled=w.receipt;receipt.append(take);body.append(receipt);}
-      else paragraph('손잡이를 돌리면 시험 경과가 압축되어 종이에 기록된다.','escape-fine');
+
     }
     function drawNotes(){
       var list=n('div','escape-notes');
@@ -159,5 +161,5 @@
       destroy:function(){if(root)root.remove();}
     };
   }
-  return {fresh:fresh,ruleFor:ruleFor,judge:judge,act:act,validRun:validRun,complete:complete,audit:audit,objective:objective,create:create};
+  return {fresh:fresh,ruleFor:ruleFor,judge:judge,act:act,validRun:validRun,complete:complete,audit:audit,create:create};
 });

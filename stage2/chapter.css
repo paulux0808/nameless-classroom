@@ -273,3 +273,61 @@ body.touch.portrait:not(.reader-open) #rotate{display:grid}
 @keyframes receipt-out{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
 @media(max-width:650px){.escape-body{padding:6px 8px;gap:6px}.escape-head,.escape-foot{padding:4px 8px}.escape-object{font-size:13px}.escape-paper{padding:6px 8px}.escape-cards{gap:4px}.escape-object .escape-card{font-size:12px;padding:4px}.escape-card small{font-size:10px}.escape-dials{gap:10px}.escape-notes{grid-template-columns:1fr 1fr}.escape-output{gap:5px;flex-wrap:wrap}.escape-output b{flex-basis:100%}}
 @media(max-width:420px){.escape-team{grid-template-columns:1fr}.escape-team .escape-tools{flex-direction:row}.escape-cards{grid-template-columns:repeat(2,1fr)}.escape-notes{grid-template-columns:1fr}.escape-dials{gap:6px}.escape-object .escape-crank{width:110px}.escape-object .escape-dial{width:76px}.escape-legend{flex-wrap:wrap;gap:2px}}
+/* CH02 panels dock beside the scene; there is no frosted full-screen backdrop. */
+body.ch02 #sheet{place-items:center end;padding:5px;background:rgba(8,15,11,.12);backdrop-filter:none;overflow:hidden}
+body.ch02 #sheet .sheet-card{width:min(430px,52vw);max-height:calc(100dvh - 10px);box-shadow:0 8px 26px #0006}
+body.ch02 #sheet.escape-sheet{background:transparent;backdrop-filter:none}
+body.ch02 #sheet.escape-sheet .sheet-card{height:auto;width:min(430px,52vw);max-height:calc(100dvh - 10px)}
+body.ch02.sheet-open #hud{visibility:visible;opacity:.55;pointer-events:none}
+body.ch02 #objective:empty{display:none}
+body.ch02 #hud-npc{display:none}
+body.ch02 #label{padding:3px 7px;background:rgba(16,29,21,.85);border:0;font-size:11px}
+body.ch02 #hud{padding-top:8px}
+body.ch02 .sheet-head{padding:6px 9px;gap:7px}
+body.ch02 .sheet-head h2{font-size:16px}
+body.ch02 .sheet-head .sub{margin-top:2px}
+body.ch02 .sheet-body{padding:8px}
+body.ch02 p.hint{margin:0 0 5px;font-size:13px;line-height:1.4}
+body.ch02 .stamp-btn{min-height:54px;padding:8px;margin:5px auto;font-size:21px}
+body.ch02 #dialogue{max-width:min(500px,90vw);padding:10px 14px}
+.escape-object{max-height:calc(100dvh - 12px);font-size:13px;line-height:1.35}
+.escape-head,.escape-foot{padding:3px 7px;gap:6px}
+.escape-head h2{font-size:13px;letter-spacing:0}
+.escape-body{padding:6px;gap:5px;background:#283a2e}
+.escape-object button{min-height:34px;padding:4px 7px;font-size:12px;line-height:1.25}
+.escape-object .escape-close{min-height:30px}
+.escape-status{font-size:11px;line-height:1.3}
+.escape-foot:has(.escape-status:empty){min-height:0}
+.escape-cards{gap:3px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.escape-object .escape-card{min-height:39px;padding:4px;border-width:1px;font-size:12px}
+.escape-card small{margin:1px 0 0;font-size:10px;line-height:1.1}
+.escape-paper{padding:7px 8px;box-shadow:none;border:0}
+.escape-paper strong{font-size:13px;margin:2px 0}
+.escape-paper p{font-size:12px;line-height:1.4}
+.escape-record{font-weight:700;font-variant-numeric:tabular-nums}
+.escape-paper .escape-quote{margin-top:4px;color:#5b614f;font-size:11px}
+.escape-object .escape-turn-card{position:relative;text-align:left;padding:0 0 18px;background:#e3dbc0;border:1px solid #b0a987;color:#29382d;font-weight:400}
+.escape-fold{position:absolute;right:0;bottom:0;padding:3px 7px;background:#c4ba95;color:#34432f;font-size:10px;clip-path:polygon(10px 0,100% 0,100% 100%,0 100%)}
+.escape-docks{grid-template-columns:1fr 1fr;gap:4px}
+.escape-object .escape-dock{min-height:34px;font-size:11px}
+.escape-scribble{font-size:10px;line-height:1.35;color:#d2c4a0;border-top:1px solid #51614b;padding-top:4px}
+.escape-toolbar{gap:4px}.escape-toolbar>.primary{width:100%}
+.escape-lock{gap:5px;padding:0}.escape-wheel{width:44px;gap:2px;padding:2px}.escape-wheel output{font-size:28px}.escape-object .escape-wheel button{min-height:30px}
+.escape-lock-label{font:11px ui-monospace,monospace;letter-spacing:.2em;text-align:center;color:#bfb991}
+.escape-object .escape-loot-item{min-height:54px;font-size:12px}
+.escape-plate{padding:8px;border-width:2px;width:min(270px,100%)}.escape-plate strong{font-size:34px}.escape-plate p{font-size:12px}
+.escape-machine{padding:5px 6px}.escape-machine.empty{min-height:50px}.escape-machine.empty p{font-size:11px}.escape-machine.empty strong{font-size:22px}
+.escape-legend{padding:3px 5px;gap:5px;font-size:10px;flex-wrap:wrap}
+.escape-dials{gap:7px;padding:5px 0 0}.escape-dials small{font-size:10px}
+.escape-object .escape-dial{width:66px;height:55px;border-width:3px;font-size:13px}
+.escape-object .escape-crank{min-height:48px;width:105px;padding:3px 5px;border-width:2px;font-size:11px}
+.escape-output{gap:4px;padding:4px 5px;flex-wrap:wrap}.escape-output b{font-size:10px;flex-basis:100%}.escape-output span{font-size:10px}.escape-output button{font-size:11px;min-height:30px}
+.escape-notes{grid-template-columns:1fr;gap:4px}.escape-notes>p{font-size:12px;padding:5px 7px}
+@media(max-width:650px) and (orientation:landscape){body.ch02 #sheet .sheet-card,body.ch02 #sheet.escape-sheet .sheet-card{width:53vw}.escape-body{padding:4px;gap:4px}.escape-paper{padding:5px 6px}.escape-paper p{font-size:11px}.escape-paper .escape-quote{font-size:10px}.escape-legend{font-size:9px}.escape-object .escape-dial{width:57px;height:50px;font-size:12px}.escape-object .escape-crank{width:90px}.escape-card small{font-size:9px}}
+@media(orientation:portrait){body.ch02 #sheet .sheet-card,body.ch02 #sheet.escape-sheet .sheet-card{width:min(430px,calc(100vw - 10px))}.escape-cards{grid-template-columns:repeat(4,1fr)}}
+/* Reading text stays legible; density comes from less chrome and shorter copy. */
+.escape-paper p,.escape-paper .escape-quote{font-size:13px;line-height:1.35}
+.escape-paper strong{font-size:14px}
+.escape-paper small{font-size:10px}
+.escape-body>.escape-copy{font-size:13px}
+@media(max-width:650px) and (orientation:landscape){.escape-paper p,.escape-paper .escape-quote{font-size:13px;line-height:1.3}.escape-paper strong{font-size:13px}.escape-paper .escape-record{font-size:12px}}

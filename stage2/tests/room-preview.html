@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><base href="../">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#171b19">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>NAMELESS Ⅱ — CHAPTER 02</title>
+<title>CH02 geometry composition preview</title>
 
 <!-- ============================================================
      챕터 파일은 껍데기다. 씬·대사·퍼즐은 chapters/ch02.js 에,
@@ -18,7 +18,7 @@
 <body class="ch02">
 
 <canvas id="scene" tabindex="0" aria-label="연구실 — 방향키로 이동, 드래그로 둘러보기, 물건을 눌러 조사"></canvas>
-<div id="grade" aria-hidden="true"></div>
+<span style="position:fixed;bottom:4px;left:4px;z-index:90;font:10px system-ui;color:#fff;background:#0008;padding:3px;pointer-events:none">CPU 배치 점검 · 실제 씬/카메라 · GPU 재질/조명 검증 아님</span><div id="grade" aria-hidden="true"></div>
 <div id="reticle" aria-hidden="true"></div>
 <div id="label" aria-hidden="true"></div>
 
@@ -71,6 +71,7 @@
 <script src="reader.js?v=ch02-staging-2"></script>
 <script src="conditions.js?v=ch02-staging-2"></script>
 <script src="condition-room.js?v=ch02-staging-2"></script>
+<script src="tests/cpu-renderer.js"></script>
 <script src="engine.js?v=ch02-staging-2"></script>
 <script src="chapters/ch02.js?v=ch02-staging-2"></script>
 <script>

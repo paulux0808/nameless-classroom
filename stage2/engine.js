@@ -98,8 +98,9 @@
 
     camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.05, 80);
     camera.position.set(0, EYE, 2.35);
-    yaw = Math.PI;      /* 책상(-z)을 마주본다 */
-    pitch = -0.16;      /* 책상 상판이 화면에 들어오도록 약간 내린다 */
+    if (chapter.spawn) camera.position.fromArray(chapter.spawn.pos);
+    yaw = chapter.spawn ? chapter.spawn.yaw : Math.PI;      /* 책상(-z)을 마주본다 */
+    pitch = chapter.spawn ? chapter.spawn.pitch : -0.16;      /* 책상 상판이 화면에 들어오도록 약간 내린다 */
     ray = new THREE.Raycaster();
     clock = { last: 0 };
 
@@ -756,7 +757,7 @@
   function buildDeskProps() {
     var a = chapter.anchors || {};
 
-    if (a.reportSlot) {
+    if (a.reportSlot && !isConditions()) {
       var top = deskTopY(a.reportSlot[1]);
       var g = new THREE.Group();
       /* 회차마다 한 장씩, 살짝 부채꼴로 어긋나게 겹친다 */
@@ -877,6 +878,7 @@
   }
 
   function renderConditions(view) {
+    if (!view || view === "desk") global.N2Conditions.act(chapter, S, { type: "bundle" });
     if (S.phase === L.PHASE.REJECTED) { toast("재시험 지시서를 준비하고 있습니다."); return; }
     var sheet = $("#sheet"); sheet.classList.add("bare", "escape-sheet");
     sheet.setAttribute("aria-labelledby", "reader-title");
@@ -897,6 +899,7 @@
       });
     }
     var opening = setSheetOpen(true); documentReader.render(S, view || "desk");
+    if (conditionRoom) conditionRoom.sync(S.conditions, S.phase);
     if (opening) documentReader.focus();
   }
 
@@ -1229,7 +1232,7 @@
       g = "<b>문</b>으로 나간다";
     }
     if (isConditions()) {
-      g = openingPending() ? "공동 검토실을 살펴본다" : global.N2Conditions.objective(S);
+      g = "";
     }
     $("#objective").innerHTML = g;
   }
@@ -1429,8 +1432,8 @@
   }
 
   function interact(id) {
-    if (isConditions() && (id.indexOf("escape:") === 0 || id.indexOf("team:") === 0)) {
-      renderConditions(id.indexOf("team:") === 0 ? id : id.slice(7)); return;
+    if (isConditions() && id.indexOf("escape:") === 0) {
+      renderConditions(id.slice(7)); return;
     }
     if (id === "docs") { openDocs(); return; }
     if (id === "stamp") { openStamp(); return; }
@@ -1606,9 +1609,9 @@
           $("#loading").classList.add("hidden"); refreshScrollHints(); resumeScene();
         }
         if (isConditions() && global.N2ConditionRoom) {
-          $("#load-status").textContent = "네 팀의 대표를 부르는 중…";
+          $("#load-status").textContent = "검토실을 준비하는 중…";
           conditionRoom = global.N2ConditionRoom.create({
-            chapter: chapter, scene: scene,
+            chapter: chapter, scene: scene, deskTop: deskTopY(.775),
             hotspot: function (pos, size, id, label) { var hit = hot(invisibleHit(size[0], size[1], size[2], pos), id, label); scene.add(hit); return hit; },
             block: function (x, z, radius) { BLOCKS.push({ x: x, z: z, hx: radius, hz: radius }); }
           }, ready);

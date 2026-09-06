@@ -46,12 +46,11 @@ function setup(){
 }
 test('complete escape through actual object UI: collect, unlock, route, reject, crank, approve, use key',()=>{
  const {engine,document,$,click,advance}=setup();engine._talk();advance();
- engine._openDocs();assert.equal(document.querySelectorAll('select').length,0);assert.equal(document.querySelectorAll('.stmt').length,0);click('note');click('close');
+ engine._openDocs();assert.equal(document.querySelectorAll('select').length,0);assert.equal(document.querySelectorAll('.stmt').length,0);assert.equal(engine._state().conditions.cards.length,4);assert.equal(engine._state().conditions.selected,'a');assert.equal($('#objective').textContent,'');click('close');
  engine._openObject('bench');click('inspect-plate');click('plate');click('close');
  engine._openObject('cabinet');click('unlock');assert.match($('.escape-status').textContent,/움직이지/);
  click('wheel-0');click('wheel-1');click('wheel-2');click('unlock');click('rule');click('crank');click('close');
- for(const id of ['a','b','c','d']){engine._openObject('team:'+id);click('flip');click('take');click('close');}
- engine._openDocs();for(const id of ['a','b','c','d']){click('card-'+id);click('dock-'+(id==='c'?'archive':'bench'));}
+  engine._openDocs();for(const id of ['a','b','c','d']){click('card-'+id);click('dock-'+(id==='c'?'archive':'bench'));}
  click('submit');advance();assert.equal(engine._state().phase,'contradiction');engine._openStamp();$('.stamp-btn').click();advance();assert.equal(engine._state().phase,'revised');
  engine._openObject('bench');click('install');click('run');click('receipt');assert.match($('.escape-status').textContent,/못 미친다/);assert.equal(engine._state().phase,'revised');
  click('dial-wait');click('dial-repeats');click('run');assert.equal(engine._state().phase,'revised');click('receipt');assert.equal(engine._state().phase,'verified');click('close');
