@@ -283,6 +283,9 @@ body.ch02 #objective:empty{display:none}
 body.ch02 #hud-npc{display:none}
 body.ch02 #label{padding:3px 7px;background:rgba(16,29,21,.85);border:0;font-size:11px}
 body.ch02 #hud{padding-top:8px}
+body.ch02 #hud .tag{display:flex;align-items:center;gap:9px;padding:6px 9px}
+body.ch02 #hud .tag b{font-size:10px;letter-spacing:.1em}
+body.ch02 #hud .tag #hud-title{margin:0;font-size:14px;line-height:1.25}
 body.ch02 .sheet-head{padding:6px 9px;gap:7px}
 body.ch02 .sheet-head h2{font-size:16px}
 body.ch02 .sheet-head .sub{margin-top:2px}

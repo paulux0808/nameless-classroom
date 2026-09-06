@@ -53,7 +53,7 @@
     room: { W: 5.8, D: 6.2, H: 2.9 },
     spawn: { pos: [0, 1.62, 1.95], yaw: Math.PI, pitch: -0.34 },
     door: { pos: [-0.65, 0, -3.1], width: 1.1, height: 2.15 },
-    npcPath: { doorway: [-.65, 0, -2.7], stand: [-1.25, 0, -.55], aside: [-1.8, 0, -.7] },
+    npcPath: { doorway: [-.65, 0, -2.7], stand: [-1.75, 0, -.45], aside: [-2.1, 0, -.7] },
     roomObjects: { bench: [1.65, 0, -1.35], cabinet: [-1.8, 0, -1.65] },
     models: [
       { id: 'desk', path: 'metal_office_desk/metal_office_desk.gltf', pos: [0, 0, .2], rot: [0, Math.PI, 0], fitHeight: .76, solid: true },
