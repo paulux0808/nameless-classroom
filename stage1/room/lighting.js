@@ -85,7 +85,7 @@
     scene.background = K.srgb(0x0d0f14);
     scene.fog = new T.FogExp2(K.srgb(0x2c2419), 0.022);
 
-    L.hemi = new T.HemisphereLight(K.srgb(0xb3c6e4), K.srgb(0x4f3a28), 0.24);
+    L.hemi = new T.HemisphereLight(K.srgb(0xb3c6e4), K.srgb(0x4f3a28), 0.28);
     L.ambient = new T.AmbientLight(K.srgb(0x9fa8bf), 0.05);
     L.sun = new T.DirectionalLight(K.srgb(0xffd6a0), 2.15);
     L.sun.position.set(-13, 8.6, 6.2);
@@ -98,7 +98,7 @@
     L.bounce = new T.PointLight(K.srgb(0xffc48a), 0.7, 7.5, 2);
     L.bounce.position.set(-2.2, 0.55, 0.1);
     /* 그늘 쪽을 살짝 채우는 서늘한 빛 */
-    L.fill = new T.PointLight(K.srgb(0xa9bde0), 0.5, 11, 2);
+    L.fill = new T.PointLight(K.srgb(0xa9bde0), 0.8, 11, 2);
     L.fill.position.set(2.8, 2.3, 0.4);
     /* 컴퓨터 화면 빛 (밤 모드에서 강해진다) */
     L.screen = new T.PointLight(K.srgb(0x6ad2bd), 0.55, 3.6, 2);
@@ -145,19 +145,23 @@
       L.sun.intensity = 2.15 - 0.7 * k;
       L.sun.position.set(-13, 8.6 - 4.4 * k, 6.2 - 4.0 * k);
       L.dir.copy(L.sun.target.position).sub(L.sun.position).normalize();
-      L.hemi.intensity = 0.24 - 0.05 * k;
+      L.hemi.intensity = 0.28 - 0.05 * k;
     };
     /* 8장: 커튼을 닫으면 방이 어두워진다 */
+    L.baseExposure = renderer.toneMappingExposure || 1; L.baseEnv = 0.8;
+    var NIGHT_SKY = new T.Color(0.06, 0.085, 0.14), DAY_SKY = new T.Color(1.9, 1.85, 1.75), FOG_DAY = K.srgb(0x2c2419), FOG_NIGHT = K.srgb(0x0a0d14);
     L.setDark = function (d) {   /* d: 0..1 */
       L.sun.intensity = (2.15 - 0.7 * L.progress) * (1 - d) + 0.03 * d;
-      L.hemi.intensity = (0.24 - 0.05 * L.progress) * (1 - d) + 0.03 * d;
+      L.hemi.intensity = (0.28 - 0.05 * L.progress) * (1 - d) + 0.03 * d;
       L.bounce.intensity = 0.7 * (1 - d);
-      L.fill.intensity = 0.5 * (1 - d) + 0.06 * d;
-      L.screen.intensity = 0.55 + 1.4 * d; L.screen.distance = 3.6 + 3.5 * d;
+      L.fill.intensity = 0.8 * (1 - d) + 0.06 * d;
+      L.screen.intensity = 0.55 + 0.8 * d; L.screen.distance = 3.6 + 2.2 * d;
       L.shafts.forEach(function (s) { s.visible = d < 0.5; });
       L.dust.material.opacity = 0.55 * (1 - d) + 0.1 * d;
-      K.setEnvIntensity(scene, 1 - 0.85 * d);
-      renderer.toneMappingExposure = 1.0 * (1 - d) + 1.25 * d;
+      K.setEnvIntensity(scene, L.baseEnv * (1 - 0.85 * d));
+      renderer.toneMappingExposure = L.baseExposure * (1 + 0.3 * d);
+      L.sky.material.color.copy(DAY_SKY).lerp(NIGHT_SKY, d);
+      scene.fog.color.copy(FOG_DAY).lerp(FOG_NIGHT, d);
     };
     return L;
   };

@@ -103,41 +103,51 @@
   /* 로컬(벽 기준) → 월드 변환을 위해 벽 하나의 세계 행렬을 돌려준다 */
   R.wallMatrix = function (name) { return K.xf(wallXf(name)); };
 
-  /* ── 마루: 긴 판이 앞뒤(z)로 흐르고 이음매가 어긋난다. 판마다 색·결이 다르다. ── */
-  function buildFloor(M) {
-    var rng = K.rng(20260929), BW = 0.096, gap = 0.0016, ch = 0.0017, su = 1 / 1.3, sv = 1 / 0.22;
-    var pos = [], nor = [], uv = [], col = [], idx = [], vi = 0;
-    var x0 = -W / 2 - 0.02, z0 = -D / 2 - 0.02, z1 = D / 2 + 0.02;
-    var Zs = z0;
-    function quad(a, b, c, d, n, tint, dark, offU, offV, bz0) {
-      /* a,b,c,d: [x,y,z] 반시계(위에서 볼 때), n: 법선 */
-      [a, b, c, d].forEach(function (p, k) {
-        pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]);
-        uv.push((p[2] - bz0) * su + offU, (p[0] - a[0]) * sv + offV + (k === 1 || k === 2 ? 0 : 0));
+  /* ── 마루판: 긴 판이 한 방향으로 흐르고 이음매가 어긋난다. 판마다 색·결이 다르다.
+     o: {x0,x1,z0,z1, y(윗면 높이), dir:"z"(앞뒤로 흐름)|"x"(좌우로 흐름), seed, BW(판 폭), uv2:[x0,z0,w,d](aoMap 좌표계), tone}
+     방 전체 마루와 교단 윗면이 같은 재질·같은 규칙을 쓴다. ── */
+  function buildPlanks(M, o) {
+    var rng = K.rng(o.seed || 20260929), BW = o.BW || 0.096, gap = 0.0016, ch = 0.0017, su = 1 / 1.3, sv = 1 / 0.22, along = o.dir !== "x";
+    var pos = [], nor = [], uv = [], col = [], idx = [], vi = 0, Y = o.y || 0;
+    /* 판의 '가로지르는 축(a)'과 '흐르는 축(l)'을 월드 x,z 로 옮긴다 */
+    var a0 = (along ? o.x0 : o.z0), a1 = (along ? o.x1 : o.z1), l0 = (along ? o.z0 : o.x0), l1 = (along ? o.z1 : o.x1);
+    function W3(a, y, l) { return along ? [a, y, l] : [l, y, a]; }
+    function quad(A, B, C, Dd, n, tint, dark, offU, offV, lref, aref) {
+      var p = [A, B, C, Dd].map(function (q) { return W3(q[0], q[1] + Y, q[2]); }), nn = along ? n : [n[2], n[1], n[0]];
+      /* 축을 바꾸면 감기는 방향이 뒤집힌다: 법선과 맞지 않으면 순서를 뒤집는다 */
+      var ux = p[1][0] - p[0][0], uy = p[1][1] - p[0][1], uz = p[1][2] - p[0][2], vx = p[2][0] - p[0][0], vy = p[2][1] - p[0][1], vz = p[2][2] - p[0][2];
+      var cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+      var order = (cx * nn[0] + cy * nn[1] + cz * nn[2] >= 0) ? [0, 1, 2, 3] : [0, 3, 2, 1];
+      order.forEach(function (k) {
+        var q = [A, B, C, Dd][k], w = p[k];
+        pos.push(w[0], w[1], w[2]); nor.push(nn[0], nn[1], nn[2]);
+        uv.push((q[2] - lref) * su + offU, (q[0] - aref) * sv + offV);
         var dk = dark && (k === 0 || k === 1) ? 0.32 : 1;   /* 바깥쪽(아래) 정점은 홈 그늘 */
         col.push(tint[0] * dk, tint[1] * dk, tint[2] * dk);
       });
       idx.push(vi, vi + 1, vi + 2, vi, vi + 2, vi + 3); vi += 4;
     }
-    for (var x = x0; x < W / 2 + 0.03; x += BW) {
-      var stagger = rng.range(0, 1.6), z = z0 - stagger;
-      while (z < z1) {
-        var len = rng.range(0.9, 1.9), za = Math.max(z, z0), zb = Math.min(z + len, z1);
-        if (zb - za > 0.05) {
-          var tone = rng.range(0.86, 1.08), warm = rng.range(-0.05, 0.05);
+    var tone0 = o.tone || 1;
+    for (var a = a0; a < a1 + 0.03; a += BW) {
+      var stagger = rng.range(0, 1.6), l = l0 - stagger;
+      while (l < l1) {
+        var len = rng.range(0.9, 1.9), la = Math.max(l, l0), lb = Math.min(l + len, l1);
+        if (lb - la > 0.05) {
+          var tone = rng.range(0.86, 1.08) * tone0, warm = rng.range(-0.05, 0.05);
           var tint = [tone * (1 + warm), tone, tone * (1 - warm * 1.4)];
           var offU = rng.next(), offV = rng.next();
-          var ax0 = x + gap / 2, ax1 = x + BW - gap / 2, az0 = za + gap / 2, az1 = zb - gap / 2;
+          var ax0 = a + gap / 2, ax1 = a + BW - gap / 2, az0 = la + gap / 2, az1 = lb - gap / 2;
+          if (o.clamp) { ax1 = Math.min(ax1, a1); if (ax1 - ax0 < 0.02) { l += len; continue; } }   /* 교단처럼 끝이 보이는 곳은 가장자리에서 자른다 */
           var ix0 = ax0 + ch, ix1 = ax1 - ch, iz0 = az0 + ch, iz1 = az1 - ch, y = ch;
-          /* 위 면 */
-          quad([ix0, y, iz1], [ix1, y, iz1], [ix1, y, iz0], [ix0, y, iz0], [0, 1, 0], tint, false, offU, offV, za);
+          /* 위 면 (좌표는 (a,y,l) 로컬 — quad 가 월드로 옮긴다) */
+          quad([ix0, y, iz1], [ix1, y, iz1], [ix1, y, iz0], [ix0, y, iz0], [0, 1, 0], tint, false, offU, offV, la, ax0);
           /* 모따기 4면: 바깥(아래)에서 안쪽(위)으로 */
-          quad([ax0, 0, az1], [ax1, 0, az1], [ix1, y, iz1], [ix0, y, iz1], [0, 0.7, 0.7], tint, true, offU, offV, za);
-          quad([ax1, 0, az0], [ax0, 0, az0], [ix0, y, iz0], [ix1, y, iz0], [0, 0.7, -0.7], tint, true, offU, offV, za);
-          quad([ax0, 0, az0], [ax0, 0, az1], [ix0, y, iz1], [ix0, y, iz0], [-0.7, 0.7, 0], tint, true, offU, offV, za);
-          quad([ax1, 0, az1], [ax1, 0, az0], [ix1, y, iz0], [ix1, y, iz1], [0.7, 0.7, 0], tint, true, offU, offV, za);
+          quad([ax0, 0, az1], [ax1, 0, az1], [ix1, y, iz1], [ix0, y, iz1], [0, 0.7, 0.7], tint, true, offU, offV, la, ax0);
+          quad([ax1, 0, az0], [ax0, 0, az0], [ix0, y, iz0], [ix1, y, iz0], [0, 0.7, -0.7], tint, true, offU, offV, la, ax0);
+          quad([ax0, 0, az0], [ax0, 0, az1], [ix0, y, iz1], [ix0, y, iz0], [-0.7, 0.7, 0], tint, true, offU, offV, la, ax0);
+          quad([ax1, 0, az1], [ax1, 0, az0], [ix1, y, iz0], [ix1, y, iz1], [0.7, 0.7, 0], tint, true, offU, offV, la, ax0);
         }
-        z += len;
+        l += len;
       }
     }
     var g = new T.BufferGeometry();
@@ -147,14 +157,20 @@
     var c = new T.Color(), lin = new Float32Array(col.length);
     for (var i = 0; i < col.length; i += 3) { c.setRGB(col[i], col[i + 1], col[i + 2]).convertSRGBToLinear(); lin[i] = c.r; lin[i + 1] = c.g; lin[i + 2] = c.b; }
     g.setAttribute("color", new T.BufferAttribute(lin, 3));
-    /* 바닥 전체 좌표로 uv2 (aoMap 용): 방 전체에 한 장 */
-    var uv2 = new Float32Array(pos.length / 3 * 2);
-    for (var k = 0; k < pos.length / 3; k++) { uv2[k * 2] = (pos[k * 3] + W / 2) / W; uv2[k * 2 + 1] = 1 - (pos[k * 3 + 2] + D / 2) / D; }
+    /* aoMap 용 uv2: 좌표계 전체에 한 장 */
+    var box = o.uv2 || [-W / 2, -D / 2, W, D], uv2 = new Float32Array(pos.length / 3 * 2);
+    for (var k = 0; k < pos.length / 3; k++) { uv2[k * 2] = (pos[k * 3] - box[0]) / box[2]; uv2[k * 2 + 1] = 1 - (pos[k * 3 + 2] - box[1]) / box[3]; }
     g.setAttribute("uv2", new T.BufferAttribute(uv2, 2));
     g.setIndex(new T.BufferAttribute(vi > 65535 ? new Uint32Array(idx) : new Uint16Array(idx), 1));
     g.computeBoundingSphere();
-    var mesh = new T.Mesh(g, M.floor);
-    mesh.receiveShadow = true; mesh.castShadow = false; mesh.name = "floorBoards";
+    var mesh = new T.Mesh(g, o.mat || M.floor);
+    mesh.receiveShadow = true; mesh.castShadow = false; mesh.name = o.name || "planks";
+    return mesh;
+  }
+  R.planks = function (o) { return buildPlanks(R._mats, o); };
+
+  function buildFloor(M) {
+    var mesh = buildPlanks(M, { x0: -W / 2 - 0.02, x1: W / 2 + 0.01, z0: -D / 2 - 0.02, z1: D / 2 + 0.02, y: 0, dir: "z", seed: 20260929, name: "floorBoards" });
     var under = new T.Mesh(new T.PlaneGeometry(W + 0.2, D + 0.2), M.under);
     under.rotation.x = -PI / 2; under.position.y = -0.0004; under.receiveShadow = true; under.name = "floorUnder";
     var grp = new T.Group(); grp.add(under); grp.add(mesh);
@@ -181,7 +197,7 @@
   }
 
   R.buildShell = function (scene) {
-    var M = mats(), out = { group: new T.Group(), anchors: {}, mats: M };
+    var M = mats(), out = { group: new T.Group(), anchors: {}, mats: M }; R._mats = M;
     out.group.name = "shell";
     var allHoles = { back: [], front: [], left: [], right: [] };
     R.WINDOWS.forEach(function (w) { allHoles.left.push({ s0: w.z - w.w / 2, s1: w.z + w.w / 2, y0: w.y0, y1: w.y1 }); });
@@ -199,7 +215,7 @@
     out.group.add(buildFloor(M));
     /* 천장: 텍스 + T-바 + 형광등 */
     var ceil = new T.Mesh(new T.PlaneGeometry(W + 0.5, D + 0.5), M.tile);
-    ceil.rotation.x = PI / 2; ceil.position.y = H; ceil.receiveShadow = true; ceil.name = "ceilingTiles";
+    ceil.rotation.x = PI / 2; ceil.position.y = H; ceil.receiveShadow = true; ceil.castShadow = true; ceil.name = "ceilingTiles";   /* 천장이 빛을 막아야 햇빛이 창으로만 든다 */
     out.group.add(ceil);
     var b = K.builder(), cy = H - 0.012;
     for (var x = -W / 2; x <= W / 2 + 0.001; x += 0.6) b.rbox(0.024, 0.018, D + 0.1, 0.004, M.tbar, { p: [x, cy, 0] });

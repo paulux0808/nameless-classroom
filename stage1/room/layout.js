@@ -22,11 +22,14 @@
       (parent || g).add(m); L.hotspots.push(m); return m;
     }
 
-    /* ── 교단(앞쪽 단) ── */
+    /* ── 교단(앞쪽 단): 어두운 몸체 위에 마루판을 좌우로 깐다 ── */
     var pb = K.builder(), trim = P.wood("plat", 0x6a4326, 0.5, "coarse");
-    pb.rbox(D.W, PLAT, D.PLAT_D, 0.006, K.mat("plat.top", function () { var t = K.tex.grain("coarse"); return K.std(0x8a5e38, 0.5, 0, { map: t.map, bump: t.bump, bumpScale: 0.001, vc: true }); }), { p: [0, PLAT / 2 - 0.0005, -D.D / 2 + D.PLAT_D / 2], uv: 1.2 });
+    var zc = -D.D / 2 + D.PLAT_D / 2;
+    pb.rbox(D.W, PLAT - 0.004, D.PLAT_D, 0.004, P.wood("platBody", 0x4a2f1a, 0.55, "fine"), { p: [0, (PLAT - 0.004) / 2, zc], uv: 1.2 });
     pb.rbox(D.W, 0.045, 0.03, 0.01, trim, { p: [0, PLAT - 0.022, -D.D / 2 + D.PLAT_D + 0.004], uv: 1.2 });
     g.add(pb.build({ name: "platform" }));
+    var top = R.planks({ x0: -D.W / 2, x1: D.W / 2, z0: -D.D / 2, z1: -D.D / 2 + D.PLAT_D, y: PLAT - 0.0017, dir: "x", seed: 4417, BW: 0.11, tone: 1.1, clamp: true, name: "platformTop" });
+    g.add(top);
     var deskZ = -2.9;
 
     /* ── 칠판 ── */
@@ -53,7 +56,7 @@
     var pcup = P.pencilCup(); place(pcup, 0.42, TOP, deskZ + 0.13); L.obj.pencilCup = pcup;
     var deskBook = P.plainBook(0x6a2b2b, 0.22, 0.03, 0.16); place(deskBook, -0.2, TOP + 0.015, deskZ + 0.12, 0.3); L.obj.deskBook = deskBook;
     /* 리빌 1: 달력 아래 편지 자리 — 교탁 상판 위 */
-    L.anchors[1] = { p: [0.62, TOP + 0.0035, deskZ - 0.06], r: [0, 0, 0] };
+    L.anchors[1] = { p: [0.62, TOP + 0.0035, deskZ - 0.06], n: [0, 1, 0], up: [0, 0, -1], roll: -0.05 };
     hot("calendar", "탁상달력", 0.2, 0.18, 0.14, 0.62, TOP + 0.09, deskZ - 0.06);
 
     /* ── 교사 + 안락의자 (앞 오른쪽 모서리) ── */
@@ -63,7 +66,9 @@
     L.hotTeacher = hot("teacher", "감독교사", 0.75, 1.4, 0.8, 3.1, PLAT + 0.7, -3.35);
     L.hotTeacher.userData.follow = teacher;
     /* 리빌 4: 교사 뒤 벽 (의자 등받이 위) */
-    L.anchors[4] = { p: [3.1, 1.36, -3.985], r: [0, 0, 0] };
+    L.anchors[4] = { p: [3.1, 1.36, -3.988], n: [0, 0, 1], up: [0, 1, 0], roll: 0.04 };
+    /* 리빌 6: 시계 뒤 벽 */
+    L.anchors[6] = { p: [0, 2.72, -3.992], n: [0, 0, 1], up: [0, 1, 0], roll: -0.03 };
 
     /* ── 쓰레기통 ── */
     var bin = P.trashCan(); place(bin, 1.6, PLAT, -3.5); L.obj.bin = bin;
@@ -84,23 +89,23 @@
     g.add(place(P.plainBook(0x7a4a3a, 0.26, 0.035, 0.19), -2.3, DTOP + 0.0175, -0.5, 0.14));
     g.add(place(P.plainBook(0x46704f, 0.26, 0.035, 0.19), 2.3, DTOP + 0.0175, -0.5, -0.1));
     /* 첫 일기: 둘째 줄 가운데 책상 */
-    var diary = P.diaryPaper(); place(diary, 0, DTOP + 0.004, 1.35, 0.16); L.obj.diary1 = diary;
-    hot("diary1obj", "일기", 0.34, 0.14, 0.3, 0, DTOP + 0.05, 1.35, 0.16);
+    var diary = P.diaryPaper(); place(diary, -0.1, DTOP + 0.004, 1.37, 0.16); L.obj.diary1 = diary;
+    hot("diary1obj", "일기", 0.34, 0.14, 0.3, -0.1, DTOP + 0.05, 1.37, 0.16);
     /* 리빌 7: 수학책 (같은 책상) + 아래 편지 */
-    var math = P.mathBook(); place(math, 0.22, DTOP + 0.0175, 1.35, 0.18); L.obj.math = math;
-    hot("mathbook", "책", 0.34, 0.14, 0.26, 0.22, DTOP + 0.06, 1.35, 0.18);
-    L.anchors[7] = { p: [0.22, DTOP + 0.0035, 1.35], r: [0, 0.18, 0] };
+    var math = P.mathBook(); place(math, 0.16, DTOP + 0.0175, 1.35, 0.18); L.obj.math = math;
+    hot("mathbook", "책", 0.34, 0.14, 0.26, 0.16, DTOP + 0.06, 1.35, 0.18);
+    L.anchors[7] = { p: [0.16, DTOP + 0.0035, 1.35], n: [0, 1, 0], up: [0, 0, -1], roll: 0.18 };
     /* 리빌 3: 둘째 줄 왼쪽 책상 밑면의 포스트잇 + 편지(밑면) */
     var post = P.stickyNote(); post.position.set(-2.3, DTOP - 0.03 - 0.0012, 1.35); post.rotation.x = PI; post.rotation.y = 0.15; g.add(post); L.obj.postit = post;
     hot("postit", "쪽지", 0.24, 0.1, 0.2, -2.3, DTOP - 0.045, 1.35);
-    L.anchors[3] = { p: [-2.3, DTOP - 0.03 - 0.0017, 1.35], r: [PI, 0, 0], under: true };
+    L.anchors[3] = { p: [-2.3, DTOP - 0.03 - 0.0017, 1.35], n: [0, -1, 0], up: [0, 0, 1], roll: 0.12, under: true };
 
     /* ── 뒤 벽: 사물함 + 위 물건들 + 게시판 ── */
     var cab = P.cabinet(); place(cab, -2.6, 0, 3.74, PI); L.obj.cabinet = cab;
     var CT = cab.userData.topY;
     var doll = P.teddy(); place(doll, -2.6, CT, 3.68, PI + 0.25); L.obj.doll = doll;
     hot("doll", "인형", 0.42, 0.44, 0.34, -2.6, CT + 0.22, 3.68);
-    L.anchors[2] = { p: [-2.6, CT + 0.0035, 3.68], r: [0, 0, 0] };
+    L.anchors[2] = { p: [-2.6, CT + 0.0035, 3.68], n: [0, 1, 0], up: [0, 0, 1], roll: 0.1 };
     var plant = P.plant(); place(plant, -1.55, CT, 3.7); L.obj.plant = plant;
     hot("decoy:plant", "화분", 0.34, 0.5, 0.34, -1.55, CT + 0.25, 3.7);
     var enc = new T.Group(); var eb = K.builder();
@@ -118,7 +123,7 @@
     /* 뒤 벽 오른쪽: 소화기 + 우산꽂이 + 청소도구는 왼쪽 구석 */
     var ext = P.extinguisher(); place(ext, 4.45, 0.02, 3.72, PI); L.obj.extinguisher = ext;
     L.hotExt = hot("extinguisher", "소화기", 0.32, 0.7, 0.32, 4.45, 0.4, 3.66); L.hotExt.userData.follow = ext;
-    L.anchors[5] = { p: [4.45, 0.66, 3.995], r: [0, PI, 0] };
+    L.anchors[5] = { p: [4.45, 0.66, 3.992], n: [0, 0, -1], up: [0, 1, 0], roll: -0.05 };
     var umb = P.umbrellaStand(); place(umb, 4.15, 0, 3.55); L.obj.umbrella = umb;
     hot("decoy:umb", "우산꽂이", 0.3, 1.0, 0.3, 4.15, 0.5, 3.55);
     var clean = P.cleaningSet(); place(clean, -4.5, 0, 3.55, PI * 0.5); L.obj.cleaning = clean;
@@ -165,9 +170,12 @@
     var rad = P.radiator(); place(rad, -D.W / 2 + 0.09, 0, 0.85, PI / 2); L.obj.radiator = rad;
     hot("decoy:radiator", "라디에이터", 0.24, 0.8, 1.05, -D.W / 2 + 0.12, 0.42, 0.85);
     /* 8장 편지: 커튼 위 (표면 위 한 점) */
-    L.anchors[8] = { curtain: 3, u: 0.5, v: 0.32 };
+    L.anchors[8] = { curtain: 3, u: 0.5, v: 0.32, n: [1, 0, 0], up: [0, 1, 0], roll: 0.03 };
 
-    L.hotspots.forEach(function (h) { h.matrixAutoUpdate = true; });
+    L.hotById = {};
+    L.hotspots.forEach(function (h) { h.matrixAutoUpdate = true; if (!L.hotById[h.userData.hot.id]) L.hotById[h.userData.hot.id] = h; });
+    L.arrowSpot = [-0.1, DTOP + 0.34, 1.37];   /* 첫 일기 위 안내 화살표 */
+    L.board = { x: 0, y: 1.6, z: -3.95, w: 5.36, h: 1.52 };
     return L;
   };
 })(window);

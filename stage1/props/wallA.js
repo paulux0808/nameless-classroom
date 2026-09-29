@@ -24,9 +24,9 @@
     var SW = 2048, SH = 580;
     var res = X.chalkboard({ w: SW, h: SH, seed: 31 });
     var layer = chalkLayer(SW, SH, [
-      { t: "이 교실을 그대로 두어라.", x: 150, y: 210, font: "600 92px 'Batang','Gowun Batang','Noto Serif KR',serif" },
-      { t: "내가 누구였는지 알아내는 사람에게", x: 150, y: 330, font: "500 62px 'Batang','Gowun Batang','Noto Serif KR',serif", color: "#eef2ea" },
-      { t: "내 이름으로 만든 장학금 전부를 주겠다.", x: 150, y: 430, font: "500 62px 'Batang','Gowun Batang','Noto Serif KR',serif", color: "#eef2ea" }
+      { t: "이 교실을 그대로 두어라.", x: 150, y: 190, font: "600 92px 'Batang','Gowun Batang','Noto Serif KR',serif" },
+      { t: "내가 누구였는지 알아내는 사람에게", x: 150, y: 290, font: "500 62px 'Batang','Gowun Batang','Noto Serif KR',serif", color: "#eef2ea" },
+      { t: "내 이름으로 만든 장학금 전부를 주겠다.", x: 150, y: 372, font: "500 62px 'Batang','Gowun Batang','Noto Serif KR',serif", color: "#eef2ea" }
     ], 5);
     res.canvas.getContext("2d").drawImage(layer, 0, 0);
     res.map.needsUpdate = true;
