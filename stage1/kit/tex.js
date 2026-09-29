@@ -128,8 +128,8 @@
     var g = res.canvas.getContext("2d"), gb = res.bumpCanvas.getContext("2d");
     holes.forEach(function (hq) {
       var x = hq[0] * S, y = hq[1] * S, r = hq[2] * S;
-      g.fillStyle = "rgba(90,82,68," + (0.16 * hq[3]) + ")"; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
-      gb.fillStyle = "rgba(0,0,0," + (0.7 * hq[3]) + ")"; gb.beginPath(); gb.arc(x, y, r, 0, 6.283); gb.fill();
+      g.fillStyle = "rgba(100,92,78," + (0.09 * hq[3]) + ")"; g.beginPath(); g.arc(x, y, r, 0, 6.283); g.fill();
+      gb.fillStyle = "rgba(0,0,0," + (0.45 * hq[3]) + ")"; gb.beginPath(); gb.arc(x, y, r, 0, 6.283); gb.fill();
     });
     res.map.needsUpdate = true; res.bump.needsUpdate = true;
     return res;

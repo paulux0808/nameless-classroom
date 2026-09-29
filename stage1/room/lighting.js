@@ -85,17 +85,17 @@
     scene.background = K.srgb(0x0d0f14);
     scene.fog = new T.FogExp2(K.srgb(0x2c2419), 0.022);
 
-    L.hemi = new T.HemisphereLight(K.srgb(0xb9cfee), K.srgb(0x5b442f), 0.34);
+    L.hemi = new T.HemisphereLight(K.srgb(0xb3c6e4), K.srgb(0x4f3a28), 0.24);
     L.ambient = new T.AmbientLight(K.srgb(0x9fa8bf), 0.05);
-    L.sun = new T.DirectionalLight(K.srgb(0xffdcae), 2.9);
-    L.sun.position.set(-14, 9.2, 2.6);
+    L.sun = new T.DirectionalLight(K.srgb(0xffd6a0), 2.15);
+    L.sun.position.set(-13, 8.6, 6.2);
     L.sun.target.position.set(0.5, 0.4, 0.2);
     L.sun.castShadow = o.shadows !== false;
     var ss = o.shadowSize || 2048;
     L.sun.shadow.mapSize.set(ss, ss); L.sun.shadow.bias = -0.0005; L.sun.shadow.normalBias = 0.035; L.sun.shadow.radius = 2.4;
     var sc = L.sun.shadow.camera; sc.left = -8.2; sc.right = 8.2; sc.top = 6.2; sc.bottom = -6.2; sc.near = 4; sc.far = 34; sc.updateProjectionMatrix();
     /* 햇빛이 닿은 바닥에서 되튀는 따뜻한 빛 (라디오시티 흉내) */
-    L.bounce = new T.PointLight(K.srgb(0xffc98a), 0.9, 7.5, 2);
+    L.bounce = new T.PointLight(K.srgb(0xffc48a), 0.7, 7.5, 2);
     L.bounce.position.set(-2.2, 0.55, 0.1);
     /* 그늘 쪽을 살짝 채우는 서늘한 빛 */
     L.fill = new T.PointLight(K.srgb(0xa9bde0), 0.5, 11, 2);
@@ -112,7 +112,7 @@
 
     /* 빛줄기 + 먼지 */
     L.dir = new T.Vector3().copy(L.sun.target.position).sub(L.sun.position).normalize();
-    L.shafts = R.WINDOWS.map(function (w) { var s = shaft(w, L.dir, new T.Color(0.030, 0.026, 0.017)); L.group.add(s); return s; });
+    L.shafts = R.WINDOWS.map(function (w) { var s = shaft(w, L.dir, new T.Color(0.024, 0.020, 0.013)); L.group.add(s); return s; });
     var N = o.dust || 220, dp = new Float32Array(N * 3), dseed = K.rng(5), dvel = new Float32Array(N * 3);
     for (var i = 0; i < N; i++) {
       var w = R.WINDOWS[i % 4], t = dseed.next() * 0.9 + 0.05;
@@ -142,16 +142,16 @@
     L.setProgress = function (k) {
       L.progress = k = K.clamp(k, 0, 1);
       L.sun.color.copy(SUN0).lerp(SUN1, k);
-      L.sun.intensity = 2.9 - 0.9 * k;
-      L.sun.position.set(-14, 9.2 - 4.6 * k, 2.6 - 3.5 * k);
+      L.sun.intensity = 2.15 - 0.7 * k;
+      L.sun.position.set(-13, 8.6 - 4.4 * k, 6.2 - 4.0 * k);
       L.dir.copy(L.sun.target.position).sub(L.sun.position).normalize();
-      L.hemi.intensity = 0.34 - 0.06 * k;
+      L.hemi.intensity = 0.24 - 0.05 * k;
     };
     /* 8장: 커튼을 닫으면 방이 어두워진다 */
     L.setDark = function (d) {   /* d: 0..1 */
-      L.sun.intensity = (2.9 - 0.9 * L.progress) * (1 - d) + 0.03 * d;
-      L.hemi.intensity = (0.34 - 0.06 * L.progress) * (1 - d) + 0.03 * d;
-      L.bounce.intensity = 0.9 * (1 - d);
+      L.sun.intensity = (2.15 - 0.7 * L.progress) * (1 - d) + 0.03 * d;
+      L.hemi.intensity = (0.24 - 0.05 * L.progress) * (1 - d) + 0.03 * d;
+      L.bounce.intensity = 0.7 * (1 - d);
       L.fill.intensity = 0.5 * (1 - d) + 0.06 * d;
       L.screen.intensity = 0.55 + 1.4 * d; L.screen.distance = 3.6 + 3.5 * d;
       L.shafts.forEach(function (s) { s.visible = d < 0.5; });

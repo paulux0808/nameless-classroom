@@ -31,15 +31,12 @@
   light.setProgress(+q.get("progress") || 0);
   if (+q.get("dark")) light.setDark(+q.get("dark"));
 
-  /* 학생 책걸상 6세트 */
-  var rng = K.rng(99), sets = 0;
-  [-0.5, 1.35].forEach(function (z) {
-    [-2.3, 0, 2.3].forEach(function (x) {
-      var d = P.schoolDesk(); d.position.set(x, 0, z); scene.add(d);
-      var c = P.schoolChair(); c.position.set(x + rng.range(-0.03, 0.03), 0, z + 0.4 + rng.range(-0.04, 0.05)); c.rotation.y = rng.range(-0.08, 0.08); scene.add(c);
-      sets++;
-    });
-  });
+  /* 자리표시 초상화·자료 (실제 게임은 data.js 의 내용을 쓴다) */
+  function portraitTex(hex) { var c = document.createElement("canvas"); c.width = 200; c.height = 240; var x = c.getContext("2d"); x.fillStyle = "#" + hex; x.fillRect(0, 0, 200, 240); x.fillStyle = "rgba(20,15,10,.55)"; x.beginPath(); x.arc(100, 96, 44, 0, 7); x.fill(); x.fillRect(48, 150, 104, 90); var t = new T.CanvasTexture(c); t.encoding = T.sRGBEncoding; return t; }
+  var ids = ["newton", "archimedes", "abel", "einstein", "galilei", "gauss"], cols = ["b39b78", "a99a7a", "8f9a86", "a6a29c", "96805f", "8d8c7c"], portraits = {}, sciences = [];
+  ids.forEach(function (id, i) { portraits[id] = portraitTex(cols[i]); sciences.push({ id: id, name: id.toUpperCase(), born: "1643. 1. 4.", died: "1727. 3. 31.", key: "핵심 업적 한 줄", body: "잉글랜드의 물리학자·수학자. 자리표시 본문입니다. 실제 게임에서는 자료 데이터가 들어갑니다. 이 문장은 인쇄물 레이아웃을 확인하기 위한 것입니다." }); });
+  var L = R.layout(scene, { portraits: portraits, sciences: sciences }); scene.add(L.group);
+  var sets = 6;
   window.__build = Math.round(performance.now() - t0);
 
   /* 카메라: 게임과 같은 화각 규칙 */
@@ -51,6 +48,10 @@
   var yaw = view[3], pitch = view[4];
   cam.lookAt(cam.position.x + Math.sin(yaw) * Math.cos(pitch), cam.position.y + Math.sin(pitch), cam.position.z + Math.cos(yaw) * Math.cos(pitch));
 
+  window.__nan = [];
+  scene.traverse(function (o) { if (o.isMesh && o.geometry) { var a = o.geometry.attributes.position.array; for (var i = 0; i < a.length; i++) if (a[i] !== a[i]) { var n = o, path = []; while (n) { path.push(n.name || n.type); n = n.parent; } window.__nan.push(path.join("<")); break; } } });
+  if (window.__nan.length) console.log("NaN meshes: " + window.__nan.join(" | "));
+  K.setEnvIntensity(scene, +q.get("env") || 0.8);
   var st = K.stats(scene);
   var calls = 0;
   renderer.render(scene, cam); renderer.render(scene, cam);

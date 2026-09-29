@@ -15,7 +15,7 @@
   function mats() {
     return {
       plaster: K.mat("shell.plaster", function () {
-        var t = X.plaster({ base: 0xd0c3a8, tone: 0xbba98a, stain: 0.7, size: 512 });
+        var t = X.plaster({ base: 0xbfae90, tone: 0xa8977a, stain: 0.75, size: 512 });
         t.map.repeat.set(1 / 2.2, 1 / 2.2); t.bump.repeat.set(1 / 2.2, 1 / 2.2);
         return K.std(0xffffff, 0.95, 0, { map: t.map, bump: t.bump, bumpScale: 0.0018 });
       }),
@@ -50,12 +50,12 @@
       }),
       tbar: K.mat("shell.tbar", function () { return K.std(0xcfc8b8, 0.6, 0.2); }),
       tile: K.mat("shell.tile", function () {
-        var t = X.ceilingTile({ base: 0xd9d2c3, size: 256 });
+        var t = X.ceilingTile({ base: 0xd3ccbd, size: 256 });
         t.map.repeat.set(1 / 0.6, 1 / 0.6); t.bump.repeat.set(1 / 0.6, 1 / 0.6);
         return K.std(0xffffff, 0.92, 0, { map: t.map, bump: t.bump, bumpScale: 0.0012 });
       }),
       floor: K.mat("shell.floor", function () {
-        var t = X.wood({ base: 0x8e5f37, dark: 0x5e3b20, rings: 4, seed: 23, fiber: 1.15, w: 512, h: 512 });
+        var t = X.wood({ base: 0x775033, dark: 0x4d3121, rings: 4, seed: 23, fiber: 1.15, w: 512, h: 512 });
         return K.std(0xffffff, 0.42, 0, { map: t.map, bump: t.bump, bumpScale: 0.0009, vc: true });
       }),
       under: K.mat("shell.under", function () { return K.std(0x160e08, 1, 0); }),

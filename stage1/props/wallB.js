@@ -17,7 +17,7 @@
     var W = o.width || 1.5, L = o.length || 1.5, nx = 110, ny = 22, side = o.gatherSide || 1;
     var geo = new T.PlaneGeometry(1, 1, nx, ny);
     var mat = K.mat("curtain.cloth", function () {
-      var f = X.fabric({ base: 0x7b2c30, dark: 0x481418, thread: 56, size: 256 });
+      var f = X.fabric({ base: 0x5d2226, dark: 0x371014, thread: 56, size: 256 });
       f.map.repeat.set(1, 1); f.bump.repeat.set(1, 1);
       var m = K.std(0xffffff, 0.94, 0, { map: f.map, bump: f.bump, bumpScale: 0.0007, side: T.DoubleSide });
       return m;
