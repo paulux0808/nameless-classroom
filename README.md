@@ -4,7 +4,7 @@
 
 ## Play
 
-- Stage 1: `stage1/index.html`
+- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만들고, 카툰 렌더링이 기본이다. 메뉴에서 사실적 화면으로 바꿀 수 있다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md))
 - Stage 2: `stage2/index.html` (챕터 선택)
 - Stage selector: `index.html`
 
@@ -20,14 +20,20 @@ npm install     # 개발용 DOM 테스트 의존성
 npm test        # stage1/stage2 로직·프론트엔드 테스트 + 스포일러 감사
 ```
 
+스테이지 1 종단 검증(진짜 브라우저로 8챕터~엔딩~뒷문~이어하기): `npm run e2e:stage1`
+(Chromium 필요. WebGL 이 없으면 SwiftShader 로 돌아 느리다.)
+
 ## Structure
 
 ```text
 index.html                  NAMELESS stage selector
-stage1/index.html           Stage 1 — 이름 없는 교실 (three.js r128 인라인)
+stage1/index.html           Stage 1 — 이름 없는 교실 (진입점, three.js r128 로컬 사본, `?style=real` 로 사실적 화면)
+stage1/kit/ props/ room/    코드로 만드는 3D 교실 (재질·소품·건축·조명·배치)
+stage1/model.js storage.js  게임 규칙·진행 저장 (DOM 무관, 테스트 대상)
 stage1/logic.js             정답·해시·충돌 등 순수 로직 (테스트 대상)
-stage1/runtime-hardening.js 저장 복구·입력 잠금·적응형 해상도
-stage1/tests/               node:test 단위 테스트
+stage1/world.js ui.js ...   리빌 연출·HUD·화면·조작 (docs/STAGE1_REBUILD.md)
+stage1/tests/               node:test 단위·구조 테스트
+tools/stage1-e2e.mjs        스테이지 1 종단 검증 (Playwright)
 stage2/index.html           Stage 2 — 챕터 선택 허브
 stage2/logic.js             순수 로직 (진행도·스포일러·검증 상태기계)
 stage2/engine.js            공용 런타임 (씬·입력·문서·도장·대사)
@@ -46,8 +52,8 @@ UI만 확인할 때는 로컬 서버에서 `stage2/tests/ui-preview.html`을 엽
 DOM 회귀 테스트는 선택 시 스크롤·초점 유지와 엔진 연동을 검증합니다.
 3D 렌더링과 실제 화면 배치는 WebGL을 지원하는 브라우저에서 별도 확인합니다.
 
-Stage 1의 three.js 애드온(GLTFLoader·포스트프로세싱)은 CDN이 아니라
-`assets/vendor/`의 로컬 사본에서 불러옵니다. 인라인된 코어와 같은 리비전입니다.
+three.js r128 은 CDN이 아니라 `assets/vendor/three.min.js` 로컬 사본을 씁니다.
+스테이지 1 은 GLTF 로더·모델 등 외부 에셋을 쓰지 않습니다(스테이지 2 는 `assets/vendor/`·`assets/models/` 를 씁니다).
 
 ## Stage 2 구조
 

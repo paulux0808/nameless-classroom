@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>N1 소품 갤러리 (개발용)</title>
+<style>
+  html,body{margin:0;height:100%;background:#1b1a18;overflow:hidden;font:12px/1.3 ui-monospace,Menlo,Consolas,monospace;color:#d8d2c4}
+  canvas{position:fixed;inset:0;display:block}
+  .cap{position:fixed;padding:3px 7px;background:rgba(0,0,0,.55);border-radius:3px;pointer-events:none}
+  #err{position:fixed;left:8px;bottom:8px;color:#ff8a7a;white-space:pre-wrap;max-width:90vw}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="err"></div>
+<script src="../../assets/vendor/three.min.js"></script>
+<script>
+  /* 스크립트를 순서대로 로드한다. 소품 파일이 늘면 이 목록만 고친다. */
+  var FILES = [
+    "../kit/core.js", "../kit/toon.js", "../kit/outline.js", "../kit/geo.js", "../kit/tex.js", "../kit/anim.js", "../kit/env.js",
+    "../props/common.js", "../props/school.js", "../props/furniture.js", "../props/objects.js", "../props/wallA.js", "../props/wallB.js", "../props/desk.js", "../props/person.js",
+    "gallery.js"
+  ];
+  (function next(i) {
+    if (i >= FILES.length) return;
+    var s = document.createElement("script");
+    s.src = FILES[i] + "?" + Date.now();
+    s.onload = function () { next(i + 1); };
+    s.onerror = function () { document.getElementById("err").textContent += "로드 실패: " + FILES[i] + "\n"; };
+    document.head.appendChild(s);
+  })(0);
+  addEventListener("error", function (e) { document.getElementById("err").textContent += (e.message || e) + "\n"; window.__error = (window.__error || "") + e.message + "\n"; });
+</script>
+</body>
+</html>
