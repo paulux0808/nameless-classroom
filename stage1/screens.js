@@ -313,6 +313,16 @@
         var rng = sens.querySelector("input"), out = sens.querySelector("output"); out.textContent = "×" + (+rng.value).toFixed(1);
         rng.oninput = function () { out.textContent = "×" + (+rng.value).toFixed(1); UI.setSensitivity(+rng.value); };
         b.appendChild(sens);
+        /* 화면 스타일: 재질이 통째로 달라서 바꾸면 다시 불러온다(진행은 저장되고, 돌아오면 곧장 이어진다) */
+        var style = el("div", "item"); style.style.marginTop = "12px";
+        var now = (root.N1K && root.N1K.style) === "real" ? "real" : "toon";
+        style.innerHTML = '<div class="in" style="border:0;padding:12px 14px"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;font:700 14px ' + FONT + '">화면 스타일' +
+          '<span class="seg" role="group" aria-label="화면 스타일"><button type="button" data-s="toon" aria-pressed="' + (now === "toon") + '">카툰</button><button type="button" data-s="real" aria-pressed="' + (now === "real") + '">사실적</button></span></div>' +
+          '<p class="mini" style="margin:8px 0 0">바꾸면 화면을 다시 불러옵니다. 진행은 저장됩니다.</p></div>';
+        [].forEach.call(style.querySelectorAll("button[data-s]"), function (bt) {
+          bt.onclick = function () { if (bt.getAttribute("data-s") !== now) hooks.setStyle && hooks.setStyle(bt.getAttribute("data-s")); };
+        });
+        b.appendChild(style);
         var close = el("button", "btn primary", "이어서 하기"), rs = el("button", "btn", "처음부터 다시");
         [close, rs].forEach(function (x) { x.type = "button"; foot.appendChild(x); });
         close.onclick = function () { UI.closeSheet(); };

@@ -154,7 +154,7 @@
       var white = new T.Mesh(new T.SphereGeometry(0.0094, 20, 14), m.white); eg.add(white);
       var iris = new T.Mesh(new T.CircleGeometry(0.0047, 20), m.iris); iris.position.z = 0.0092; eg.add(iris);
       var pup = new T.Mesh(new T.CircleGeometry(0.0021, 14), K.mat("person.pupil", function () { return K.std(0x050505, 0.2, 0, { env: 1.4 }); })); pup.position.z = 0.0094; eg.add(pup);
-      var lid = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, 0, PI * 0.5), m.skin); lid.rotation.x = -0.04; eg.add(lid);
+      var lid = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, 0, PI * 0.5), m.skin); lid.rotation.x = -0.04; lid.userData.animated = true; eg.add(lid);   /* 깜빡임: 껍질 병합에서 뺀다 */
       var lidL = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, PI * 0.5, PI * 0.5), m.skin); lidL.rotation.x = 0.72; eg.add(lidL);
       eg.traverse(function (o) { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } });
       eyes.push({ g: eg, lid: lid, iris: iris, pup: pup });

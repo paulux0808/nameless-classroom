@@ -94,53 +94,72 @@
   }
   O.skippable = skippable;
 
-  /* 움직이는 물체: 안의 모든 메시에 껍질을 자식으로 붙인다(같은 지오메트리를 공유) */
-  O.attach = function (obj) {
-    O.init(); var list = [];
-    obj.traverse(function (m) { if (!skippable(m)) list.push(m); });
-    list.forEach(function (m) {
-      if (m.userData.hullMesh) return;
-      var h = new T.Mesh(O.hullGeometry(m.geometry), O.mat); h.name = "hull"; h.castShadow = false; h.receiveShadow = false; h.userData.isHull = true; h.renderOrder = 2;
-      m.add(h); m.userData.hullMesh = h;
-    });
-    obj.userData.hulls = list.map(function (m) { return m.userData.hullMesh; });
-    obj.userData.hullSrc = list;
+  var DUMMY = { isHullMerge: true, vertexColors: false };
+  /* 메시 여럿 → 껍질 지오메트리 하나. rel(m): 메시의 행렬(껍질이 붙을 기준 좌표계 기준) */
+  function mergedHull(list, rel) {
+    var parts = list.map(function (m) { return { geo: lite(m.geometry), mat: DUMMY, matrix: rel(m) }; });
+    var g = K.mergeParts(parts)[0].geometry;
+    if (g.attributes.uv) g.deleteAttribute("uv"); if (g.attributes.color) g.deleteAttribute("color");
+    g.setAttribute("normal", new T.BufferAttribute(O.smoothNormals(g.attributes.position.array, g.attributes.normal.array), 3));
+    g.computeBoundingSphere(); return g;
+  }
+  function hullMesh(geo, mat, order, name) {
+    var h = new T.Mesh(geo, mat); h.name = name; h.castShadow = false; h.receiveShadow = false; h.userData.isHull = true; h.renderOrder = order; return h;
+  }
+  /* 움직이는 물체에 껍질을 붙인다. 붙이는 방식(o.mode):
+     "mesh"(기본)   메시마다 하나씩 — 안쪽이 따로 움직여도 맞는다
+     "rigid"        물체 전체를 껍질 하나로 — 안쪽이 안 움직이는 소품(그리기 호출이 가장 적다)
+     "parent"       같은 부모 아래 메시끼리 하나로 — 관절이 있는 인물·시계. userData.animated 메시는 따로 둔다. */
+  O.attach = function (obj, o) {
+    o = o || {}; O.init(); obj.updateMatrixWorld(true);
+    var list = [], mode = o.mode || "mesh", sets = [];
+    obj.traverse(function (m) { if (!skippable(m) && visibleChain(m, obj)) list.push(m); });
+    function relTo(base) { var inv = new T.Matrix4().copy(base.matrixWorld).invert(); return function (m) { return new T.Matrix4().multiplyMatrices(inv, m.matrixWorld); }; }
+    function add(parent, geo) { var h = hullMesh(geo, O.mat, 2, "hull"); parent.add(h); sets.push({ parent: parent, geo: geo, ink: h, halo: null }); }
+    if (mode === "rigid" && list.length > 1) add(obj, mergedHull(list, relTo(obj)));
+    else if (mode === "parent") {
+      var byParent = new Map();
+      list.forEach(function (m) { if (m.userData.animated) { add(m, O.hullGeometry(m.geometry)); return; } var l = byParent.get(m.parent); if (!l) byParent.set(m.parent, l = []); l.push(m); });
+      byParent.forEach(function (l, par) { if (l.length === 1) { var m = l[0]; add(m, O.hullGeometry(m.geometry)); } else add(par, mergedHull(l, relTo(par))); });
+    } else list.forEach(function (m) { add(m, O.hullGeometry(m.geometry)); });
+    obj.userData.hullSets = (obj.userData.hullSets || []).concat(sets);
+    obj.userData.hulls = obj.userData.hullSets.map(function (e) { return e.ink; });
     return obj;
   };
-  /* 강조: 잉크 바깥에 노란 테두리(후광)를 더 굵게 얹는다. 처음 켤 때 메시마다 하나씩 만들어 두고 이후엔 보이기만 바꾼다. */
+  /* 강조: 잉크 바깥에 노란 테두리(후광)를 더 굵게 얹는다. 처음 켤 때 만들어 두고 이후엔 보이기만 바꾼다. */
   O.highlight = function (obj, on) {
-    if (!obj || !obj.userData.hullSrc) return;
-    obj.userData.hullSrc.forEach(function (m) {
-      var hl = m.userData.hullHalo;
-      if (!hl) {
-        if (!on) return;
-        hl = new T.Mesh(O.hullGeometry(m.geometry), O.hoverMat); hl.name = "halo"; hl.castShadow = false; hl.receiveShadow = false;
-        hl.userData.isHull = true; hl.renderOrder = 1; m.add(hl); m.userData.hullHalo = hl;
-      }
-      hl.visible = !!on;
+    if (!obj || !obj.userData.hullSets) return;
+    obj.userData.hullSets.forEach(function (e) {
+      if (!e.halo) { if (!on) return; e.halo = hullMesh(e.geo, O.hoverMat, 1, "halo"); e.parent.add(e.halo); }
+      e.halo.visible = !!on;
     });
   };
 
-  /* 움직이지 않는 소품 전부를 하나의 껍질로 합친다. skipNames: 이름이 걸리면 뺀다(마루판 등 각진 대면적) */
+  /* 움직이지 않는 소품 전부를 껍질로 합친다. 방을 사분면(x·z 부호)으로 나눠 시야 밖 부분은 그리지 않는다.
+     합치기(bakeStatic) 전에 부른다 — 합쳐진 뒤에는 메시가 커서 나눌 수 없다.
+     skipNames: 이름이 걸리면 뺀다(마루판 등 각진 대면적) */
   O.buildStatic = function (root_, o) {
     o = o || {}; O.init();
     root_.updateMatrixWorld(true);
-    var skip = new Set(), parts = [], inv = new T.Matrix4().copy(root_.matrixWorld).invert(), dummy = { isHullMerge: true, vertexColors: false };
+    var skip = new Set(), inv = new T.Matrix4().copy(root_.matrixWorld).invert(), quad = {}, c = new T.Vector3(), count = 0;
     (o.exclude || []).forEach(function (ex) { if (ex) ex.traverse(function (x) { skip.add(x); }); });
-    var names = o.skipNames || [], count = 0;
+    var names = o.skipNames || [], minR = o.minRadius || 0, dropped = 0, hist = { r1: 0, r2: 0, r4: 0, r8: 0, big: 0 };
     root_.traverse(function (m) {
-      if (skip.has(m) || skippable(m) || names.indexOf(m.name) >= 0) return;
-      if (!visibleChain(m, root_)) return;
-      parts.push({ geo: lite(m.geometry), mat: dummy, matrix: new T.Matrix4().multiplyMatrices(inv, m.matrixWorld) }); count++;
+      if (skip.has(m) || skippable(m) || names.indexOf(m.name) >= 0 || !visibleChain(m, root_)) return;
+      var g = m.geometry; if (!g.boundingSphere) g.computeBoundingSphere();
+      var rad = g.boundingSphere.radius * m.matrixWorld.getMaxScaleOnAxis(), tri = g.index ? g.index.count / 3 : g.attributes.position.count / 3;
+      hist[rad < 0.01 ? "r1" : rad < 0.02 ? "r2" : rad < 0.04 ? "r4" : rad < 0.08 ? "r8" : "big"] += tri;
+      if (rad < minR) { dropped++; return; }                                     /* 나사·손잡이 같은 잔 물건은 선이 지저분해질 뿐이다 */
+      c.copy(g.boundingSphere.center).applyMatrix4(m.matrixWorld).applyMatrix4(inv);
+      var key = (c.x < 0 ? 0 : 1) + (c.z < 0 ? 0 : 2);
+      (quad[key] || (quad[key] = [])).push(m); count++;
     });
-    if (!parts.length) return null;
-    var merged = K.mergeParts(parts)[0].geometry;
-    merged.deleteAttribute("uv"); if (merged.attributes.color) merged.deleteAttribute("color");
-    merged.setAttribute("normal", new T.BufferAttribute(O.smoothNormals(merged.attributes.position.array, merged.attributes.normal.array), 3));
-    merged.computeBoundingSphere();
-    var mesh = new T.Mesh(merged, O.mat); mesh.name = "hullStatic"; mesh.castShadow = false; mesh.receiveShadow = false; mesh.userData.isHull = true; mesh.frustumCulled = false; mesh.renderOrder = 2;
-    root_.add(mesh);
-    return { mesh: mesh, meshes: count, tris: merged.index ? merged.index.count / 3 : 0 };
+    var meshes = [], tris = 0;
+    Object.keys(quad).forEach(function (k) {
+      var geo = mergedHull(quad[k], function (m) { return new T.Matrix4().multiplyMatrices(inv, m.matrixWorld); });
+      var mesh = hullMesh(geo, O.mat, 2, "hullStatic"); root_.add(mesh); meshes.push(mesh); tris += geo.index ? geo.index.count / 3 : 0;
+    });
+    return { meshes: count, groups: meshes.length, tris: tris, dropped: dropped, hist: hist, list: meshes };
   };
 
   /* ══ 조사 강조 ═══════════════════════════════════════════════════════════
@@ -195,8 +214,8 @@
     if (hoverMesh) { hoverMesh.visible = false; hoverMesh = null; }
     if (!t) return;
     var ow = t.userData.hlOwner;
-    for (var p = t.parent; !ow && p && p !== hoverRoot; p = p.parent) if (p.userData && p.userData.hulls) ow = p;    /* 문·편지처럼 히트박스가 물체의 자식인 경우 */
-    if (ow && ow.userData.hulls && ow.userData.hulls.length) { O.highlight(ow, true); hoverObj = ow; return; }
+    for (var p = t.parent; !ow && p && p !== hoverRoot; p = p.parent) if (p.userData && p.userData.hullSets) ow = p;    /* 문·편지처럼 히트박스가 물체의 자식인 경우 */
+    if (ow && ow.userData.hullSets && ow.userData.hullSets.length) { O.highlight(ow, true); hoverObj = ow; return; }
     if (t.userData.hlParts || t.userData.hlMesh) { hoverMesh = staticHover(t); hoverMesh.visible = true; }
   };
   /* 강조 굵기가 숨 쉬듯 살짝 변한다 */

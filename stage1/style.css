@@ -350,3 +350,13 @@ body.sheet-wide #toast{bottom:auto;top:calc(var(--sa-t) + 10px);left:50%}
 @media(max-width:700px){#sheet{width:min(96vw,100%)}#sheet.wide,#sheet.center{width:96vw}
   .hud-tag{max-width:calc(100vw - 168px)}}
 @media(max-width:560px){.term-layout{grid-template-columns:minmax(0,1fr)}.term-left{order:1}.term-right{order:2}}
+
+/* ───────────── 화면 스타일 전환(메뉴) · 카툰일 때 가장자리 어둠을 줄인다 ───────────── */
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:3px;overflow:hidden}
+.seg button{min-height:38px;padding:0 18px;border:0;background:transparent;color:var(--ink);font:700 14px/1 var(--font-ui)}
+.seg button+button{border-left:2px solid var(--ink)}
+.seg button:hover{background:rgba(27,38,64,.07)}
+.seg button[aria-pressed="true"]{background:var(--pencil);box-shadow:inset 0 -3px 0 #a9800c}
+body.toon #grade{background:radial-gradient(125% 110% at 50% 46%,transparent 58%,rgba(40,26,12,.14) 86%,rgba(24,14,6,.32) 100%),
+             linear-gradient(180deg,rgba(255,226,170,.03),rgba(20,26,40,.04))}
+body.toon.dim #grade{background:radial-gradient(120% 105% at 50% 46%,transparent 34%,rgba(4,6,14,.5) 80%,rgba(2,3,8,.84) 100%)}

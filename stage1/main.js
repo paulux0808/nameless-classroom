@@ -10,6 +10,7 @@
   var q = new URLSearchParams(location.search);
   var IS_TOUCH = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
   doc.body.classList.toggle("touch", IS_TOUCH);
+  doc.body.classList.toggle("toon", K.isToon());
 
   /* ── 화질: 기기에 맞춰 시작하고, 프레임이 모자라면 해상도부터 내린다 ── */
   var QNAME = q.get("q") || (IS_TOUCH ? "mobile" : "desktop");
@@ -44,6 +45,14 @@
     restart: function () {
       M.startNew(); UI.resetPieces(); World.applyState(M.S, true); UI.renderHUD();
       Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch); SC.showIntro();
+    },
+    /* 화면 스타일 전환: 저장하고 다시 불러온다. 돌아오면 자동으로 이어 한다. ?style= 는 저장값을 덮으니 지운다. */
+    setStyle: function (s) {
+      if (s === K.style) return;
+      try { M.save(); } catch (e) {}
+      K.setStyle(s);
+      try { window.sessionStorage.setItem("n1-resume", "1"); } catch (e) {}
+      try { var u = new URL(location.href); u.searchParams.delete("style"); location.replace(u.toString()); } catch (e) { location.reload(); }
     },
     onFinalOk: function () { setTimeout(SC.showEnding, 180); },
     onExitOpened: function () {
@@ -136,19 +145,21 @@
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
     var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
       .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }));
-    /* 카툰: 잉크 윤곽선. 히트박스와 물체의 짝을 합치기 전에 정한다(붙박이 물체는 합쳐지면 따로 찾을 수 없다) */
+    /* 카툰: 잉크 윤곽선. 합치기 전에 ① 히트박스와 물체의 짝을 정하고 ② 붙박이 소품의 껍질을 만든다(합쳐진 뒤엔 메시가 커서 나눌 수 없다) */
     var hullInfo = null;
     if (TOON) {
       K.outline.init(); K.outline.setSize(window.innerWidth, window.innerHeight, dpr);
       Lay.curtains.forEach(function (c) { c.traverse(function (x) { if (x.isMesh) x.userData.noHull = true; }); });   /* 천은 두께가 없어 껍질이 안 맞는다 */
       K.outline.bind(Lay.group, Lay.hotspots, dyn);
-    }
-    var bake = K.bakeStatic(Lay.group, { exclude: dyn, half: function (z) { return z < 0 ? 0 : 1; } });
-    mark("bake");
-    /* 움직이지 않는 소품은 껍질 하나로, 움직이는 소품은 메시마다 껍질을 붙인다 */
-    if (TOON) {
       hullInfo = K.outline.buildStatic(Lay.group, { exclude: dyn, skipNames: ["platformTop"] });
-      dyn.forEach(function (d) { if (d) K.outline.attach(d); });
+    }
+    var bake = K.bakeStatic(Lay.group, { exclude: hullInfo ? dyn.concat(hullInfo.list) : dyn, half: function (z) { return z < 0 ? 0 : 1; } });   /* 윤곽선 껍질은 다시 합치지 않는다(사분면 컬링 유지) */
+    mark("bake");
+    /* 움직이는 소품: 안쪽이 안 움직이면 통째로 하나, 관절이 있으면 관절별, 나머지는 메시별 */
+    if (TOON) {
+      [ob.calendar, ob.doll, ob.postit, ob.extinguisher, ob.math, ob.diary1, ob.globe, ob.crt, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board].forEach(function (d) { if (d) K.outline.attach(d, { mode: "rigid" }); });
+      [ob.teacher, ob.clock].forEach(function (d) { if (d) K.outline.attach(d, { mode: "parent" }); });
+      [ob.door].concat(Lay.frameOrder.map(function (id) { return Lay.frames[id]; })).forEach(function (d) { if (d) K.outline.attach(d); });
       mark("outline");
     }
     K.setEnvIntensity(scene, Light.baseEnv);
@@ -181,6 +192,7 @@
     if (q.get("debug")) window.__n1 = { bake: bake, hull: hullInfo, Q: Q, M: M, W: World, C: Ctl, UI: UI, SC: SC, I: Inter, R: renderer, scene: scene, camera: camera, L: Lay, light: Light, begin: hooks.begin, K: K };
     window.__ready = true;
     requestAnimationFrame(loop);
+    try { if (window.sessionStorage.getItem("n1-resume") && M.hasSave()) { window.sessionStorage.removeItem("n1-resume"); hooks.begin(false); } } catch (e) {}   /* 스타일을 바꾸고 돌아온 경우 */
   }
 
   /* ── 프레임 루프 ── */

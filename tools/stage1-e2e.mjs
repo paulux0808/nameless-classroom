@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* 스테이지 1 종단 검증 — 진짜 브라우저(Chromium)로 게임을 8챕터 끝까지 플레이한다.
    실제 마우스 클릭으로 물건을 조사하고, 실제 키 입력으로 단말기에 답을 넣고, 조립·엔딩·뒷문·저장 이어하기까지 확인한다.
-   사용법: node tools/stage1-e2e.mjs [--shots 폴더] [--headed]
+   사용법: node tools/stage1-e2e.mjs [--shots 폴더] [--headed] [--style toon|real]   (기본은 카툰. 사실적 렌더도 같은 길로 끝까지 통과해야 한다)
    WebGL 이 없는 환경에서는 SwiftShader 로 돌린다(느리지만 된다). npm test 에는 넣지 않았다(브라우저 필요). */
 import http from "node:http";
 import { readFileSync, existsSync, mkdirSync } from "node:fs";
@@ -13,6 +13,7 @@ const require = createRequire(import.meta.url);
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
 const shotsDir = args.includes("--shots") ? args[args.indexOf("--shots") + 1] : null;
+const STYLE = args.includes("--style") ? args[args.indexOf("--style") + 1] : "toon";
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
 const { chromium } = require("playwright");
@@ -55,9 +56,12 @@ const screenOf = (id) => ev(async (id) => {
 }, id);
 
 try {
-  await page.goto(`${base}/stage1/index.html?debug=1`, { waitUntil: "load" });
+  await page.goto(`${base}/stage1/index.html?debug=1&style=${STYLE}`, { waitUntil: "load" });
   await page.waitForFunction(() => window.__ready === true, null, { timeout: 180000 });
   check(errors.length === 0, "부팅 중 오류 없음 " + errors.join(" | "));
+  check((await ev(() => N1K.style)) === STYLE, "화면 스타일: " + STYLE);
+  if (STYLE === "toon") check(await ev(() => !!__n1.hull && __n1.hull.groups >= 1 && __n1.scene.getObjectByName("hullStatic") != null), "카툰: 붙박이 소품의 윤곽선 껍질이 만들어졌다");
+  else check(await ev(() => !__n1.hull && __n1.scene.getObjectByName("hullStatic") == null), "사실적: 윤곽선 껍질이 없다");
   await shot("01-intro");
   await page.click("#go-new"); await page.waitForTimeout(500);
 
@@ -69,7 +73,10 @@ try {
 
   /* 1) 첫 일기: 진짜 클릭 */
   await ev(() => __n1.C.setView(-0.1, 2.3, Math.PI, -0.35)); await page.waitForTimeout(300);
-  let p = await screenOf("diary1obj"); await page.mouse.move(p.x, p.y); await page.mouse.click(p.x, p.y); await page.waitForTimeout(600);
+  let p = await screenOf("diary1obj"); await page.mouse.move(p.x - 6, p.y + 2); await page.mouse.move(p.x, p.y); await page.waitForTimeout(250);
+  if (STYLE === "toon") check(await ev(() => __n1.L.obj.diary1.userData.hullSets.some((h) => h.halo && h.halo.visible)), "카툰: 가리킨 일기에 노란 후광이 켜진다");
+  await page.mouse.click(p.x, p.y); await page.waitForTimeout(600);
+  if (STYLE === "toon") check(await ev(() => !__n1.L.obj.diary1.userData.hullSets.some((h) => h.halo && h.halo.visible)), "카툰: 창이 열리면 후광이 꺼진다");
   check(await ev(() => __n1.M.S.tookD1), "첫 일기를 클릭으로 집었다");
   await page.keyboard.press("Escape"); await page.waitForTimeout(400);
   check(await ev(() => !__n1.UI.sheetOpen()), "Esc 로 패널이 닫히고 메뉴가 따라 열리지 않는다");

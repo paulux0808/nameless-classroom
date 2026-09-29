@@ -4,7 +4,7 @@
 
 ## Play
 
-- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만든다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md))
+- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만들고, 카툰 렌더링이 기본이다. 메뉴에서 사실적 화면으로 바꿀 수 있다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md))
 - Stage 2: `stage2/index.html` (챕터 선택)
 - Stage selector: `index.html`
 
@@ -27,7 +27,7 @@ npm test        # stage1/stage2 로직·프론트엔드 테스트 + 스포일러
 
 ```text
 index.html                  NAMELESS stage selector
-stage1/index.html           Stage 1 — 이름 없는 교실 (진입점, three.js r128 로컬 사본)
+stage1/index.html           Stage 1 — 이름 없는 교실 (진입점, three.js r128 로컬 사본, `?style=real` 로 사실적 화면)
 stage1/kit/ props/ room/    코드로 만드는 3D 교실 (재질·소품·건축·조명·배치)
 stage1/model.js storage.js  게임 규칙·진행 저장 (DOM 무관, 테스트 대상)
 stage1/logic.js             정답·해시·충돌 등 순수 로직 (테스트 대상)
