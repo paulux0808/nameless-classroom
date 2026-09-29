@@ -18,7 +18,7 @@
     var hitMat = new T.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
     function hot(id, name, w, h, d, x, y, z, ry, parent) {
       var m = new T.Mesh(new T.BoxGeometry(w, h, d), hitMat); m.position.set(x, y, z); if (ry) m.rotation.y = ry;
-      m.userData.hot = { id: id, name: name }; m.userData.isHit = true; m.renderOrder = -1;
+      m.userData.hot = { id: id, name: name }; m.userData.isHit = true; m.renderOrder = -1; m.layers.set(1);   /* 레이어 1: 화면에는 안 그리고 레이캐스트만 받는다 */
       (parent || g).add(m); L.hotspots.push(m); return m;
     }
 
@@ -146,11 +146,11 @@
     L.frameOrder = order;
     order.forEach(function (id, f) {
       var zz = -2.5 + f * 1.0, tex = opts.portraits && opts.portraits[id];
-      var fr = P.sciFrame(tex || null); fr.position.set(D.W / 2 - 0.05, 1.72, zz); fr.rotation.y = -PI / 2; g.add(fr); L.frames[id] = fr;
-      hot("frame:" + id, "액자", 0.74, 0.84, 0.1, D.W / 2 - 0.09, 1.72, zz, -PI / 2);
+      var fr = P.sciFrame(tex || null); fr.position.set(D.W / 2 - 0.05, 1.95, zz); fr.rotation.y = -PI / 2; g.add(fr); L.frames[id] = fr;
+      hot("frame:" + id, "액자", 0.74, 0.84, 0.1, D.W / 2 - 0.09, 1.95, zz, -PI / 2);
       if (opts.sciences) {
         var sc = opts.sciences.filter(function (s) { return s.id === id; })[0];
-        if (sc) { var np = P.notePaper(sc); np.position.set(D.W / 2 - 0.012, 1.1, zz); np.rotation.y = -PI / 2; g.add(np); hot("note:" + id, "인쇄물", 0.62, 0.52, 0.06, D.W / 2 - 0.05, 1.1, zz, -PI / 2); }
+        if (sc) { var np = P.notePaper(sc); np.position.set(D.W / 2 - 0.012, 1.32, zz); np.rotation.y = -PI / 2; g.add(np); hot("note:" + id, "인쇄물", 0.62, 0.52, 0.06, D.W / 2 - 0.05, 1.32, zz, -PI / 2); }
       }
     });
     var tt = P.timetable(); place(tt, D.W / 2 - 0.012, 1.55, -3.45, -PI / 2); hot("decoy:timetable", "시간표", 0.5, 0.7, 0.06, D.W / 2 - 0.05, 1.55, -3.45, -PI / 2);

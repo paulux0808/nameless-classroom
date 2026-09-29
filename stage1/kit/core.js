@@ -76,6 +76,7 @@
   };
 
   /* ── 수학 ────────────────────────────────────────────────────────────── */
+  K.detail = 1;   /* 곡면 분할 배율. 기기 성능에 맞춰 부팅 때 정한다(원형 단면 수 등) */
   K.clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
   K.lerp = function (a, b, t) { return a + (b - a) * t; };
   K.smooth = function (t) { t = K.clamp(t, 0, 1); return t * t * (3 - 2 * t); };
@@ -204,6 +205,37 @@
       }
     };
     return api;
+  };
+
+  /* ── 정적 병합: 움직이지 않는 메시를 (재질·그림자 옵션·앞/뒤 절반)별로 한 덩어리로 합친다 ──────
+     소품을 하나씩 만들어 배치한 뒤 한 번만 부르면 드로콜이 3분의 1 이하로 줄어든다.
+     o.exclude: 건드리지 않을 Object3D 들(하위 전부 포함 — 움직이거나 상호작용하는 것)
+     o.half(worldZ): 절반 나누기 기준 — 시야 밖 절반은 그리지 않는다. 히트박스·스키닝·uv2 메시는 원래대로 둔다. */
+  K.bakeStatic = function (root, o) {
+    o = o || {};
+    root.updateMatrixWorld(true);
+    var skip = new Set(), buckets = new Map(), inv = new T.Matrix4().copy(root.matrixWorld).invert(), c = new T.Vector3();
+    (o.exclude || []).forEach(function (ex) { if (ex) ex.traverse(function (x) { skip.add(x); }); });
+    root.traverse(function (m) {
+      if (!m.isMesh || skip.has(m) || m.userData.hot || m.userData.isHit || m.isSkinnedMesh || Array.isArray(m.material) || m.geometry.attributes.uv2) return;
+      for (var v = m; v && v !== root; v = v.parent) if (v.visible === false) return;
+      var g = m.geometry; if (!g.boundingSphere) g.computeBoundingSphere();
+      c.copy(g.boundingSphere.center).applyMatrix4(m.matrixWorld);
+      var half = o.half ? o.half(c.z) : 0;
+      var key = m.material.uuid + "|" + (m.castShadow ? 1 : 0) + (m.receiveShadow ? 1 : 0) + "|" + m.renderOrder + "|" + half;
+      var b = buckets.get(key); if (!b) buckets.set(key, b = { mat: m.material, cast: m.castShadow, recv: m.receiveShadow, ro: m.renderOrder, meshes: [], parts: [] });
+      b.meshes.push(m); b.parts.push({ geo: g, mat: m.material, matrix: new T.Matrix4().multiplyMatrices(inv, m.matrixWorld) });
+    });
+    var before = 0, after = 0;
+    buckets.forEach(function (b) {
+      before += b.meshes.length;
+      if (b.meshes.length < 2) { after += 1; return; }             /* 하나뿐이면 합칠 이유가 없다 */
+      var merged = K.mergeParts(b.parts)[0], mesh = new T.Mesh(merged.geometry, merged.material);
+      mesh.castShadow = b.cast; mesh.receiveShadow = b.recv; mesh.renderOrder = b.ro; mesh.name = "baked";
+      root.add(mesh); after += 1;
+      b.meshes.forEach(function (m) { if (m.parent) m.parent.remove(m); });
+    });
+    return { before: before, after: after };
   };
 
   /* ── 통계 (예산 점검용) ──────────────────────────────────────────────── */

@@ -48,7 +48,7 @@
         var m = K.std(0xdfeaf0, 0.06, 0, { opacity: 0.14, env: 1.4 });
         m.depthWrite = false; return m;
       }),
-      tbar: K.mat("shell.tbar", function () { return K.std(0xcfc8b8, 0.6, 0.2); }),
+      tbar: K.mat("shell.tbar", function () { return K.std(0xb4ad9d, 0.65, 0.15); }),
       tile: K.mat("shell.tile", function () {
         var t = X.ceilingTile({ base: 0xd3ccbd, size: 256 });
         t.map.repeat.set(1 / 0.6, 1 / 0.6); t.bump.repeat.set(1 / 0.6, 1 / 0.6);

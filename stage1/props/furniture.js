@@ -146,12 +146,12 @@
   function buildRadiator() {
     var b = K.builder(), iv = M.ivory(), br = M.brass(), st = M.steelDark(), rr = K.rng(8);
     var N = 12, pitch = 0.075, H = 0.6, Dp = 0.11, x0 = -(N - 1) * pitch / 2;
-    var colGeo = G.capsule(0.017, H - 0.1, 14);
+    var colGeo = G.capsule(0.017, H - 0.1, 12);
     for (var i = 0; i < N; i++) {
       var x = x0 + i * pitch;
       [-0.026, 0.026].forEach(function (dz) { b.add(colGeo, iv, { p: [x, 0.13 + H / 2, dz], s: [1.75, 1, 1], tint: rr.pick([0xffffff, 0xf6f2e6, 0xe9e2d0]) }); });
-      b.rbox(pitch - 0.012, 0.05, Dp, 0.02, iv, { p: [x, 0.13 + 0.02, 0], segs: 2 });
-      b.rbox(pitch - 0.012, 0.05, Dp, 0.02, iv, { p: [x, 0.13 + H - 0.02, 0], segs: 2 });
+      b.rbox(pitch - 0.012, 0.05, Dp, 0.02, iv, { p: [x, 0.13 + 0.02, 0], segs: 1 });
+      b.rbox(pitch - 0.012, 0.05, Dp, 0.02, iv, { p: [x, 0.13 + H - 0.02, 0], segs: 1 });
     }
     b.cyl(0.02, 0.02, N * pitch + 0.02, iv, { p: [0, 0.13 + 0.03, 0.0], r: [0, 0, PI / 2], seg: 14 });
     b.cyl(0.02, 0.02, N * pitch + 0.02, iv, { p: [0, 0.13 + H - 0.03, 0.0], r: [0, 0, PI / 2], seg: 14 });

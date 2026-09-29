@@ -82,7 +82,7 @@
     var spine = joint("spine", hips, 0, 0.04, 0);
     var chest = joint("chest", spine, 0, 0.2, 0);
     var neck = joint("neck", chest, 0, 0.27, 0.005);
-    var head = joint("head", neck, 0, 0.034, 0.008);
+    var head = joint("head", neck, 0, 0.026, 0.008);
     var sh = { L: joint("shL", chest, -0.195, 0.17, 0), R: joint("shR", chest, 0.195, 0.17, 0) };
     sh.L.rotation.order = "YXZ"; sh.R.rotation.order = "YXZ";
     var el = { L: joint("elL", sh.L, 0, -0.29, 0), R: joint("elR", sh.R, 0, -0.29, 0) };
@@ -108,7 +108,7 @@
     }
     tb.lathe(tprof, m.suit, { p: [0, -0.02, 0], s: [1, 1, TZ], seg: 40 });
     /* 어깨선: 납작한 패드로 각을 살린다 */
-    [-1, 1].forEach(function (sx) { tb.sphere(0.066, m.suit, { p: [sx * 0.19, 0.385, -0.002], s: [1.2, 0.62, 1.0], ws: 22, hs: 12 }); });
+    [-1, 1].forEach(function (sx) { tb.sphere(0.06, m.suit, { p: [sx * 0.19, 0.383, -0.002], s: [1.15, 0.55, 0.95], ws: 22, hs: 12 }); });
     add(spine, tb.build({ name: "torso" }));
     /* 앞면 디테일: 셔츠 V, 칼라, 넥타이, 라펠(띠), 단추, 행커치프 */
     var fb = K.builder(), Z0 = 0.004;
@@ -133,8 +133,8 @@
 
     /* ── 목·칼라 ── */
     var nb = K.builder();
-    nb.cyl(0.058, 0.064, 0.085, m.skin, { p: [0, 0.03, 0.0], seg: 22 });
-    nb.torus(0.064, 0.012, m.shirt, { p: [0, -0.004, 0.0], r: [PI / 2 - 0.12, 0, 0], ts: 26, rs: 8 });
+    nb.cyl(0.045, 0.054, 0.078, m.skin, { p: [0, 0.03, 0.0], seg: 22 });
+    nb.torus(0.062, 0.012, m.shirt, { p: [0, 0.004, 0.0], r: [PI / 2 - 0.12, 0, 0], ts: 26, rs: 8 });
     add(neck, nb.build({ name: "neck" }));
 
     /* ── 머리 ── */
@@ -151,11 +151,11 @@
     var eyes = [];
     [-1, 1].forEach(function (s) {
       var eg = new T.Group(); eg.position.set(s * 0.034, ey, eyeZ); head.add(eg);
-      var white = new T.Mesh(new T.SphereGeometry(0.0108, 20, 14), m.white); eg.add(white);
-      var iris = new T.Mesh(new T.CircleGeometry(0.0054, 20), m.iris); iris.position.z = 0.0106; eg.add(iris);
-      var pup = new T.Mesh(new T.CircleGeometry(0.0024, 14), K.mat("person.pupil", function () { return K.std(0x050505, 0.2, 0, { env: 1.4 }); })); pup.position.z = 0.0108; eg.add(pup);
-      var lid = new T.Mesh(new T.SphereGeometry(0.0117, 20, 10, 0, PI * 2, 0, PI * 0.5), m.skin); lid.rotation.x = -0.26; eg.add(lid);
-      var lidL = new T.Mesh(new T.SphereGeometry(0.0117, 20, 10, 0, PI * 2, PI * 0.5, PI * 0.5), m.skin); lidL.rotation.x = 0.85; eg.add(lidL);
+      var white = new T.Mesh(new T.SphereGeometry(0.0094, 20, 14), m.white); eg.add(white);
+      var iris = new T.Mesh(new T.CircleGeometry(0.0047, 20), m.iris); iris.position.z = 0.0092; eg.add(iris);
+      var pup = new T.Mesh(new T.CircleGeometry(0.0021, 14), K.mat("person.pupil", function () { return K.std(0x050505, 0.2, 0, { env: 1.4 }); })); pup.position.z = 0.0094; eg.add(pup);
+      var lid = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, 0, PI * 0.5), m.skin); lid.rotation.x = -0.04; eg.add(lid);
+      var lidL = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, PI * 0.5, PI * 0.5), m.skin); lidL.rotation.x = 0.72; eg.add(lidL);
       eg.traverse(function (o) { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } });
       eyes.push({ g: eg, lid: lid, iris: iris, pup: pup });
     });
@@ -166,9 +166,10 @@
     [-1, 1].forEach(function (s) { hb.sphere(0.0072, m.skin, { p: [s * 0.0105, 0.084, nz0 - 0.002], s: [1, 0.8, 0.95], ws: 12, hs: 8 }); });
     /* 입술과 입선 */
     var mz = surfZ(0, 0.06);
-    hb.torus(0.0165, 0.0027, m.lip, { p: [0, 0.0625, mz + 0.0006], r: [0, 0, PI * 1.02], arc: PI * 0.98, ts: 20, rs: 8, s: [1.3, 0.5, 0.8] });
-    hb.torus(0.0155, 0.0033, m.lip, { p: [0, 0.0535, mz - 0.0006], r: [0, 0, 0], arc: PI * 0.98, ts: 20, rs: 8, s: [1.25, 0.55, 0.8] });
-    hb.cyl(0.0012, 0.0012, 0.034, K.mat("person.mouth", function () { return K.std(0x3a1a17, 0.6, 0); }), { p: [0, 0.0575, mz + 0.0005], r: [0, 0, PI / 2], seg: 6 });
+    /* 윗입술·아랫입술은 속이 찬 납작한 덩어리(윤곽선이 아니라 입술로 읽힌다) + 다문 입선 */
+    hb.sphere(0.0086, m.lip, { p: [0, 0.0607, mz + 0.0002], s: [2.05, 0.42, 0.55], ws: 18, hs: 10 });
+    hb.sphere(0.0092, m.lip, { p: [0, 0.0548, mz + 0.0004], s: [1.85, 0.52, 0.62], ws: 18, hs: 10 });
+    hb.cyl(0.0009, 0.0009, 0.034, K.mat("person.mouth", function () { return K.std(0x3a1a17, 0.6, 0); }), { p: [0, 0.0578, mz + 0.0026], r: [0, 0, PI / 2], seg: 6 });
     /* 귀 */
     [-1, 1].forEach(function (s) {
       hb.sphere(0.024, m.skin, { p: [s * 0.0765, 0.112, 0.006], s: [0.32, 1.1, 0.72], ws: 16, hs: 12 });
@@ -182,21 +183,26 @@
     /* 안경 */
     var gb = K.builder(), gz = eyeZ + 0.024;
     [-1, 1].forEach(function (s) {
-      gb.torus(0.0215, 0.0016, m.frame, { p: [s * 0.034, ey, gz], ts: 32, rs: 6 });
-      var ln = new T.Mesh(new T.CircleGeometry(0.0212, 28), m.lens); ln.position.set(s * 0.034, ey, gz); ln.renderOrder = 6; head.add(ln);
-      gb.pipe([[s * 0.0555, ey, gz], [s * 0.076, ey - 0.002, gz - 0.006], [s * 0.084, ey - 0.006, gz - 0.06], [s * 0.081, ey - 0.02, gz - 0.098]], 0.0012, m.frame, { bend: 0.01, radial: 5 });
+      gb.torus(0.0198, 0.0015, m.frame, { p: [s * 0.0335, ey, gz], ts: 32, rs: 6 });
+      var ln = new T.Mesh(new T.CircleGeometry(0.0194, 28), m.lens); ln.position.set(s * 0.0335, ey, gz); ln.renderOrder = 6; head.add(ln);
+      gb.pipe([[s * 0.0532, ey, gz], [s * 0.076, ey - 0.002, gz - 0.006], [s * 0.084, ey - 0.006, gz - 0.06], [s * 0.081, ey - 0.02, gz - 0.098]], 0.0012, m.frame, { bend: 0.01, radial: 5 });
     });
-    gb.torus(0.011, 0.0014, m.frame, { p: [0, ey + 0.008, gz], arc: PI, ts: 12, rs: 5 });
+    gb.torus(0.0095, 0.0013, m.frame, { p: [0, ey + 0.007, gz], arc: PI, ts: 12, rs: 5 });
     add(head, gb.build({ name: "glasses" }));
-    /* 머리카락: 두피를 덮는 껍질 + 옆머리 */
-    var hairG = new T.SphereGeometry(1, 48, 24, 0, PI * 2, 0, PI * 0.56);
+    /* 머리카락: 두피를 덮는 껍질. 앞 머리선은 높고 옆·뒤는 낮게 내려온다.
+       껍질은 두개골보다 언제나 바깥에 있어(요철도 양수) 살이 비쳐 보이지 않는다. */
+    var LIM0 = PI * 0.62, hairG = new T.SphereGeometry(1, 60, 30, 0, PI * 2, 0, LIM0);
     var hp = hairG.attributes.position;
     for (var i = 0; i < hp.count; i++) {
-      var nx = hp.getX(i), ny = hp.getY(i), nzv = hp.getZ(i), n = K.noise2(nx * 6 + 3, nzv * 6 + ny * 4, 64, 64) * 0.012;
-      hp.setXYZ(i, nx * (0.0845 + n), ny * (0.1125 + n), nzv * (0.1025 + n));
+      var ux = hp.getX(i), uy = hp.getY(i), uz = hp.getZ(i);
+      var th = Math.acos(K.clamp(uy, -1, 1)), psi = Math.atan2(ux, uz), fr = Math.exp(-psi * psi / 0.5);
+      var th2 = th * (PI * (0.605 - 0.2 * fr) / LIM0), sn = Math.sin(th2);       /* 앞(psi 0)일수록 머리선이 높다 */
+      var dx = Math.sin(psi) * sn, dz = Math.cos(psi) * sn, dy = Math.cos(th2);
+      var nn = K.noise2(dx * 7 + 3, dz * 7 + dy * 5, 64, 64), off = 0.0062 + 0.0042 * nn * (0.4 + 0.6 * th2 / LIM0);
+      hp.setXYZ(i, dx * (0.078 + off), dy * (0.105 + off), dz * (0.094 + off));
     }
     hairG.computeVertexNormals();
-    var hair = new T.Mesh(hairG, m.hair); hair.position.set(0, 0.117 + 0.004, 0.002); hair.rotation.x = -0.2; head.add(hair); hair.castShadow = true;
+    var hair = new T.Mesh(hairG, m.hair); hair.position.set(0, 0.117 + 0.002, 0.002); hair.rotation.x = -0.12; head.add(hair); hair.castShadow = true;
     var hs = K.builder();
     [-1, 1].forEach(function (s) {
       hs.sphere(0.03, m.hair, { p: [s * 0.068, 0.145, -0.012], s: [0.42, 1.5, 1.4], ws: 14, hs: 10 });
@@ -328,7 +334,7 @@
       if (st.blink <= 0 && st.blinkT < 0) { st.blinkT = 0; st.blink = 2.2 + Math.random() * 3.6; }
       var lidK = 0;
       if (st.blinkT >= 0) { st.blinkT += dt; var bk = st.blinkT / 0.16; lidK = bk < 0.5 ? bk * 2 : Math.max(0, 2 - bk * 2); if (bk >= 1) st.blinkT = -1; }
-      eyes.forEach(function (e) { e.lid.rotation.x = K.lerp(-0.26, 1.25, sm(lidK)); });
+      eyes.forEach(function (e) { e.lid.rotation.x = K.lerp(-0.04, 1.25, sm(lidK)); });
       /* 시선: 몸의 정면 기준 yaw/pitch 를 제한해 머리·목이 따라간다 */
       if (camPos) {
         head.getWorldPosition(_v); root.getWorldQuaternion(_q);
@@ -340,7 +346,7 @@
         st.lookYaw += (ty - st.lookYaw) * K.damp(3.2, dt); st.lookPitch += (tp - st.lookPitch) * K.damp(3.2, dt);
         neck.rotation.y = st.lookYaw * 0.4; head.rotation.y = st.lookYaw * 0.6; head.rotation.x = cur.head + st.lookPitch * 0.7; neck.rotation.x = cur.neck + st.lookPitch * 0.3;
         var eyeYaw = K.clamp(yaw - st.lookYaw, -0.25, 0.25) * engage;
-        eyes.forEach(function (e) { e.iris.position.x = eyeYaw * 0.0108; e.pup.position.x = eyeYaw * 0.0108; });
+        eyes.forEach(function (e) { e.iris.position.x = eyeYaw * 0.0094; e.pup.position.x = eyeYaw * 0.0094; });
       }
     };
     root.userData.joints = J; root.userData.mode = function () { return st.mode; };

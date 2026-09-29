@@ -75,7 +75,7 @@
       var next = n + 1, meta = next === 9 ? { era: "2018", title: "마지막 일기" } : D.CH[next - 1];
       var holder = new T.Group(), letter = P.letter(meta.title, meta.era); holder.add(letter);
       var hit = new T.Mesh(new T.BoxGeometry(0.56, 0.09, 0.42), L.hotspots[0].material);
-      hit.userData.hot = { id: "reward:" + n, name: "편지" }; hit.userData.isHit = true; hit.renderOrder = -1; holder.add(hit);
+      hit.userData.hot = { id: "reward:" + n, name: "편지" }; hit.userData.isHit = true; hit.renderOrder = -1; hit.layers.set(1); holder.add(hit);
       var glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: 0xffd694, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false, fog: false }));
       glow.scale.set(0.9, 0.9, 1); glow.position.y = 0.05; holder.add(glow);
       holder.visible = false; scene.add(holder);
@@ -139,7 +139,7 @@
       function add(it) {
         var g = P.boardPaper(it); g.position.set(it.x, it.y, BOARD_Z); g.rotation.z = it.tilt; boardGroup.add(g);
         var hit = new T.Mesh(new T.BoxGeometry(0.5, 0.39, 0.06), L.hotspots[0].material);
-        hit.position.set(it.x, it.y, BOARD_Z + 0.02); hit.userData.hot = { id: it.id, name: it.name }; hit.userData.isHit = true; hit.renderOrder = -1;
+        hit.position.set(it.x, it.y, BOARD_Z + 0.02); hit.userData.hot = { id: it.id, name: it.name }; hit.userData.isHit = true; hit.renderOrder = -1; hit.layers.set(1);
         boardGroup.add(hit); setHot(hit, true);
         W.papers.push({ group: g, hit: hit, k: it.k, kind: it.kind });
         if (popIndex && it.k === popIndex && it.kind === "diary") popIn(g);
@@ -230,7 +230,7 @@
       W.openDoor(S.done ? 1 : 0);
       W.setProgress(S.pieces.length / 8, true);
       W.refreshBoard(S);
-      W.setExitGlow(S.done ? 1 : 0);
+      W.setExitGlow(S.done ? 0.6 : 0);
     };
     W.setDiaryOnDesk = function (v) { L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v); arrow.visible = v; };
 
@@ -281,7 +281,12 @@
       var m = new T.MeshBasicMaterial({ vertexColors: true, blending: T.AdditiveBlending, transparent: true, depthWrite: false, fog: false, opacity: 0, side: T.DoubleSide });
       var mesh = new T.Mesh(g, m); mesh.renderOrder = 4; mesh.frustumCulled = false; scene.add(mesh); return mesh;
     })();
-    W.setExitGlow = function (k) { glowMat.opacity = K.clamp(k, 0, 1); spill.material.opacity = 0.75 * K.clamp(k, 0, 1); doorGlow.visible = k > 0.001; spill.visible = k > 0.001; };
+    /* 문 유리 너머 복도: 늘 희미하게 켜져 있어 유리가 시커멓게 보이지 않는다 */
+    var hall = new T.Mesh(new T.PlaneGeometry(2.6, 2.8), new T.MeshBasicMaterial({ color: 0x3a342a, fog: false, toneMapped: false })); hall.position.set((R.DOOR.x0 + R.DOOR.x1) / 2, 1.4, 4.9); hall.rotation.y = PI; scene.add(hall); W.hall = hall;
+    /* 눈부심: 열린 문 앞에서만 켜지는 큰 번짐(화면 전체에 겹쳐 그린다) */
+    var bloom = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: 0xfff2d8, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthTest: false, depthWrite: false, fog: false, toneMapped: false }));
+    bloom.scale.set(5.5, 5.5, 1); bloom.position.set((R.DOOR.x0 + R.DOOR.x1) / 2, 1.2, 4.3); bloom.renderOrder = 20; bloom.visible = false; scene.add(bloom);
+    W.setExitGlow = function (k) { k = K.clamp(k, 0, 1); glowMat.opacity = k; spill.material.opacity = 0.75 * k; doorGlow.visible = k > 0.001; spill.visible = k > 0.001; bloom.visible = k > 0.001; bloom.material.opacity = 0.55 * k * k; };
     W.setExitGlow(0);
 
     /* 코드가 맞은 뒤: 문이 열리고 빛이 밀려든다. 카메라가 문 쪽으로 다가간다. */
@@ -293,7 +298,7 @@
         cam.position.x = K.lerp(from.x, stage.x, k); cam.position.z = K.lerp(from.z, stage.z, k); C.yaw = yaw0 + dy * k; C.pitch = K.lerp(pit0, 0, k);
       }, done: function () {
         A.tween({ dur: 2.0, ease: A.ease.inOutCubic, update: function (k) { doorPivot.rotation.y = k * PI / 2; W.setExitGlow(k); } });
-        A.tween({ dur: 3.0, delay: 1.0, ease: A.ease.inOutCubic, update: function (k) { cam.position.z = K.lerp(stage.z, 3.35, k); C.pitch = K.lerp(0, 0.02, k); }, done: function () { C.lock = Math.max(0, C.lock - 1); if (done) done(); } });
+        A.tween({ dur: 3.0, delay: 1.0, ease: A.ease.inOutCubic, update: function (k) { cam.position.z = K.lerp(stage.z, 3.35, k); C.pitch = K.lerp(0, 0.02, k); }, done: function () { C.lock = Math.max(0, C.lock - 1); W.setExitGlow(0.6); if (done) done(); } });
       } });
     };
 

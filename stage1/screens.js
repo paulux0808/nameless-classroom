@@ -117,12 +117,12 @@
       /* 물리 키보드: 자판 배열·한글 입력기와 무관하게 e.code 로 읽는다. 버튼에 초점이 있어도 Enter 는 제출로 간다. */
       function onKey(e) {
         if (activeCRT !== api || e.ctrlKey || e.metaKey || e.altKey) return;
-        var ch = null, m;
-        if (e.code && (m = /^Key([A-Z])$/.exec(e.code))) ch = number ? null : m[1];
-        else if (e.code && (m = /^(?:Digit|Numpad)([0-9])$/.exec(e.code))) ch = m[1];
-        if (ch) { e.preventDefault(); e.stopPropagation(); add(ch); press(ch); return; }
-        if (e.key === "Backspace") { e.preventDefault(); state = state.slice(0, -1); paint(); }
-        else if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); api.submit(); }
+        var k = root.N1Input.crt(e, number);
+        if (!k) return;
+        e.preventDefault(); e.stopPropagation();
+        if (k.kind === "char") { add(k.ch); press(k.ch); }
+        else if (k.kind === "back") { state = state.slice(0, -1); paint(); }
+        else if (k.kind === "enter") api.submit();
       }
       api.attach = function (sheetApi) {
         activeCRT = api; doc.addEventListener("keydown", onKey, true);

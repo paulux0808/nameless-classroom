@@ -316,6 +316,20 @@ body.sheet-wide #toast{bottom:auto;top:calc(var(--sa-t) + 10px);left:50%}
   .crt-value{min-height:26px;font-size:19px;margin-top:2px}.keys{gap:5px}
   .sheet-head p{margin-top:4px;font-size:10.5px}
 }
+/* 아주 짧은 화면(구형 폰 가로 320px대): 단말기가 한 화면에 들어오도록 더 줄인다 */
+@media(max-height:350px){
+  .sheet-head{padding:9px 12px 6px 16px}.sheet-head h2{font-size:15px}.sheet-head h2::after{margin-top:4px;height:2px;width:32px}.sheet-head p{display:none}
+  .x{width:30px;height:30px;font-size:19px}
+  .sheet-body{padding:8px 12px 8px 16px}.sheet-foot{padding:8px 12px calc(8px + var(--sa-b)) 16px}
+  .crt{padding:6px;gap:4px;border-radius:9px}.crt-screen{padding:5px 10px}.crt-value{min-height:22px;font-size:17px;margin-top:0}.crt-l{display:none}
+  .key,.key.tool{min-height:26px;font-size:12px;border-radius:4px}.keys{gap:4px}.keytools{gap:4px}
+  .tab{min-height:28px;font-size:12px;padding:0 10px}.tabpane{padding:8px 4px 4px 2px}
+  .diary{font-size:14.5px;padding-left:22px}
+  .will-scroll{padding:10px 20px 4px}.will-card h1{font-size:21px;margin-bottom:6px}.will-card h1::after{margin-top:6px;width:38px}
+  .will-card p{font-size:12px;line-height:1.5;margin-bottom:5px}.will{padding:7px 11px;font-size:12.5px!important;line-height:1.6!important}
+  .will-actions{padding:7px 20px calc(7px + var(--sa-b))}.will-actions .btn{min-height:36px;font-size:14px}
+  #hud{gap:4px}.hud-tag{padding:3px 9px 4px}.hud-tag span{font-size:12.5px}
+}
 /* 좁은 가로 화면(폰): 여백과 글자를 줄여 좌우 분할을 지킨다 */
 @media(max-height:430px){
   #hud{gap:5px;padding-top:calc(var(--sa-t) + 6px)} .hud-tag{padding:4px 10px 5px} .hud-tag span{font-size:13.5px}

@@ -10,9 +10,7 @@
   var K = root.N1K, Lg = root.N1Logic || root;
   var EYE = 1.6, EYE_LOW = 0.42, SPEED = 2.9, REACH = 3.0;
 
-  var KEYMAP = { w: "w", a: "a", s: "s", d: "d", W: "w", A: "a", S: "s", D: "d",
-    ArrowUp: "w", ArrowLeft: "a", ArrowDown: "s", ArrowRight: "d",
-    "ㅈ": "w", "ㅁ": "a", "ㄴ": "s", "ㅇ": "d" };
+  var Input = root.N1Input;
 
   function create(o) {
     var cv = o.canvas, cam = o.camera, blocks = Lg.buildBlocks();
@@ -21,6 +19,7 @@
     var IS_TOUCH = ("ontouchstart" in root) || (navigator.maxTouchPoints > 0);
     C.isTouch = IS_TOUCH;
     var ray = new root.THREE.Raycaster(), ndc = new root.THREE.Vector2(), hits = [];
+    ray.layers.set(1);   /* 히트박스는 레이어 1 — 카메라(레이어 0)에는 그려지지 않는다 */
     C.hotspots = o.hotspots;   /* 메시 배열 (userData.hot) — 호출 측이 바꿀 수 있다 */
 
     function blocked() { return C.lock > 0 || (o.blocked && o.blocked()); }
@@ -30,7 +29,7 @@
     function castAt(x, y) {
       var r = cv.getBoundingClientRect();
       ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
-      ray.setFromCamera(ndc, cam);
+      ray.setFromCamera(ndc, cam); ray.layers.set(1);
       hits.length = 0;
       ray.intersectObjects(C.hotspots, false, hits);
       for (var i = 0; i < hits.length; i++) if (hits[i].object.visible !== false && hits[i].object.userData.hot) { C.hoverDist = hits[i].distance; return hits[i].object; }
@@ -103,14 +102,15 @@
     function typing() { var a = document.activeElement; return a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA" || a.tagName === "SELECT"); }
     root.addEventListener("keydown", function (e) {
       if (typing() || e.ctrlKey || e.metaKey || e.altKey) return;
-      var k = KEYMAP[e.key];
+      var k = Input.move(e);
       if (k) { if (!blocked()) { C.keys[k] = true; if (e.key.indexOf("Arrow") === 0) e.preventDefault(); } return; }
       if (blocked()) return;
-      if (e.key === "c" || e.key === "C" || e.key === "ㅊ") C.toggleCrouch();
-      else if (e.key === "e" || e.key === "E" || e.key === "ㄷ" || e.key === " " || e.key === "Enter") { e.preventDefault(); C.pickCenter(); }
-      else if (e.key === "f" || e.key === "F" || e.key === "ㄹ") { if (o.onFullscreen) o.onFullscreen(); }
+      var a = Input.action(e);
+      if (a === "crouch") C.toggleCrouch();
+      else if (a === "act") { e.preventDefault(); C.pickCenter(); }
+      else if (a === "full") { if (o.onFullscreen) o.onFullscreen(); }
     });
-    root.addEventListener("keyup", function (e) { var k = KEYMAP[e.key]; if (k) C.keys[k] = false; });
+    root.addEventListener("keyup", function (e) { var k = Input.move(e); if (k) C.keys[k] = false; });
     root.addEventListener("blur", C.clearInput);
 
     /* ── 조이스틱(터치) ── */

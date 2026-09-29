@@ -101,12 +101,12 @@
     L.fill = new T.PointLight(K.srgb(0xa9bde0), 0.8, 11, 2);
     L.fill.position.set(2.8, 2.3, 0.4);
     /* 컴퓨터 화면 빛 (밤 모드에서 강해진다) */
-    L.screen = new T.PointLight(K.srgb(0x6ad2bd), 0.55, 3.6, 2);
+    L.screen = new T.PointLight(K.srgb(0x8ad6c6), 0.55, 3.6, 2);
     L.screen.position.set(0, 1.2, -2.55);
     [L.hemi, L.ambient, L.sun, L.sun.target, L.bounce, L.fill, L.screen].forEach(function (x) { L.group.add(x); });
 
     /* 창밖 배경 */
-    var sky = new T.Mesh(new T.PlaneGeometry(60, 15), new T.MeshBasicMaterial({ map: skyTexture(), color: new T.Color(1.9, 1.85, 1.75), fog: false }));
+    var sky = new T.Mesh(new T.PlaneGeometry(60, 15), new T.MeshBasicMaterial({ map: skyTexture(), color: new T.Color(1, 1, 1), fog: false, toneMapped: false }));
     sky.position.set(-17, 4.6, 0); sky.rotation.y = PI / 2; sky.name = "skyBackdrop";
     L.group.add(sky); L.sky = sky;
 
@@ -149,13 +149,14 @@
     };
     /* 8장: 커튼을 닫으면 방이 어두워진다 */
     L.baseExposure = renderer.toneMappingExposure || 1; L.baseEnv = 0.8;
-    var NIGHT_SKY = new T.Color(0.06, 0.085, 0.14), DAY_SKY = new T.Color(1.9, 1.85, 1.75), FOG_DAY = K.srgb(0x2c2419), FOG_NIGHT = K.srgb(0x0a0d14);
+    var HEMI_DAY = K.srgb(0xb3c6e4), HEMI_NIGHT = K.srgb(0x7f92b8);
+    var NIGHT_SKY = new T.Color(0.06, 0.085, 0.14), DAY_SKY = new T.Color(1, 1, 1), FOG_DAY = K.srgb(0x2c2419), FOG_NIGHT = K.srgb(0x0a0d14);
     L.setDark = function (d) {   /* d: 0..1 */
       L.sun.intensity = (2.15 - 0.7 * L.progress) * (1 - d) + 0.03 * d;
-      L.hemi.intensity = (0.28 - 0.05 * L.progress) * (1 - d) + 0.03 * d;
+      L.hemi.intensity = (0.28 - 0.05 * L.progress) * (1 - d) + 0.07 * d; L.hemi.color.copy(HEMI_DAY).lerp(HEMI_NIGHT, d);
       L.bounce.intensity = 0.7 * (1 - d);
-      L.fill.intensity = 0.8 * (1 - d) + 0.06 * d;
-      L.screen.intensity = 0.55 + 0.8 * d; L.screen.distance = 3.6 + 2.2 * d;
+      L.fill.intensity = 0.8 * (1 - d) + 0.14 * d;
+      L.screen.intensity = 0.55 + 0.5 * d; L.screen.distance = 3.6 + 1.6 * d;
       L.shafts.forEach(function (s) { s.visible = d < 0.5; });
       L.dust.material.opacity = 0.55 * (1 - d) + 0.1 * d;
       K.setEnvIntensity(scene, L.baseEnv * (1 - 0.85 * d));

@@ -13,8 +13,8 @@
 
   /* ── 화질: 기기에 맞춰 시작하고, 프레임이 모자라면 해상도부터 내린다 ── */
   var QNAME = q.get("q") || (IS_TOUCH ? "mobile" : "desktop");
-  var Q = { desktop: { dprMax: 2, shadow: 2048, dust: 220, aniso: 8, fps: 55 }, mobile: { dprMax: 1.5, shadow: 1024, dust: 120, aniso: 4, fps: 30 },
-    low: { dprMax: 1, shadow: 1024, dust: 60, aniso: 2, fps: 30 } }[QNAME] || { dprMax: 2, shadow: 2048, dust: 220, aniso: 8, fps: 55 };
+  var Q = { desktop: { dprMax: 2, shadow: 2048, dust: 220, aniso: 8, fps: 55, detail: 1 }, mobile: { dprMax: 1.5, shadow: 1024, dust: 120, aniso: 4, fps: 30, detail: 0.75 },
+    low: { dprMax: 1, shadow: 1024, dust: 60, aniso: 2, fps: 30, detail: 0.55 } }[QNAME] || { dprMax: 2, shadow: 2048, dust: 220, aniso: 8, fps: 55, detail: 1 };
   var dprMax = Math.min(window.devicePixelRatio || 1, Q.dprMax), dprMin = 0.75, dpr = dprMax;
 
   /* ── 저장소: 접근이 막혀 있어도 게임은 돌아간다(메모리에만 남는다) ── */
@@ -48,7 +48,11 @@
     onFinalOk: function () { setTimeout(SC.showEnding, 180); },
     onExitOpened: function () {
       UI.flags.exiting = true; UI.clearHover();
-      World.playExit(camera, Ctl, function () { UI.flags.exiting = false; SC.showClear(); });
+      World.playExit(camera, Ctl, function () {
+        var wo = doc.getElementById("whiteout"); wo.classList.add("on");                           /* 빛 속으로 사라진다 */
+        setTimeout(function () { UI.flags.exiting = false; SC.showClear(); }, 700);
+        setTimeout(function () { wo.classList.remove("on"); }, 900);
+      });
     },
     onEndingClosed: function () { Ctl.clearInput(); },
     goNextStage: function () {
@@ -106,6 +110,7 @@
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = QNAME === "desktop" ? T.PCFSoftShadowMap : T.PCFShadowMap;
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;      /* 움직임이 있을 때만 그림자를 다시 그린다 */
     K.tex.setAnisotropy(Math.min(Q.aniso, renderer.capabilities.getMaxAnisotropy()));
+    K.detail = Q.detail;
     cv.addEventListener("webglcontextlost", function (e) { e.preventDefault(); try { M.save(); } catch (_) {} UI.toast("화면 연결이 끊겼습니다. 다시 불러옵니다…", "bad"); setTimeout(function () { location.reload(); }, 1600); });
     scene = new T.Scene(); camera = new T.PerspectiveCamera(60, 1, 0.05, 80); camera.rotation.order = "YXZ";
     camera.position.set(OPEN.x, N1C.EYE, OPEN.z); scene.add(camera);
@@ -123,6 +128,10 @@
     Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI }); scene.add(Lay.group);
     UI.setLoading(0.8, "마무리");
     await tick();
+    /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
+    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
+      .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }));
+    var bake = K.bakeStatic(Lay.group, { exclude: dyn, half: function (z) { return z < 0 ? 0 : 1; } });
     K.setEnvIntensity(scene, Light.baseEnv);
     World = N1W.create({ scene: scene, layout: Lay, light: Light, data: D, model: M, renderer: renderer });
     Ctl = N1C.create({
@@ -148,7 +157,7 @@
     UI.setLoading(1, "");
     SC.bindIntro();
     UI.hideLoading();
-    if (q.get("debug")) window.__n1 = { M: M, W: World, C: Ctl, UI: UI, SC: SC, I: Inter, R: renderer, scene: scene, camera: camera, L: Lay, light: Light, begin: hooks.begin, K: K };
+    if (q.get("debug")) window.__n1 = { bake: bake, Q: Q, M: M, W: World, C: Ctl, UI: UI, SC: SC, I: Inter, R: renderer, scene: scene, camera: camera, L: Lay, light: Light, begin: hooks.begin, K: K };
     window.__ready = true;
     requestAnimationFrame(loop);
   }

@@ -3,6 +3,8 @@
   "use strict";
   var T = root.THREE, K = root.N1K, G = K.geo = {};
   var PI = Math.PI;
+  /* 곡면 분할 수를 기기 성능 배율(K.detail)에 맞춘다. 배율 1 이면 원래 값 그대로. */
+  function sc(n, min) { var d = K.detail || 1; return d >= 1 ? n : Math.max(min || 3, Math.round(n * d)); }
 
   /* ── 위치가 같은 정점끼리 법선을 평균낸다 (분리된 그리드의 이음매를 매끈하게) ── */
   G.weldNormals = function (g, eps) {
@@ -25,7 +27,7 @@
 
   /* ── 둥근 상자: 모서리가 반경 r 로 깎인다. UV 는 월드 크기 기준 평면 투영. ── */
   G.rbox = function (w, h, d, r, segs, uvs) {
-    segs = segs || 2;
+    segs = sc(segs || 2, 1);
     r = Math.max(0.0004, Math.min(r, w / 2 - 1e-4, h / 2 - 1e-4, d / 2 - 1e-4));
     var n = segs * 2 + 1;
     var g = new T.BoxGeometry(1, 1, 1, n, n, n);
@@ -50,10 +52,10 @@
         가장자리 둥글림 edge, bend(v) 로 곡면화. 상판·좌판·선반·책 표지에 쓴다. ── */
   G.plate = function (w, d, cr, t, o) {
     o = o || {};
-    var edge = Math.min(o.edge == null ? t * 0.45 : o.edge, t / 2 - 1e-4), E = o.edgeSegs || 3, R = o.rings || 8;
+    var edge = Math.min(o.edge == null ? t * 0.45 : o.edge, t / 2 - 1e-4), E = sc(o.edgeSegs || 3, 1), R = sc(o.rings || 8, 2);
     var us = o.uv == null ? 1 : o.uv, bend = o.bend, hx = w / 2, hz = d / 2;
     cr = Math.max(0.002, Math.min(cr, hx - 1e-3, hz - 1e-3));
-    var cx = hx - cr, cz = hz - cr, ac = o.cornerSegs || 6, step = o.step || 0.06;
+    var cx = hx - cr, cz = hz - cr, ac = sc(o.cornerSegs || 6, 3), step = o.step || 0.06;
     /* 1) 외곽선 (반시계, 각도가 +x 에서 +z 로 증가) */
     var P = [];   /* {x,z,nx,nz} */
     function arc(ccx, ccz, a0) {
@@ -212,12 +214,44 @@
     straight(cur, V[V.length - 1]);
     return out;
   };
+  /* 꺾은선을 따라 링을 세우는 관. 직선 구간은 양 끝 링 둘뿐이고, 필렛(곡선)에만 링이 촘촘하다.
+     (예전엔 Catmull-Rom 을 다시 표본해 직선에도 링이 수십 개였다 → 같은 모양에 삼각형 4배) */
   G.pipe = function (pts, radius, o) {
     o = o || {};
-    var path = G.pipePath(pts, o.bend == null ? radius * 3 : o.bend, o.step);
-    var curve = new T.CatmullRomCurve3(path, false, "centripetal");
-    var segs = Math.max(6, path.length * 2);
-    var g = new T.TubeGeometry(curve, segs, radius, o.radial || 10, false);
+    var path = G.pipePath(pts, o.bend == null ? radius * 3 : o.bend, o.straight ? o.step : 1e9), radial = Math.max(6, Math.round((o.radial || 10) * (K.detail || 1)));
+    var P2 = [path[0]];                                           /* 겹친 점 제거 */
+    for (var q = 1; q < path.length; q++) if (path[q].distanceToSquared(P2[P2.length - 1]) > 1e-10) P2.push(path[q]);
+    var n = P2.length, i, j, tan = [], nor = [], bin = [];
+    for (i = 0; i < n; i++) {
+      var t = new T.Vector3();
+      if (i === 0) t.subVectors(P2[1], P2[0]); else if (i === n - 1) t.subVectors(P2[n - 1], P2[n - 2]);
+      else { t.subVectors(P2[i], P2[i - 1]).normalize().add(new T.Vector3().subVectors(P2[i + 1], P2[i]).normalize()); }
+      tan.push(t.normalize());
+    }
+    /* 평행 이동 프레임 */
+    var up = Math.abs(tan[0].y) < 0.9 ? new T.Vector3(0, 1, 0) : new T.Vector3(1, 0, 0);
+    nor[0] = new T.Vector3().crossVectors(tan[0], up).normalize(); bin[0] = new T.Vector3().crossVectors(tan[0], nor[0]).normalize();
+    var axis = new T.Vector3(), qt = new T.Quaternion();
+    for (i = 1; i < n; i++) {
+      axis.crossVectors(tan[i - 1], tan[i]);
+      if (axis.lengthSq() > 1e-12) { qt.setFromAxisAngle(axis.normalize(), Math.acos(K.clamp(tan[i - 1].dot(tan[i]), -1, 1))); nor[i] = nor[i - 1].clone().applyQuaternion(qt); } else nor[i] = nor[i - 1].clone();
+      bin[i] = new T.Vector3().crossVectors(tan[i], nor[i]).normalize();
+    }
+    var pos = new Float32Array(n * (radial + 1) * 3), nrm = new Float32Array(n * (radial + 1) * 3), uv = new Float32Array(n * (radial + 1) * 2), idx = [], len = 0, L = 0, acc = [0];
+    for (i = 1; i < n; i++) { L += P2[i].distanceTo(P2[i - 1]); acc.push(L); }
+    for (i = 0; i < n; i++) for (j = 0; j <= radial; j++) {
+      var a = j / radial * Math.PI * 2, c = Math.cos(a), sn = Math.sin(a), k = (i * (radial + 1) + j);
+      var nx = nor[i].x * c + bin[i].x * sn, ny = nor[i].y * c + bin[i].y * sn, nz = nor[i].z * c + bin[i].z * sn;
+      pos[k * 3] = P2[i].x + radius * nx; pos[k * 3 + 1] = P2[i].y + radius * ny; pos[k * 3 + 2] = P2[i].z + radius * nz;
+      nrm[k * 3] = nx; nrm[k * 3 + 1] = ny; nrm[k * 3 + 2] = nz; uv[k * 2] = acc[i] / (radius * 6.28); uv[k * 2 + 1] = j / radial;
+    }
+    for (i = 0; i < n - 1; i++) for (j = 0; j < radial; j++) {
+      var a0 = i * (radial + 1) + j, b0 = (i + 1) * (radial + 1) + j;
+      idx.push(a0, a0 + 1, b0, b0, a0 + 1, b0 + 1);   /* 바깥쪽이 앞면이 되는 감김 */
+    }
+    var g = new T.BufferGeometry();
+    g.setAttribute("position", new T.BufferAttribute(pos, 3)); g.setAttribute("normal", new T.BufferAttribute(nrm, 3)); g.setAttribute("uv", new T.BufferAttribute(uv, 2));
+    g.setIndex(idx); g.computeBoundingSphere(); g.computeBoundingBox();
     return g;
   };
 
@@ -225,16 +259,16 @@
   G.lathe = function (profile, seg, o) {
     o = o || {};
     var pts = profile.map(function (p) { return new T.Vector2(p[0], p[1]); });
-    return new T.LatheGeometry(pts, seg || 32, o.start || 0, o.len == null ? PI * 2 : o.len);
+    return new T.LatheGeometry(pts, sc(seg || 32, 8), o.start || 0, o.len == null ? PI * 2 : o.len);
   };
-  G.cyl = function (rt, rb, h, seg, open) { return new T.CylinderGeometry(rt, rb, h, seg || 20, 1, !!open); };
-  G.sphere = function (r, ws, hs) { return new T.SphereGeometry(r, ws || 24, hs || 16); };
-  G.torus = function (R, r, rs, ts, arc) { return new T.TorusGeometry(R, r, rs || 10, ts || 32, arc == null ? PI * 2 : arc); };
+  G.cyl = function (rt, rb, h, seg, open) { return new T.CylinderGeometry(rt, rb, h, sc(seg || 20, 6), 1, !!open); };
+  G.sphere = function (r, ws, hs) { return new T.SphereGeometry(r, sc(ws || 24, 8), sc(hs || 16, 5)); };
+  G.torus = function (R, r, rs, ts, arc) { return new T.TorusGeometry(R, r, sc(rs || 10, 5), sc(ts || 32, 10), arc == null ? PI * 2 : arc); };
   G.box = function (w, h, d) { return new T.BoxGeometry(w, h, d); };
   G.plane = function (w, h, ws, hs) { return new T.PlaneGeometry(w, h, ws || 1, hs || 1); };
   /* 캡슐 (반경 r, 몸통 길이 len) — 회전체로 만들어 이음매가 매끈하다 */
   G.capsule = function (r, len, seg) {
-    var pr = [], n = 8, i;
+    var pr = [], n = Math.max(3, Math.round(6 * (K.detail || 1))), i;
     for (i = 0; i <= n; i++) { var a = -PI / 2 + (PI / 2) * (i / n); pr.push([Math.max(0.0001, r * Math.cos(a)), -len / 2 + r * Math.sin(a)]); }
     for (i = 0; i <= n; i++) { var b = (PI / 2) * (i / n); pr.push([Math.max(0.0001, r * Math.cos(b)), len / 2 + r * Math.sin(b)]); }
     return G.lathe(pr, seg || 20);
