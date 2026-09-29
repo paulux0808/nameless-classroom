@@ -124,10 +124,8 @@
         else if (k.kind === "back") { state = state.slice(0, -1); paint(); }
         else if (k.kind === "enter") api.submit();
       }
-      api.attach = function (sheetApi) {
-        activeCRT = api; doc.addEventListener("keydown", onKey, true);
-        sheetApi.cleanup(function () { doc.removeEventListener("keydown", onKey, true); if (activeCRT === api) activeCRT = null; });
-      };
+      api.detach = function () { doc.removeEventListener("keydown", onKey, true); if (activeCRT === api) activeCRT = null; };
+      api.attach = function (sheetApi) { activeCRT = api; doc.addEventListener("keydown", onKey, true); sheetApi.cleanup(api.detach); };
       paint();
       return api;
     }
@@ -169,6 +167,7 @@
             var r = M.answer(raw);
             if (r.ok) {
               UI.toast("암호 해제 — 단서: “" + r.cue + "”", "good");
+              crt.detach();                                  /* 통과했으니 Enter 는 이제 '조사하러 간다' 버튼의 것이다 */
               right.innerHTML = ""; right.appendChild(acceptedPanel(c));
               var eb = el("button", "btn primary", "교실을 조사하러 간다"); eb.style.marginTop = "12px"; eb.onclick = function () { UI.closeSheet(); }; right.appendChild(eb);
               try { eb.focus({ preventScroll: true }); } catch (e) {}

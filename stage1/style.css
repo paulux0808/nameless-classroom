@@ -18,6 +18,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:#0a0d0c;overscroll-behavior:none}
 body{font-family:var(--font-ui);color:var(--chalk);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;font-size:16px}
+#scene,#hud,#joy,#act,#crouch,#reticle,#label{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 button,input{font:inherit;color:inherit}
 /* 한글은 낱말 중간에서 줄을 바꾸지 않는다 (긴 낱말만 예외로 꺾는다) */
 .sheet-body,.will-card,#note,#toast,.crt-rule,.crt-cue,.mini,.item{word-break:keep-all;overflow-wrap:anywhere}
@@ -37,7 +38,8 @@ body.dim #grade{background:radial-gradient(120% 105% at 50% 46%,transparent 30%,
 
 /* ───────────── HUD ───────────── */
 #hud{position:fixed;inset:0;z-index:30;pointer-events:none;padding:calc(var(--sa-t) + 10px) calc(var(--sa-r) + 12px) 10px calc(var(--sa-l) + 12px);display:flex;flex-direction:column;gap:8px}
-#hud>*{pointer-events:auto}
+/* HUD 는 눌리는 것(버튼)만 이벤트를 받는다. 빈 곳은 그대로 3D 화면(시선 드래그)으로 통과한다 */
+#hud *{pointer-events:none}#hud button{pointer-events:auto}
 .hud-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .hud-tag{display:flex;align-items:baseline;gap:10px;padding:6px 13px 7px;min-width:0;max-width:calc(100vw - 210px);
   background:linear-gradient(180deg,var(--slate),var(--slate-2));border:1px solid rgba(232,238,228,.16);border-radius:5px;

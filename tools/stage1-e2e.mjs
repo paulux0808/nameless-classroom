@@ -61,6 +61,12 @@ try {
   await shot("01-intro");
   await page.click("#go-new"); await page.waitForTimeout(500);
 
+  /* 0) 시선 드래그: HUD 띠(화면 맨 위) 한가운데서 시작해도 끌린다 */
+  const yaw0 = await ev(() => __n1.C.yaw);
+  await page.mouse.move(640, 22); await page.mouse.down(); await page.mouse.move(700, 40, { steps: 4 }); await page.mouse.up(); await page.waitForTimeout(200);
+  check(Math.abs((await ev(() => __n1.C.yaw)) - yaw0) > 0.05, "HUD 띠 위에서 시작한 드래그도 시선을 돌린다");
+  await ev(() => __n1.C.setView(0, 3.1, Math.PI, -0.13));
+
   /* 1) 첫 일기: 진짜 클릭 */
   await ev(() => __n1.C.setView(-0.1, 2.3, Math.PI, -0.35)); await page.waitForTimeout(300);
   let p = await screenOf("diary1obj"); await page.mouse.move(p.x, p.y); await page.mouse.click(p.x, p.y); await page.waitForTimeout(600);

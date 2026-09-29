@@ -117,21 +117,24 @@
     resize();
     UI.setLoading(0.12, "벽과 바닥");
     await tick();
-    var shell = R.buildShell(scene); scene.add(shell.group);
+    var T0 = performance.now(), TM = window.__timing = {};
+    function mark(k) { TM[k] = Math.round(performance.now() - T0); }
+    var shell = R.buildShell(scene); scene.add(shell.group); mark("shell");
     UI.setLoading(0.3, "빛");
     await tick();
-    Light = R.buildLighting(scene, renderer, { shadowSize: Q.shadow, dust: Q.dust }); scene.add(Light.group);
+    Light = R.buildLighting(scene, renderer, { shadowSize: Q.shadow, dust: Q.dust }); scene.add(Light.group); mark("lighting");
     UI.setLoading(0.42, "초상화");
-    var portraits = await loadPortraits();
+    var portraits = await loadPortraits(); mark("portraits");
     UI.setLoading(0.55, "책상과 소품");
     await tick();
-    Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI }); scene.add(Lay.group);
+    Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI }); scene.add(Lay.group); mark("layout");
     UI.setLoading(0.8, "마무리");
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
     var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
       .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }));
     var bake = K.bakeStatic(Lay.group, { exclude: dyn, half: function (z) { return z < 0 ? 0 : 1; } });
+    mark("bake");
     K.setEnvIntensity(scene, Light.baseEnv);
     World = N1W.create({ scene: scene, layout: Lay, light: Light, data: D, model: M, renderer: renderer });
     Ctl = N1C.create({
@@ -152,8 +155,10 @@
     World.applyState(M.S, true);
     UI.setLoading(0.95, "셰이더");
     await tick();
+    mark("world");
     try { renderer.compile(scene, camera); } catch (e) {}
-    renderer.render(scene, camera);
+    mark("compile");
+    renderer.render(scene, camera); mark("firstFrame");
     UI.setLoading(1, "");
     SC.bindIntro();
     UI.hideLoading();

@@ -94,7 +94,6 @@
       if (c.onClose && !silent) setTimeout(c.onClose, 0);
     };
     doc.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-x]")) UI.closeSheet(); });
-    veil.addEventListener("pointerdown", function () { if (cur && cur.dismiss) UI.closeSheet(); });
     doc.addEventListener("keydown", function (e) {
       if (!cur) return;
       if (e.key === "Escape") { if (cur.dismiss) { e.preventDefault(); e.stopPropagation(); UI.closeSheet(); } return; }   /* 같은 키가 메뉴까지 열지 않게 멈춘다 */
