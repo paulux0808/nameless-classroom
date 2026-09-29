@@ -14,6 +14,7 @@
   /* CanvasTexture 마무리: sRGB(색) / linear(높이) 구분 */
   X.finish = function (c, o) {
     o = o || {};
+    if (o.color !== false && o.toon !== false && K.isToon && K.isToon()) K.toon.toonify(c, o.toonOpts);   /* 카툰: 뭉개고 색 단계를 줄인다 */
     var t = new T.CanvasTexture(c);
     t.wrapS = t.wrapT = o.clamp ? T.ClampToEdgeWrapping : T.RepeatWrapping;
     t.anisotropy = aniso;

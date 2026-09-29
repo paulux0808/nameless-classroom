@@ -33,7 +33,8 @@
     var sg = new T.PlaneGeometry(0.34, 0.255, 8, 6), sp = sg.attributes.position;
     for (var i = 0; i < sp.count; i++) { var xx = sp.getX(i) / 0.17, yy = sp.getY(i) / 0.1275; sp.setZ(i, 0.012 * (1 - 0.5 * (xx * xx + yy * yy))); }
     sg.computeVertexNormals();
-    var screen = new T.Mesh(sg, new T.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: new T.Color(1, 1, 1), emissiveIntensity: 0.9, roughness: 0.18, metalness: 0 }));
+    var screen = new T.Mesh(sg, K.isToon() ? new T.MeshBasicMaterial({ map: tex, toneMapped: false })
+      : new T.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: new T.Color(1, 1, 1), emissiveIntensity: 0.9, roughness: 0.18, metalness: 0 }));
     screen.position.set(0, 0.3, 0.197); screen.name = "crtScreen"; g.add(screen);
     var sheen = new T.Mesh(sg.clone(), K.std(0xffffff, 0.03, 0, { opacity: 0.08, env: 1.6 })); sheen.material.depthWrite = false; sheen.position.set(0, 0.3, 0.2); g.add(sheen);
     /* 키보드 + 본체 케이스(플로피 슬롯) */

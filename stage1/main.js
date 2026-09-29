@@ -67,6 +67,7 @@
     }
   };
   var UI = N1UI.create({ model: M, data: D, isTouch: IS_TOUCH, hooks: hooks });
+  (function () { var clear = UI.clearHover; UI.clearHover = function () { clear(); if (K.outline && K.outline.mat) K.outline.hover(null); }; })();   /* 창이 열리면 테두리 강조도 끈다 */
   var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
@@ -84,6 +85,7 @@
     if (!renderer) return;
     var w = window.innerWidth, h = window.innerHeight;
     renderer.setPixelRatio(dpr); renderer.setSize(w, h, false);
+    if (K.outline && K.outline.mat) K.outline.setSize(w, h, dpr);                    /* 윤곽선 두께는 장치 픽셀 기준 */
     camera.aspect = w / h; camera.fov = fovFor(camera.aspect); camera.updateProjectionMatrix();
   }
   window.addEventListener("resize", function () { if (resizeQueued) return; resizeQueued = true; requestAnimationFrame(function () { resizeQueued = false; resize(); }); });
@@ -106,8 +108,9 @@
     if (!window.WebGLRenderingContext) throw new Error("WebGL 미지원");
     var cv = $("#scene");
     renderer = new T.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: "high-performance" });
-    renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = QNAME === "desktop" ? T.PCFSoftShadowMap : T.PCFShadowMap;
+    var TOON = K.isToon();
+    renderer.outputEncoding = T.sRGBEncoding; renderer.toneMapping = TOON ? T.NoToneMapping : T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = (QNAME === "desktop" && !TOON) ? T.PCFSoftShadowMap : T.PCFShadowMap;   /* 카툰은 또렷한 그림자 */
     renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;      /* 움직임이 있을 때만 그림자를 다시 그린다 */
     K.tex.setAnisotropy(Math.min(Q.aniso, renderer.capabilities.getMaxAnisotropy()));
     K.detail = Q.detail;
@@ -133,14 +136,27 @@
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
     var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
       .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }));
+    /* 카툰: 잉크 윤곽선. 히트박스와 물체의 짝을 합치기 전에 정한다(붙박이 물체는 합쳐지면 따로 찾을 수 없다) */
+    var hullInfo = null;
+    if (TOON) {
+      K.outline.init(); K.outline.setSize(window.innerWidth, window.innerHeight, dpr);
+      Lay.curtains.forEach(function (c) { c.traverse(function (x) { if (x.isMesh) x.userData.noHull = true; }); });   /* 천은 두께가 없어 껍질이 안 맞는다 */
+      K.outline.bind(Lay.group, Lay.hotspots, dyn);
+    }
     var bake = K.bakeStatic(Lay.group, { exclude: dyn, half: function (z) { return z < 0 ? 0 : 1; } });
     mark("bake");
+    /* 움직이지 않는 소품은 껍질 하나로, 움직이는 소품은 메시마다 껍질을 붙인다 */
+    if (TOON) {
+      hullInfo = K.outline.buildStatic(Lay.group, { exclude: dyn, skipNames: ["platformTop"] });
+      dyn.forEach(function (d) { if (d) K.outline.attach(d); });
+      mark("outline");
+    }
     K.setEnvIntensity(scene, Light.baseEnv);
     World = N1W.create({ scene: scene, layout: Lay, light: Light, data: D, model: M, renderer: renderer });
     Ctl = N1C.create({
       canvas: cv, camera: camera, hotspots: World.active, joy: $("#joy"), joyKnob: $("#joyk"),
       blocked: function () { return UI.blocked(); },
-      onHover: function (t, far, x, y) { UI.setHover(t, far, x, y); },
+      onHover: function (t, far, x, y) { UI.setHover(t, far, x, y); if (TOON) K.outline.hover(t && !far ? t : null); },
       onHoverMove: function (x, y) { UI.moveLabel(x, y); },
       onPick: function (t) { Inter.interact(t.userData.hot.id); },
       onTooFar: function () { UI.toast("더 가까이 가세요."); },
@@ -162,7 +178,7 @@
     UI.setLoading(1, "");
     SC.bindIntro();
     UI.hideLoading();
-    if (q.get("debug")) window.__n1 = { bake: bake, Q: Q, M: M, W: World, C: Ctl, UI: UI, SC: SC, I: Inter, R: renderer, scene: scene, camera: camera, L: Lay, light: Light, begin: hooks.begin, K: K };
+    if (q.get("debug")) window.__n1 = { bake: bake, hull: hullInfo, Q: Q, M: M, W: World, C: Ctl, UI: UI, SC: SC, I: Inter, R: renderer, scene: scene, camera: camera, L: Lay, light: Light, begin: hooks.begin, K: K };
     window.__ready = true;
     requestAnimationFrame(loop);
   }
@@ -177,6 +193,7 @@
     if (UI.flags.intro) { Ctl.yaw = OPEN.yaw + Math.sin(now * 0.11) * 0.06; Ctl.pitch = OPEN.pitch + Math.sin(now * 0.08) * 0.012; }
     Ctl.update(dt, now);
     World.update(dt, now, camera.position);
+    if (K.outline && K.outline.mat) K.outline.tick(now);
     var wideSheet = UI.sheetOpen() && (doc.getElementById("sheet").classList.contains("wide") || doc.getElementById("sheet").classList.contains("center"));
     if (UI.flags.ending) return;                                    /* 엔딩이 화면을 덮는 동안 3D 는 쉰다 */
     if (wideSheet ? (frame & 3) : (UI.sheetOpen() && (frame & 1))) return;

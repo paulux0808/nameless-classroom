@@ -85,6 +85,7 @@
   /* ── 재질 ────────────────────────────────────────────────────────────── */
   K.std = function (hex, rough, metal, o) {
     o = o || {};
+    if (K.isToon && K.isToon()) return K.toon.material(hex, rough, metal, o);   /* 카툰: 툰 재질(kit/toon.js) */
     var m = new T.MeshStandardMaterial({
       color: K.srgb(hex), roughness: rough == null ? 0.7 : rough, metalness: metal || 0
     });

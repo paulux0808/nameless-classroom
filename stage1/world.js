@@ -74,6 +74,7 @@
     for (var n = 1; n <= 8; n++) (function (n) {
       var next = n + 1, meta = next === 9 ? { era: "2018", title: "마지막 일기" } : D.CH[next - 1];
       var holder = new T.Group(), letter = P.letter(meta.title, meta.era); holder.add(letter);
+      if (K.outline && K.outline.mat) K.outline.attach(holder);                          /* 카툰: 편지 테두리 */
       var hit = new T.Mesh(new T.BoxGeometry(0.56, 0.09, 0.42), L.hotspots[0].material);
       hit.userData.hot = { id: "reward:" + n, name: "편지" }; hit.userData.isHit = true; hit.renderOrder = -1; hit.layers.set(1); holder.add(hit);
       var glow = new T.Sprite(new T.SpriteMaterial({ map: glowTex, color: 0xffd694, transparent: true, opacity: 0, blending: T.AdditiveBlending, depthWrite: false, fog: false }));
@@ -138,9 +139,10 @@
       }
       function add(it) {
         var g = P.boardPaper(it); g.position.set(it.x, it.y, BOARD_Z); g.rotation.z = it.tilt; boardGroup.add(g);
+        if (K.outline && K.outline.mat) { K.outline.attach(g); it.owner = g; }
         var hit = new T.Mesh(new T.BoxGeometry(0.5, 0.39, 0.06), L.hotspots[0].material);
         hit.position.set(it.x, it.y, BOARD_Z + 0.02); hit.userData.hot = { id: it.id, name: it.name }; hit.userData.isHit = true; hit.renderOrder = -1; hit.layers.set(1);
-        boardGroup.add(hit); setHot(hit, true);
+        boardGroup.add(hit); setHot(hit, true); if (it.owner) hit.userData.hlOwner = it.owner;
         W.papers.push({ group: g, hit: hit, k: it.k, kind: it.kind });
         if (popIndex && it.k === popIndex && it.kind === "diary") popIn(g);
       }
