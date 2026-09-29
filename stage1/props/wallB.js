@@ -23,7 +23,7 @@
       return m;
     });
     var mesh = new T.Mesh(geo, mat); mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
-    var st = { closed: 1, t: 0, dirty: true };
+    var st = { closed: 1, t: 0, dirty: true, acc: 0 };
     function fill(t) {
       var pos = geo.attributes.position, uv = geo.attributes.uv, c = st.closed, gw = 0.26, width = K.lerp(gw, W, c);
       var off = (1 - c) * side * (W - gw) / 2, folds = K.lerp(9, 12, c), amp0 = K.lerp(0.06, 0.036, c);
@@ -33,7 +33,7 @@
         var fold = Math.sin(u * folds * PI * 2 + 0.7 * Math.sin(v * 2.4) + 0.3);
         var amp = amp0 * (1 - 0.3 * v) * (0.85 + 0.15 * Math.sin(u * 5.3));
         var z = amp * fold + 0.010 * Math.sin(u * 27 + v * 4) * v * v;
-        z += 0.007 * Math.sin(t * 0.9 + u * 5.2 + v * 2.0) * v * v;
+        z += 0.007 * (1 + (1 - c) * 1.8) * Math.sin(t * 0.9 + u * 5.2 + v * 2.0) * v * v;   /* 모인 커튼은 자유롭게 매달려 더 흔들린다 */
         pos.setXYZ(id, x, -v * L, z);
         uv.setXY(id, x * 3.5, -v * L * 3.5);
       }
@@ -53,7 +53,11 @@
     g.userData.length = L; g.userData.width = W;
     g.userData.setClosed = function (c) { st.closed = K.clamp(c, 0, 1); st.dirty = true; g.userData.closed = st.closed; fill(st.t); st.dirty = false; };
     g.userData.closed = 1;
-    g.userData.update = function (dt, t, moving) { st.t = t; if (moving || (st.closed > 0.5)) fill(t); };
+    g.userData.update = function (dt, t, moving) {
+      st.t = t; st.acc += dt;
+      /* 활짝 펼친 커튼은 매 프레임, 한쪽에 모인 커튼은 살랑이는 정도라 초당 12번만 다시 그린다 */
+      if (moving || st.closed > 0.5 || st.acc > 0.083) { fill(t); st.acc = 0; }
+    };
     /* 천 표면 위 한 점 (u:0..1 가로, v:0..1 위→아래) — 편지를 붙이는 용도 */
     g.userData.surface = function (u, v) {
       var pos = geo.attributes.position, i = Math.round(u * nx), j = Math.round(v * ny), id = j * (nx + 1) + i;
