@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>N1 방 미리보기 (개발용)</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0c0e;overflow:hidden}
+  canvas{position:fixed;inset:0;display:block}
+  #err{position:fixed;left:8px;bottom:8px;color:#ff8a7a;font:12px ui-monospace,monospace;white-space:pre-wrap;max-width:90vw}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="err"></div>
+<script src="../../assets/vendor/three.min.js"></script>
+<script>
+  var FILES = [
+    "../kit/core.js", "../kit/geo.js", "../kit/tex.js", "../kit/anim.js", "../kit/env.js",
+    "../props/common.js", "../props/school.js", "../props/furniture.js", "../props/objects.js", "../props/wallA.js", "../props/wallB.js", "../props/desk.js", "../props/person.js",
+    "../room/shell.js", "../room/lighting.js",
+    "room.js"
+  ];
+  (function next(i) {
+    if (i >= FILES.length) return;
+    var s = document.createElement("script");
+    s.src = FILES[i] + "?" + Date.now();
+    s.onload = function () { next(i + 1); };
+    s.onerror = function () { document.getElementById("err").textContent += "로드 실패: " + FILES[i] + "\n"; };
+    document.head.appendChild(s);
+  })(0);
+  addEventListener("error", function (e) { document.getElementById("err").textContent += (e.message || e) + "\n"; window.__error = (window.__error || "") + e.message + "\n"; });
+</script>
+</body>
+</html>
