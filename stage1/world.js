@@ -167,6 +167,7 @@
       var h = Lt.holder, base = Lt.base.clone(), nrm = new T.Vector3(L.anchors[n].n[0], L.anchors[n].n[1], L.anchors[n].n[2]);
       if (!animate) { h.position.copy(base); h.scale.setScalar(1); Lt.glow.material.opacity = 0.5; return; }
       h.scale.setScalar(0.35);
+      burst(base.clone().addScaledVector(nrm, 0.05), 18, 0xffe2a8);                                      /* 편지가 나타나는 순간의 반짝임 */
       A.tween({ dur: 0.9, ease: A.ease.outBack, update: function (k) {
         h.scale.setScalar(K.lerp(0.35, 1, k)); h.position.copy(base).addScaledVector(nrm, (1 - k) * 0.06);
         Lt.glow.material.opacity = Math.min(1, k * 1.6) * 0.5;
@@ -301,7 +302,7 @@
       A.tween({ dur: 1.15, ease: A.ease.inOutCubic, update: function (t) {
         h.position.set(K.lerp(from.x, target.x, t), K.lerp(from.y, target.y, t) + Math.sin(t * PI) * 0.45, K.lerp(from.z, target.z, t) + Math.sin(t * PI) * 0.5 * (1 - t));
         h.quaternion.slerpQuaternions(fq, tq, t); h.scale.setScalar(K.lerp(1, 1.24, t));
-      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); W.showMemory(n, true); if (done) done(); } });
+      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); burst(target.clone().add(new T.Vector3(0, 0, 0.08)), 14, 0xfff0c8); W.showMemory(n, true); if (done) done(); } });
     };
 
     /* ── 소소한 반응: 지구본, 흔들림 ── */

@@ -4,7 +4,7 @@
    앞면 +Z, 원점은 발이 놓인 바닥 중앙. 앉은 자세의 골반 높이 0.5(안락의자 좌면). */
 (function (root) {
   "use strict";
-  var T = root.THREE, K = root.N1K, G = K.geo, X = K.tex, P = root.N1P, PI = Math.PI;
+  var T = root.THREE, K = root.N1K, G = K.geo, X = K.tex, P = root.N1P, V = root.N1Voice, PI = Math.PI;
 
   function S(t) { return t * t * (3 - 2 * t); }
   function sm(t) { return S(K.clamp(t, 0, 1)); }
@@ -364,28 +364,8 @@
     };
     var face = { brow: 0, tilt: 0.12, askew: 0, smile: 0.3, squint: 0.05, roll: 0, open: 0, wide: 0, nod: 0, lineSmile: 9 };
     var fs = { mood: "calm", moodT: 0, seq: null, seqT: 0, seqEnd: 0, si: 0, talk: 0, gest: 0, q: false };
-    /* 한글 모음 21개: [벌림, 너비] — ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ */
-    var VOW = [[1, 0], [0.72, 0.25], [1, 0], [0.72, 0.25], [0.82, -0.1], [0.6, 0.35], [0.82, -0.1], [0.6, 0.35], [0.55, -0.6], [0.85, -0.3], [0.7, -0.1],
-      [0.5, -0.3], [0.55, -0.6], [0.4, -0.7], [0.62, -0.4], [0.55, -0.2], [0.4, -0.4], [0.4, -0.7], [0.3, 0.55], [0.3, 0.3], [0.28, 0.7]];
-    var SYL = 0.105;                                             /* 한 음절 길이(초) — 말풍선이 떠 있는 시간과 비슷하게 맞춘다 */
-    function bilab(cho, jong) { return { b0: cho === 6 || cho === 7 || cho === 8 || cho === 17, b1: jong === 16 || jong === 17 || jong === 18 || jong === 26 }; }
-    function visemes(text) {
-      var seq = [], t = 0, chars = Array.from(String(text || ""));
-      chars.forEach(function (ch) {
-        var c = ch.charCodeAt(0);
-        if (c >= 0xac00 && c <= 0xd7a3) {
-          var idx = c - 0xac00, jong = idx % 28, jung = Math.floor((idx % 588) / 28), cho = Math.floor(idx / 588), b = bilab(cho, jong), v = VOW[jung];
-          var dur = SYL * (jong ? 1.12 : 1);
-          seq.push({ t0: t, t1: t + dur, a: v[0] * (jong && !b.b1 ? 0.88 : 1) * (0.85 + Math.random() * 0.3), w: v[1], b0: b.b0, b1: b.b1 }); t += dur;
-        } else if (/[A-Za-z0-9]/.test(ch)) { seq.push({ t0: t, t1: t + SYL, a: 0.5, w: 0, b0: false, b1: false }); t += SYL; }
-        else if (ch === " ") t += 0.03;
-        else if (ch === "," || ch === ";" || ch === "·") t += 0.16;
-        else if (ch === "." || ch === "?" || ch === "!" || ch === "…" || ch === "—") t += 0.28;
-      });
-      return { seq: seq, end: t };
-    }
     root.userData.say = function (text, mood) {
-      var v = visemes(text); fs.seq = v.seq; fs.seqEnd = v.end; fs.seqT = 0; fs.si = 0;
+      var v = V.parse(text); fs.seq = v.seq; fs.seqEnd = v.end; fs.seqT = 0; fs.si = 0;
       fs.q = /[?？]\s*$/.test(String(text || ""));
       if (mood && MOODS[mood]) { fs.mood = mood; fs.moodT = v.end + 2.2; }
       else if (fs.mood !== "calm") fs.moodT = Math.max(fs.moodT, v.end + 1.2);
@@ -396,16 +376,12 @@
     root.userData.talking = function () { return !!fs.seq; };
     root.userData.face = face;
 
-    /* 지금 시각의 입 목표: 음절 하나를 [올라오기 → 유지 → 내려오기]로 그린다. 입술소리(ㅁㅂㅍ)는 그 끝을 다문다. */
+    /* 지금 시각의 입 목표(음절 모양은 voice.js). 끝난 뒤 잠깐은 다문 채로 두었다가 말을 마친다 */
     function mouthTarget() {
       if (!fs.seq) return null;
-      var u = fs.seqT, q = fs.seq;
-      while (fs.si < q.length && u >= q[fs.si].t1) fs.si++;
-      if (fs.si >= q.length) { if (u > fs.seqEnd + 0.05) { fs.seq = null; return null; } return { a: 0, w: 0 }; }
-      var g = q[fs.si]; if (u < g.t0) return { a: 0, w: 0 };
-      var k = (u - g.t0) / (g.t1 - g.t0), lo0 = g.b0 ? 0 : 0.38, lo1 = g.b1 ? 0 : 0.38;
-      var rise = lo0 + (1 - lo0) * sm(k / 0.3), fall = lo1 + (1 - lo1) * sm((1 - k) / 0.3);
-      return { a: g.a * rise * fall, w: g.w };
+      var r = V.sample(fs.seq, fs.seqT, fs.si); fs.si = r.i;
+      if (r.over) { if (fs.seqT > fs.seqEnd + 0.05) { fs.seq = null; return null; } return { a: 0, w: 0 }; }
+      return r;
     }
 
     function faceTick(dt, t, lidK) {
