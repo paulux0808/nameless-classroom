@@ -2,7 +2,7 @@
 /* 스테이지 1 재설계 종단 검증 — 현장 퍼즐(날짜 도장·액자 표식·명단·VHS)과 5~8장 연필 도구,
    감독교사의 대사·힌트·표정, 기억 소품을 진짜 브라우저(Chromium)로 확인한다.
    (8챕터 전체 흐름과 정답 경로는 tools/stage1-e2e.mjs 가 맡는다. 여기서는 새로 생긴 조작 하나하나를 짚는다.)
-   사용법: node tools/stage1-e2e-puzzles.mjs [--shots 폴더] [--headed] [--style toon|real]
+   사용법: node tools/stage1-e2e-puzzles.mjs [--shots 폴더] [--headed] [--style toon|real] [--mobile-only]
    정답은 게임과 같은 수준(U 난독화)으로만 보관한다. npm test 에는 넣지 않았다(브라우저 필요). */
 import http from "node:http";
 import { readFileSync, existsSync, mkdirSync } from "node:fs";
@@ -15,6 +15,7 @@ const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
 const shotsDir = args.includes("--shots") ? args[args.indexOf("--shots") + 1] : null;
 const STYLE = args.includes("--style") ? args[args.indexOf("--style") + 1] : "toon";
+const MOBILE_ONLY = args.includes("--mobile-only");                 /* 모바일 가로 화면 검사만 (빠르게 다시 볼 때) */
 if (shotsDir) mkdirSync(shotsDir, { recursive: true });
 
 const { chromium } = require("playwright");
@@ -43,7 +44,7 @@ async function open(viewport, touch) {
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text().slice(0, 200)); });
-  await page.goto(`${base}/stage1/index.html?debug=1&style=${STYLE}`, { waitUntil: "load" });
+  await page.goto(`${base}/stage1/index.html?debug=1&style=${STYLE}`, { waitUntil: "load", timeout: 180000 });
   await page.waitForFunction(() => window.__ready === true, null, { timeout: 180000 });
   return page;
 }
@@ -74,6 +75,7 @@ const helpers = (page, prefix) => {
 };
 
 try {
+  if (!MOBILE_ONLY) {
   /* ══════ 데스크톱 ══════ */
   const page = await open({ width: 1280, height: 720 });
   const { ev, shot, until, clickHot, sheetOpen, setState, screenOf } = helpers(page, "");
@@ -248,8 +250,8 @@ try {
   await page.keyboard.press("Escape"); await page.waitForTimeout(400);
 
   /* L) 저장: 도구에 적은 것과 힌트, 기억 소품은 새로고침 뒤에도 남는다 */
-  const saved = await ev(() => { __n1.M.save(); return localStorage.getItem("nameless-classroom-v2") || ""; });
-  check(['"pz"', '"hints"', '"c2"', '"c5"', '"c6"', '"c7"'].every((k) => saved.includes(k)), "L. 진행 저장(localStorage)에 퍼즐 메모(pz)와 힌트 기록이 함께 들어 있다");
+  const saved = JSON.parse(JSON.parse(await ev(() => { __n1.M.save(); return localStorage.getItem("nameless-classroom-v2") || "{}"; })).payload || "{}");   /* 저장은 { payload: "<상태 JSON>", checksum } 모양 */
+  check(["c2", "c5", "c6", "c7"].every((k) => saved.pz && saved.pz[k]) && saved.hints && saved.hints.c2 === 3, "L. 진행 저장(localStorage)에 퍼즐 메모(pz)와 힌트 기록이 함께 들어 있다");
 
   /* M) 기억 소품: 조각 수만큼 소품이 생긴다 */
   await setState(9, "read", [1, 2, 3, 4, 5, 6, 7, 8]);
@@ -264,6 +266,8 @@ try {
   check(errors.length === 0, "화면 오류 없음 " + errors.join(" | "));
 
   /* ══════ 모바일 가로(568×320) ══════ */
+  await page.context().close();                                   /* 데스크톱 창을 닫아 소프트웨어 렌더링 부담을 덜어 준다 */
+  }
   const mp = await open({ width: 568, height: 320 }, true);
   const mh = helpers(mp, "m-");
   await mp.tap("#go-new").catch(() => mp.click("#go-new")); await mp.waitForTimeout(600);
