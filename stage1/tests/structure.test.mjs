@@ -45,8 +45,10 @@ test("레이아웃의 모든 핫스팟이 상호작용 처리를 갖는다", () 
   vm.runInContext(read("data.js"), ctx);
   const D = ctx.N1Data, inter = read("interact.js");
   const special = new Set(["computer", "diary1obj", "exitdoor", "calendar", "doll", "postit", "teacher", "extinguisher", "clock", "mathbook", "curtain"]);
+  const stations = ["stamp", "roster", "tv"];                         /* 퍼즐 자리: interact.js 가 stations 로 넘긴다 */
   for (const id of new Set(ids)) {
     if (id.startsWith("decoy:")) assert.ok(D.DECOY[id.slice(6)] || inter.includes(`DECOY.${id.slice(6)} =`), `말이 없는 소품: ${id}`);
+    else if (stations.includes(id)) assert.ok(inter.includes(`id === "${id}"`), `퍼즐 자리 처리 없음: ${id}`);
     else assert.ok(special.has(id) || id.startsWith("frame:") || id.startsWith("note:"), `처리 없는 핫스팟: ${id}`);
   }
   for (const s of ["calendar", "doll", "postit", "teacher", "extinguisher", "clock", "mathbook", "curtain"]) assert.ok(ids.includes(s), `탐색 지점이 배치에 없다: ${s}`);

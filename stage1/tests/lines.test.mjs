@@ -148,7 +148,7 @@ test("M.sayOnce: 처음에만 true, 저장된다", () => {
 
 test("HUD: lines 가 있으면 읽기 단계 목표가 구체적이고, 없으면 예전과 같다", () => {
   const M = game(); M.takeDiary1();
-  assert.ok(M.hud().objective.main.includes("컴퓨터"), "1장 읽기 목표");
+  assert.ok(M.hud().objective.main.includes("도장"), "1장 읽기 목표");
   M.answer(answerOf(1));
   assert.ok(M.hud().objective.main.includes("단서") && M.hud().objective.hint.startsWith("“"), "탐색: 단서를 그대로 보여 준다");
   M.reveal(); assert.ok(M.hud().objective.hint.includes("편지"));

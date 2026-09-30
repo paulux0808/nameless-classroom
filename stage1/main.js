@@ -40,6 +40,8 @@
     onSpeak: function (on) { var t = Lay && Lay.obj && Lay.obj.teacher; if (t && t.userData.speak) t.userData.speak(on); },
     onAnswered: function (n) { Dir.solved(n, D.CH[n - 1].cue); },
     onWrong: function (n) { Dir.wrong(n); },
+    onMiss: function (n) { Dir.miss(n); },                                      /* 표식이 안 붙는 정도의 작은 실수: 세 번째마다만 말한다 */
+    onSticker: function (id, sym) { if (World) World.setFrameSticker(id, D.SYMBOL_SVG[sym], true); },
     onStackSolved: function () { Dir.nameAsk(); },
     onAssembly: function () { Dir.asm(); },
     begin: function (isNew) {
@@ -87,6 +89,7 @@
   (function () { var clear = UI.clearHover; UI.clearHover = function () { clear(); if (K.outline && K.outline.mat) K.outline.hover(null); }; })();   /* 창이 열리면 테두리 강조도 끈다 */
   var Dir = N1Director.create({ model: M, lines: N1Lines, ui: UI });
   var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks });
+  var ST = N1Stations.create({ ui: UI, model: M, data: D, assets: ASSETS, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
   M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); });
@@ -184,7 +187,7 @@
       onFullscreen: function () { UI.toggleFullscreen(); }
     });
     Ctl.sensitivity = UI.sensitivity;
-    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, world: World, controls: Ctl, director: Dir });
+    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, stations: ST, world: World, controls: Ctl, director: Dir });
     $("#crouch").onclick = function () { Ctl.toggleCrouch(); };
     $("#act").onclick = function () { Ctl.pickCenter(); };
     Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch);

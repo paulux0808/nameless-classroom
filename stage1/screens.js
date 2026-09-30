@@ -12,8 +12,18 @@
     var SC = {};
 
     /* ───────── 일기 ───────── */
+    /* 기억 복원: 맞힌 장의 일기에서 비워졌던 곳을 잉크로 되살린다 (1장은 빈칸 숫자, 2·4장은 검게 지워진 낱말) */
+    function restore(a, n) {
+      var ans = M.solvedAnswer && M.solvedAnswer(n); if (!ans) return;
+      if (n === 1) {
+        var bl = a.querySelectorAll(".blank");
+        for (var i = 0; i < bl.length && i < ans.length; i++) { bl[i].textContent = ans.charAt(i); bl[i].classList.add("filled"); }
+      } else if (root.N1Puz && root.N1Puz.RESTORE[n]) {
+        var rd = a.querySelector(".redacted"); if (rd) { rd.textContent = root.N1Puz.RESTORE[n]; rd.classList.add("restored"); }
+      }
+    }
     function diaryArticle(key, n) {
-      var a = el("article", "diary", D.DIARY_HTML[key]);
+      var a = el("article", "diary", D.DIARY_HTML[key]); restore(a, n);
       if (n === 7) {
         var link = el("a", "dict-link", "네이버 영어사전에서 단어 찾기 ↗");
         link.href = "https://en.dict.naver.com/#/main"; link.target = "_blank"; link.rel = "noopener noreferrer"; a.appendChild(link);
@@ -138,10 +148,12 @@
       return crt;
     }
 
+    /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
+    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
       if (S.ch > 8) { SC.showAssembly(); return; }
-      var c = M.chapter(), spec = D.TERMINAL_AID[c.n] || { kind: null };
+      var c = M.chapter(), spec = AID[c.n] || D.TERMINAL_AID[c.n] || { kind: null };
       var head = { title: "장학금 단말기", sub: "CHAPTER " + c.n + " · " + c.title };
       if (S.phase === "search") {
         UI.openSheet({ title: head.title, sub: head.sub, build: function (b) { b.appendChild(acceptedPanel(c)); } });
@@ -351,6 +363,7 @@
     SC.showIntro = function () { UI.flags.intro = true; doc.getElementById("intro").classList.remove("hidden"); SC.bindIntro(); UI.showHud(false); };
     SC.hideIntro = function () { UI.flags.intro = false; doc.getElementById("intro").classList.add("hidden"); };
 
+    SC.kit = { makeCRT: makeCRT, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
     return SC;
   }
   root.N1Screens = { create: create };

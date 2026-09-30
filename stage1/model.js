@@ -52,7 +52,9 @@
       if (!v) return { ok: false, reason: "empty" };
       var c = M.chapter();
       if (c.h.some(function (h) { return h === Lg.sealCode(v, c.n); })) {
-        S.phase = "search"; S.revealed = 0; save(); emit("change"); return { ok: true, cue: c.cue };
+        S.phase = "search"; S.revealed = 0;
+        if (!S.pz) S.pz = {}; S.pz["ok" + c.n] = v;             /* 맞힌 답을 남겨 두면 일기의 지워진 부분을 되살려 보여 줄 수 있다 */
+        save(); emit("change"); return { ok: true, cue: c.cue };
       }
       return { ok: false, reason: "wrong" };
     };
@@ -94,6 +96,12 @@
       if (String(raw) !== "0808") return { ok: false, reason: "wrong" };
       S.done = true; save(); emit("change"); return { ok: true };
     };
+
+    /* ── 퍼즐 진행(현장 상호작용의 중간 상태)과 맞힌 답 ── */
+    M.pz = function (key) { return (S.pz && S.pz[key]) || null; };
+    M.pzSet = function (key, val) { if (!S.pz) S.pz = {}; S.pz[key] = val; save(); emit("pz", { key: key }); };
+    M.solvedAnswer = function (n) { return (S.pz && S.pz["ok" + n]) || null; };
+    M.isSolved = function (n) { return S.ch > n || (S.ch === n && (S.phase === "search")); };
 
     /* ── 힌트: 범위마다 1→2→3단계. 저장된다 ── */
     M.hintScope = function () { return Ln ? Ln.hintScope(S, { stackSolved: M.stackSolved() }) : null; };

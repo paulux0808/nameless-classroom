@@ -8,7 +8,7 @@
   "use strict";
 
   function create(o) {
-    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, W = o.world, C = o.controls, S = M.S, Dir = o.director;
+    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, ST = o.stations, W = o.world, C = o.controls, S = M.S, Dir = o.director;
     var DECOY = {}; Object.keys(D.DECOY).forEach(function (k) { DECOY[k] = D.DECOY[k]; });
     if (!DECOY.eraser) DECOY.eraser = "칠판지우개다. 하얀 분필 가루가 잔뜩 묻어 있다.";
     var toast = UI.toast;
@@ -48,7 +48,12 @@
       /* 읽기 전용 자료: 언제든 */
       if (id.indexOf("diaryP:") === 0) { SC.showDiary(+id.split(":")[1]); return; }
       if (id.indexOf("refP:") === 0) { SC.showRefs(id.split(":")[1]); return; }
-      if (id === "sheet") { SC.showSheet(); return; }
+      if (id === "sheet") { ST.showStickers(); return; }
+      if (id === "stamp") {
+        if (!S.tookD1 && S.ch === 1) { toast("먼저 책상 위의 일기를 읽어 보세요."); return; }
+        if (S.ch === 1 && S.phase === "read") W.guide(null);
+        ST.showStamp(); return;
+      }
       if (id.indexOf("note:") === 0) {
         var sc = D.SCI.filter(function (x) { return x.id === id.split(":")[1]; })[0];
         if (!sc) { toast("자료를 찾을 수 없습니다.", "bad"); return; }

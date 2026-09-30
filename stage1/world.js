@@ -93,6 +93,12 @@
       g.traverse(function (x) { x.castShadow = false; }); return g;
     })();
     W.arrow = arrow;
+    var arrowBase = L.arrowSpot[1];
+    /* 안내 화살표: 다음에 눌러야 할 곳을 가리킨다. spot=[x,y,z] 이면 거기서, null 이면 숨긴다 */
+    W.guide = function (spot) {
+      if (!spot) { arrow.visible = false; return; }
+      arrow.position.set(spot[0], spot[1], spot[2]); arrowBase = spot[1]; arrow.visible = true;
+    };
 
     /* ── 액자 ── */
     var frameIds = L.frameOrder;
@@ -229,12 +235,30 @@
       if (S.revealed) { clueHot(S.revealed, false); applyAway(S.revealed, true); W.showLetter(S.revealed, false); }
       frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); });
       W.setDiaryOnDesk(!(S.tookD1 || S.ch > 1));
+      var pl = (o.model.pz && o.model.pz("c2") && o.model.pz("c2").placed) || {};
+      frameIds.forEach(function (id) { W.setFrameSticker(id, null); });
+      Object.keys(pl).forEach(function (sym) { W.setFrameSticker(pl[sym], D.SYMBOL_SVG[sym], false); });
       W.openDoor(S.done ? 1 : 0);
       W.setProgress(S.pieces.length / 8, true);
       W.refreshBoard(S);
       W.setExitGlow(S.done ? 0.6 : 0);
     };
-    W.setDiaryOnDesk = function (v) { L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v); arrow.visible = v; };
+    W.setDiaryOnDesk = function (v) {
+      L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v);
+      if (v) W.guide(L.arrowSpot); else W.refreshGuide(o.model.S);
+    };
+    /* 첫 일기를 집은 뒤에도 1장을 풀 때까지는 도장을 가리킨다 */
+    W.refreshGuide = function (S) {
+      var stampNow = S.tookD1 && S.ch === 1 && S.phase === "read" && L.stampSpot;
+      if (L.obj.diary1.visible) return;
+      W.guide(stampNow ? L.stampSpot : null);
+    };
+    /* 2장 표식 카드: 액자에 스티커가 붙는다(튀어 오르며) */
+    W.setFrameSticker = function (id, svg, pop) {
+      var fr = L.frames[id]; if (!fr || !fr.userData.setSticker) return;
+      var st = fr.userData.setSticker(svg);
+      if (st && pop) { st.scale.setScalar(0.01); A.tween({ dur: 0.45, ease: A.ease.outBack, update: function (k) { st.scale.setScalar(Math.max(0.01, k)); } }); }
+    };
 
     /* ── 리빌 연출: 물건이 치워지고 편지가 나타난다 ── */
     W.reveal = function (n, done) {
@@ -314,7 +338,7 @@
       for (var i = 0; i < L.updaters.length; i++) L.updaters[i](dt, t);
       teacher.userData.update(dt, t, camPos);
       light.update(dt, t);
-      if (arrow.visible) { arrow.position.y = L.arrowSpot[1] + Math.sin(t * 2.6) * 0.03; arrow.rotation.y += dt * 1.4; }
+      if (arrow.visible) { arrow.position.y = arrowBase + Math.sin(t * 2.6) * 0.03; arrow.rotation.y += dt * 1.4; }
       for (var n = 1; n <= 8; n++) {
         var Lt = W.letters[n]; if (!Lt.shown) continue;
         var p = 0.5 + 0.5 * Math.sin(t * 2.1 + n);

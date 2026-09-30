@@ -113,6 +113,29 @@
     return g;
   };
 
+  /* ── 날짜 도장 (1장): 놋쇠 몸통 + 원목 손잡이 + 고무 받침. 몸통 앞의 좁은 창에 숫자띠가 보인다 ── */
+  P.dateStamp = function () {
+    var b = K.builder();
+    var wood = K.mat("stamp.wood", function () { return K.std(0x8a5a2e, 0.55, 0.05, { env: 0.6 }); });
+    var brass = K.mat("stamp.brass", function () { return K.std(0xc9a24a, 0.35, 0.8, { env: 1.2 }); });
+    var rubber = K.mat("stamp.rubber", function () { return K.std(0x2a2a2c, 0.9, 0); });
+    var red = K.mat("stamp.red", function () { return K.std(0xb32a22, 0.55, 0); });
+    b.rbox(0.078, 0.008, 0.05, 0.002, rubber, { p: [0, 0.004, 0] });                                   /* 고무 받침 */
+    b.rbox(0.072, 0.03, 0.042, 0.005, brass, { p: [0, 0.023, 0], segs: 2 });                           /* 놋쇠 몸통 */
+    b.rbox(0.078, 0.004, 0.048, 0.002, brass, { p: [0, 0.0395, 0], segs: 1 });                        /* 윗턱 */
+    b.lathe([[0.0, 0.041], [0.013, 0.041], [0.018, 0.048], [0.0185, 0.06], [0.014, 0.07], [0.007, 0.076], [0.0, 0.077]], wood, { p: [0, 0, 0], seg: 22 });   /* 손잡이 */
+    b.lathe([[0.0175, 0.05], [0.0195, 0.05], [0.0195, 0.055], [0.0175, 0.055]], red, { p: [0, 0, 0], seg: 22 });
+    var g = b.build({ name: "dateStamp" });
+    var strip = P.canvas(256, 48, function (x, w, h) {
+      x.fillStyle = "#15130f"; x.fillRect(0, 0, w, h); x.fillStyle = "#f3e2b0"; x.font = "700 30px ui-monospace,Consolas,monospace"; x.textAlign = "center"; x.textBaseline = "middle";
+      x.fillText("1 0 0 0 · 0 · 0", w / 2, h / 2 + 2);
+    });
+    var st = new T.Mesh(new T.PlaneGeometry(0.058, 0.0108), K.isToon() ? new T.MeshBasicMaterial({ map: (function () { var t = new T.CanvasTexture(strip); t.encoding = T.sRGBEncoding; return t; })(), toneMapped: false }) : P.canvasMat(strip, { rough: 0.6 }));
+    st.position.set(0, 0.026, 0.0212); st.name = "stampStrip"; g.add(st);
+    g.userData.size = [0.078, 0.077, 0.05];
+    return g;
+  };
+
   /* ── 수학책 / 일반 책 ────────────────────────────────────────────── */
   P.mathBook = function () {
     var b = K.builder(); var w = 0.26, h = 0.035, d = 0.19;

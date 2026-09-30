@@ -391,3 +391,59 @@ body.sheet-open #say{opacity:0!important}                                       
   .say-txt{font-size:14px;line-height:1.55} .say-who{font-size:11px;margin-bottom:3px}
   .sheet-say{padding:6px 12px 7px} .sheet-say .say-txt{font-size:13.5px}
 }
+
+/* ───────────── 1장 날짜 도장 · 2장 표식 붙이기 · 복원된 일기 ───────────── */
+.diary .blank.filled{border-bottom-color:transparent;font-style:italic;color:#a03528;text-shadow:0 0 0 #a03528;animation:inkin .8s var(--ease)}
+.diary .redacted.restored{background:none;height:auto;min-width:0;padding:0 .12em;color:#a03528;font-weight:800;font-style:italic;border-bottom:2px solid #a03528;animation:inkin .8s var(--ease)}
+@keyframes inkin{from{opacity:0;filter:blur(5px)}to{opacity:1;filter:none}}
+.stamp-paper{position:relative;margin:4px auto 12px;max-width:820px;padding:28px 18px 22px;border-radius:3px;border:1px solid rgba(27,38,64,.2);
+  background:repeating-linear-gradient(180deg,#fbfaf3 0 33px,#e6ecdf 33px 34px);box-shadow:0 10px 24px rgba(20,20,10,.2)}
+.stamp-paper.shake,.stk-frames .shake,.stk-msg.shake,.fr.shake{animation:shake .38s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+.stamp-line{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:6px 5px;font:800 clamp(28px,5.4vw,46px)/1 var(--font-read);color:var(--ink)}
+.stamp-line .fixed{padding:0 2px 8px}
+.wheel{display:grid;grid-template-rows:auto auto auto;width:clamp(44px,8.2vw,66px);outline:none;border-radius:4px}
+.wheel:focus-visible{box-shadow:0 0 0 3px var(--pencil)}
+.wheel button{min-height:36px;border:0;background:linear-gradient(180deg,#dcb96f,#b48a3e);color:#3a260a;font:800 14px var(--font-ui);box-shadow:inset 0 1px 0 rgba(255,255,255,.4)}
+.wheel .w-up{border-radius:4px 4px 0 0} .wheel .w-dn{border-radius:0 0 4px 4px}
+.wheel .w-up:active,.wheel .w-dn:active{filter:brightness(.9)}
+.wheel .w-d{display:grid;place-items:center;height:clamp(54px,9.5vw,76px);background:linear-gradient(180deg,#1f1a11,#3a3122 50%,#1f1a11);color:#f3e2b0;
+  font:800 clamp(32px,6.4vw,48px)/1 var(--font-mono);box-shadow:inset 0 8px 10px rgba(0,0,0,.55),inset 0 -8px 10px rgba(0,0,0,.55)}
+.wheel .w-d.tick{animation:tick .16s ease-out}
+@keyframes tick{from{transform:translateY(-8px);opacity:.4}to{transform:none;opacity:1}}
+.wheel.locked button{opacity:.45;pointer-events:none}
+.stamp-mark{position:absolute;right:16px;top:8px;padding:2px 16px 4px;border:4px solid #b32a22;border-radius:7px;color:#b32a22;font:900 clamp(20px,3.6vw,30px)/1.15 var(--font-ui);letter-spacing:.16em;
+  opacity:0;transform:rotate(-13deg);mix-blend-mode:multiply;pointer-events:none}
+.stamp-mark.slam{animation:slam .5s cubic-bezier(.2,1.5,.4,1) forwards} .stamp-mark.static{animation:none;opacity:.88}
+@keyframes slam{0%{opacity:0;transform:rotate(-13deg) scale(2.6)}55%{opacity:1;transform:rotate(-13deg) scale(.9)}100%{opacity:.88;transform:rotate(-13deg) scale(1)}}
+.stamp-msg,.stk-msg{margin:6px 0 4px;text-align:center;font:600 15px/1.6 var(--font-ui);color:var(--ink-2)}
+.stamp-prints{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 14px;min-height:24px}
+.stamp-prints .print{font:700 15px var(--font-mono);color:rgba(60,60,52,.55);border:2px solid rgba(60,60,52,.35);padding:1px 9px;border-radius:3px}
+.stamp-btn{min-height:var(--tap);padding:0 34px;border:2px solid #7a5716;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,#f4d36a,#d9a92e);color:#2b1c05;font:900 17px var(--font-ui);letter-spacing:.2em;box-shadow:0 5px 0 #7a5716}
+.stamp-btn:hover{filter:brightness(1.05)} .stamp-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #7a5716} .stamp-btn:disabled{opacity:.5;transform:none;box-shadow:0 2px 0 #7a5716}
+.fold{margin-top:12px} .fold>summary{font-size:14px}
+.stk{display:grid;grid-template-columns:170px 1fr;gap:18px;align-items:start}
+.stk-side .mini{margin:0 0 8px}
+.stk-tray{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{aspect-ratio:1;display:grid;place-items:center;padding:0;background:#fbfaf3;border:2px solid var(--ink);border-radius:4px;box-shadow:0 4px 0 rgba(27,38,64,.35);transition:transform .15s var(--ease)}
+.card svg{width:64%;height:64%}
+.card:hover:not(:disabled){transform:translateY(-2px)} .card.sel{outline:4px solid var(--pencil);transform:translateY(-4px) rotate(-3deg)}
+.card.used{opacity:.22;box-shadow:none} .card:disabled{cursor:default}
+.stk-frames{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:660px;margin:0 auto}
+.fr{position:relative;display:grid;gap:5px;justify-items:center;padding:8px 8px 7px;background:linear-gradient(180deg,#b8854a,#8d5e2e);border:0;border-radius:4px;box-shadow:0 5px 0 #5a3a18;color:#fff7e6;transition:transform .15s var(--ease),box-shadow .15s}
+.fr .pic{display:block;width:100%;aspect-ratio:1/1;background:#181410;border-radius:2px;overflow:hidden;box-shadow:inset 0 0 0 3px #181410}
+.fr img{width:100%;height:100%;object-fit:cover;object-position:50% 22%;filter:sepia(.12)}
+.fr .nm{font:700 13px/1.2 var(--font-ui);text-align:center}
+.fr .badge{position:absolute;left:5px;bottom:34px;width:36px;height:36px;display:grid;place-items:center;background:#fbfaf3;border:2px solid var(--ink);border-radius:3px;transform:rotate(-8deg);color:var(--ink);font-size:20px}
+.fr .badge:empty{display:none} .fr .badge svg{width:70%;height:70%}
+.fr:hover:not(:disabled){transform:translateY(-3px)} .fr:disabled{cursor:default}
+.fr.stuck{animation:stuck .45s var(--ease)} @keyframes stuck{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+.fr.ok{box-shadow:0 5px 0 #5a3a18,0 0 0 3px rgba(239,196,60,.85)}
+.fr.spare{animation:sparepulse 1.2s ease-in-out infinite} @keyframes sparepulse{50%{box-shadow:0 5px 0 #5a3a18,0 0 0 6px rgba(239,196,60,.9)}}
+.fr.won{box-shadow:0 5px 0 #5a3a18,0 0 0 4px var(--pencil)}
+@media(max-width:700px){.stk{grid-template-columns:1fr}.stk-tray{grid-template-columns:repeat(5,1fr)}.stk-frames{grid-template-columns:repeat(3,1fr)}}
+@media(max-height:460px){
+  .stamp-paper{padding:14px 10px 12px;margin-bottom:6px} .stamp-msg,.stk-msg{font-size:13px;margin:3px 0}
+  .wheel .w-d{height:46px} .wheel button{min-height:30px}
+  .stk-frames{gap:7px} .fr{padding:5px}.fr .nm{font-size:11px} .card{box-shadow:0 2px 0 rgba(27,38,64,.35)}
+}

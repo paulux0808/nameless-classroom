@@ -55,6 +55,9 @@
     var cal = P.deskCalendar(); place(cal, 0.62, TOP, deskZ - 0.06, -0.15); L.obj.calendar = cal;
     var pcup = P.pencilCup(); place(pcup, 0.42, TOP, deskZ + 0.13); L.obj.pencilCup = pcup;
     var deskBook = P.plainBook(0x6a2b2b, 0.22, 0.03, 0.16); place(deskBook, -0.2, TOP + 0.015, deskZ + 0.12, 0.3); L.obj.deskBook = deskBook;
+    var stamp = P.dateStamp(); place(stamp, -0.4, TOP, deskZ + 0.17, 0.4); L.obj.stamp = stamp;
+    hot("stamp", "날짜 도장", 0.13, 0.13, 0.11, -0.4, TOP + 0.05, deskZ + 0.17);
+    L.stampSpot = [-0.4, TOP + 0.2, deskZ + 0.17];                           /* 안내 화살표가 서는 곳 */
     /* 리빌 1: 달력 아래 편지 자리 — 교탁 상판 위 */
     L.anchors[1] = { p: [0.62, TOP + 0.0035, deskZ - 0.06], n: [0, 1, 0], up: [0, 0, -1], roll: -0.05 };
     hot("calendar", "탁상달력", 0.2, 0.18, 0.14, 0.62, TOP + 0.09, deskZ - 0.06);
