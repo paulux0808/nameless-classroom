@@ -58,6 +58,24 @@
     var stamp = P.dateStamp(); place(stamp, -0.4, TOP, deskZ + 0.17, 0.4); L.obj.stamp = stamp;
     hot("stamp", "날짜 도장", 0.13, 0.13, 0.11, -0.4, TOP + 0.05, deskZ + 0.17);
     L.stampSpot = [-0.4, TOP + 0.2, deskZ + 0.17];                           /* 안내 화살표가 서는 곳 */
+    /* 기억 소품 여덟: 조각을 칠판에 붙일 때마다 하나씩 생긴다(처음엔 숨겨 둔다) */
+    L.mem = {};
+    function mem(n, obj, x, y, z, ry, name, extra) {
+      obj.visible = false; obj.position.set(x, y, z); if (ry) obj.rotation.y = ry; if (extra) extra(obj); g.add(obj); L.mem[n] = obj;
+      if (obj.userData.update) L.updaters.push(function (dt, t) { if (obj.visible) obj.userData.update(dt, t); });
+      var sz = obj.userData.size || [0.2, 0.2, 0.2];
+      hot("decoy:mem" + n, name, Math.max(sz[0], 0.16) + 0.06, Math.max(sz[1], 0.16) + 0.06, Math.max(sz[2], 0.1) + 0.06, x, y + (n === 1 ? -0.3 : n === 5 ? -0.17 : sz[1] / 2), z);
+      return obj;
+    }
+    mem(1, P.memStars(), -2.3, D.H, 0.3, 0, "별 모빌");
+    mem(2, P.memDoodle(), 2.28, 1.2, -3.93, 0, "낙서");
+    mem(3, P.memCane(), 1.1, PLAT, -2.62, 0, "지팡이", function (o) { o.rotation.z = 0.17; });
+    mem(4, P.memPoster(), 3.95, 1.9, -3.965, 0, "포스터");
+    mem(5, P.memMedal(), -3.3, 1.3, -3.965, 0, "메달");
+    mem(6, P.memBooks(), -1.3, PLAT, -2.95, 0.2, "책");
+    mem(7, P.memFlag(), -0.86, TOP, deskZ + 0.02, 0.15, "태극기");
+    mem(8, P.memLamp(), 0.86, TOP, deskZ - 0.14, -0.3, "스탠드");
+    L.lampLight = new T.PointLight(0xffc880, 0, 3.4, 2); L.lampLight.position.set(0.86, TOP + 0.2, deskZ - 0.14); g.add(L.lampLight);
     /* 리빌 1: 달력 아래 편지 자리 — 교탁 상판 위 */
     L.anchors[1] = { p: [0.62, TOP + 0.0035, deskZ - 0.06], n: [0, 1, 0], up: [0, 0, -1], roll: -0.05 };
     hot("calendar", "탁상달력", 0.2, 0.18, 0.14, 0.62, TOP + 0.09, deskZ - 0.06);

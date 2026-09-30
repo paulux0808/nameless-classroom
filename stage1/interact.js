@@ -11,6 +11,15 @@
     var M = o.model, D = o.data, UI = o.ui, SC = o.screens, ST = o.stations, W = o.world, C = o.controls, S = M.S, Dir = o.director;
     var DECOY = {}; Object.keys(D.DECOY).forEach(function (k) { DECOY[k] = D.DECOY[k]; });
     if (!DECOY.eraser) DECOY.eraser = "칠판지우개다. 하얀 분필 가루가 잔뜩 묻어 있다.";
+    /* 기억 소품: 조각을 붙일 때마다 생기는 물건들 */
+    DECOY.mem1 = "금빛 별 모빌이 천천히 돈다. 아기 침대 위에 달려 있던 것 같다.";
+    DECOY.mem2 = "칠판 구석에 누군가 그린 낙서다. 머리카락이 사방으로 뻗친 얼굴 옆에 ‘천재?!’라고 적혀 있다.";
+    DECOY.mem3 = "교탁 옆에 기대어 놓은 지팡이다. 손잡이가 오래 쥔 손을 따라 닳았다.";
+    DECOY.mem4 = "한 점에서 퍼져 나가는 고리를 그린 포스터다. ‘시간을 거꾸로 돌리면’이라고 적혀 있다.";
+    DECOY.mem5 = "벽에 걸린 금메달이다. 가운데에 십자가가 새겨져 있다.";
+    DECOY.mem6 = "같은 책이 세 권 쌓여 있다. 표지에는 은하가 그려져 있다.";
+    DECOY.mem7 = "작은 태극기가 꽂혀 있다. 바람이 없는데도 천이 살짝 흔들린다.";
+    DECOY.mem8 = "초록 갓 스탠드다. 어둠이 내려도 이 불빛만은 꺼지지 않을 것 같다.";
     var toast = UI.toast;
 
     function revealReward(n) {

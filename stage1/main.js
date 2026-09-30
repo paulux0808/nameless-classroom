@@ -157,7 +157,7 @@
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
     var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
-      .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }));
+      .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }), Object.keys(Lay.mem).map(function (n) { return Lay.mem[n]; }));
     /* 카툰: 잉크 윤곽선. 합치기 전에 ① 히트박스와 물체의 짝을 정하고 ② 붙박이 소품의 껍질을 만든다(합쳐진 뒤엔 메시가 커서 나눌 수 없다) */
     var hullInfo = null;
     if (TOON) {
@@ -173,6 +173,7 @@
       [ob.calendar, ob.doll, ob.postit, ob.extinguisher, ob.math, ob.diary1, ob.globe, ob.crt, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board].forEach(function (d) { if (d) K.outline.attach(d, { mode: "rigid" }); });
       [ob.teacher, ob.clock].forEach(function (d) { if (d) K.outline.attach(d, { mode: "parent" }); });
       [ob.door].concat(Lay.frameOrder.map(function (id) { return Lay.frames[id]; })).forEach(function (d) { if (d) K.outline.attach(d); });
+      Object.keys(Lay.mem).forEach(function (n) { K.outline.attach(Lay.mem[n], { mode: "rigid" }); });
       mark("outline");
     }
     K.setEnvIntensity(scene, Light.baseEnv);

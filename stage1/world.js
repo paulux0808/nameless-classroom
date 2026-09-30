@@ -235,6 +235,7 @@
       if (S.revealed) { clueHot(S.revealed, false); applyAway(S.revealed, true); W.showLetter(S.revealed, false); }
       frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); });
       W.setDiaryOnDesk(!(S.tookD1 || S.ch > 1));
+      for (var mi = 1; mi <= 8; mi++) { if (S.pieces.indexOf(mi) >= 0) W.showMemory(mi, false); else W.hideMemory(mi); }
       var pl = (o.model.pz && o.model.pz("c2") && o.model.pz("c2").placed) || {};
       frameIds.forEach(function (id) { W.setFrameSticker(id, null); });
       Object.keys(pl).forEach(function (sym) { W.setFrameSticker(pl[sym], D.SYMBOL_SVG[sym], false); });
@@ -253,6 +254,30 @@
       if (L.obj.diary1.visible) return;
       W.guide(stampNow ? L.stampSpot : null);
     };
+    /* 반짝이 터짐: 정답·기억 소품이 생길 때 쓴다 */
+    function burst(p, n, color) {
+      var geo = new T.BufferGeometry(), pos = new Float32Array(n * 3), vel = [], i;
+      for (i = 0; i < n; i++) { pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z; var a = Math.random() * PI * 2, b = (Math.random() - 0.3) * PI, sp = 0.25 + Math.random() * 0.45; vel.push([Math.cos(a) * Math.cos(b) * sp, Math.sin(b) * sp + 0.15, Math.sin(a) * Math.cos(b) * sp]); }
+      geo.setAttribute("position", new T.BufferAttribute(pos, 3));
+      var mat = new T.PointsMaterial({ map: glowTex, color: color || 0xffdf9a, size: 0.085, transparent: true, opacity: 1, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true, fog: false });
+      var pts = new T.Points(geo, mat); pts.frustumCulled = false; pts.renderOrder = 9; scene.add(pts);
+      A.tween({ dur: 1.0, ease: A.ease.outCubic, update: function (k) {
+        for (var j = 0; j < n; j++) { pos[j * 3] = p.x + vel[j][0] * k; pos[j * 3 + 1] = p.y + vel[j][1] * k - 0.25 * k * k; pos[j * 3 + 2] = p.z + vel[j][2] * k; }
+        geo.attributes.position.needsUpdate = true; mat.opacity = 1 - k * k;
+      }, done: function () { scene.remove(pts); geo.dispose(); mat.dispose(); } });
+    }
+    W.burst = burst;
+    /* 기억 소품: 조각 n 을 붙이면 교실에 그 조각의 물건이 생긴다 */
+    W.showMemory = function (n, animate) {
+      var m = L.mem && L.mem[n]; if (!m) return;
+      m.visible = true; setHot(L.hotById["decoy:mem" + n], true);
+      if (n === 8) { if (animate) A.tween({ dur: 1.4, update: function (k) { L.lampLight.intensity = 0.7 * k; } }); else L.lampLight.intensity = 0.7; }
+      if (animate) {
+        m.scale.setScalar(0.01); A.tween({ dur: 0.7, ease: A.ease.outBack, update: function (k) { m.scale.setScalar(Math.max(0.01, k)); }, done: function () { m.scale.setScalar(1); } });
+        var wp = new T.Vector3(); m.updateWorldMatrix(true, false); wp.setFromMatrixPosition(m.matrixWorld); wp.y += (m.userData.size ? m.userData.size[1] * (n === 1 ? -0.5 : 0.5) : 0.1); burst(wp, 22, n === 8 ? 0xffc880 : 0xffdf9a);
+      }
+    };
+    W.hideMemory = function (n) { var m = L.mem && L.mem[n]; if (!m) return; m.visible = false; setHot(L.hotById["decoy:mem" + n], false); if (n === 8) L.lampLight.intensity = 0; };
     /* 2장 표식 카드: 액자에 스티커가 붙는다(튀어 오르며) */
     W.setFrameSticker = function (id, svg, pop) {
       var fr = L.frames[id]; if (!fr || !fr.userData.setSticker) return;
@@ -276,7 +301,7 @@
       A.tween({ dur: 1.15, ease: A.ease.inOutCubic, update: function (t) {
         h.position.set(K.lerp(from.x, target.x, t), K.lerp(from.y, target.y, t) + Math.sin(t * PI) * 0.45, K.lerp(from.z, target.z, t) + Math.sin(t * PI) * 0.5 * (1 - t));
         h.quaternion.slerpQuaternions(fq, tq, t); h.scale.setScalar(K.lerp(1, 1.24, t));
-      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); if (done) done(); } });
+      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); W.showMemory(n, true); if (done) done(); } });
     };
 
     /* ── 소소한 반응: 지구본, 흔들림 ── */
