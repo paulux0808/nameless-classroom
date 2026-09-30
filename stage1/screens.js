@@ -175,6 +175,7 @@
               return true;
             }
             UI.toast(r.reason === "empty" ? "정답을 입력하세요." : "암호가 맞지 않습니다.", "bad");
+            if (r.reason === "wrong") hooks.onWrong && hooks.onWrong(c.n);
             return false;
           } });
         right.appendChild(crt.el); layout.appendChild(left); layout.appendChild(right); b.appendChild(layout);
@@ -219,7 +220,7 @@
       return wrap;
     }
     SC.showAssembly = function () {
-      M.ensureStack();
+      M.ensureStack(); hooks.onAssembly && hooks.onAssembly();
       UI.openSheet({ title: "기억을 쌓다", sub: "마지막 일기를 보며 기억 조각을 맞추세요", mode: "center", cls: "assembly-sheet", build: function (b, foot, api) {
         var layout = el("div", "assembly"), diaryCol = el("div", "a-diary"), work = el("div"), host = el("div", "stackview"), term = el("div", "a-final");
         diaryCol.appendChild(diaryArticle("diary9", 9)); work.appendChild(host); work.appendChild(term);
@@ -234,10 +235,13 @@
               onSubmit: function (raw) {
                 var r = M.submitFinal(raw);
                 if (r.ok) { term.dataset.done = "1"; UI.closeSheet(true); hooks.onFinalOk && hooks.onFinalOk(); return true; }
-                UI.toast(r.reason === "empty" ? "이름을 입력하세요." : "다시 읽어 보세요.", "bad"); return false;
+                UI.toast(r.reason === "empty" ? "이름을 입력하세요." : "다시 읽어 보세요.", "bad");
+                if (r.reason === "wrong") hooks.onWrong && hooks.onWrong(10);
+                return false;
               } });
             term.appendChild(crt.el); crt.attach(api);
             UI.toast("조각이 맞춰졌습니다. 이제 이름을 적으세요.", "good");
+            hooks.onStackSolved && hooks.onStackSolved();
           }
           api.refresh();
         }

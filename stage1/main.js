@@ -24,7 +24,7 @@
     catch (e) { return { getItem: function () { return null; }, setItem: function () { throw new Error("storage blocked"); }, removeItem: function () {} }; }
   }
   var store = N1Storage.createStore({ localStorage: safeStorage(), emit: function (name, detail) { window.dispatchEvent(new CustomEvent(name, { detail: detail })); } });
-  var M = N1Model.create({ data: D, logic: window, storage: N1Storage, store: store });
+  var M = N1Model.create({ data: D, logic: window, storage: N1Storage, store: store, lines: window.N1Lines });
   window.addEventListener("nameless:save-memory-only", function () { if (!window.__warnedSave) { window.__warnedSave = 1; UI.toast("이 브라우저는 진행을 저장하지 못합니다. 창을 닫으면 처음부터 시작합니다.", "bad"); } });
   window.addEventListener("nameless:save-recovered", function () { UI.toast("손상된 저장을 복구했습니다.", "good"); });
 
@@ -35,12 +35,20 @@
   var hooks = {
     onSheet: function (open) { if (Ctl) Ctl.clearInput(); if (open) UI.clearHover(); },
     onSensitivity: function (v) { if (Ctl) Ctl.sensitivity = v; },
+    /* 감독교사: 힌트 단추, 말하는 동안의 몸짓, 답을 낸 뒤의 말 */
+    askHint: function () { Dir.hint(); },
+    onSpeak: function (on) { var t = Lay && Lay.obj && Lay.obj.teacher; if (t && t.userData.speak) t.userData.speak(on); },
+    onAnswered: function (n) { Dir.solved(n, D.CH[n - 1].cue); },
+    onWrong: function (n) { Dir.wrong(n); },
+    onStackSolved: function () { Dir.nameAsk(); },
+    onAssembly: function () { Dir.asm(); },
     begin: function (isNew) {
       if (isNew) M.startNew(); else if (!M.continueSaved()) { UI.toast("저장된 진행이 없습니다.", "bad"); return; }
       UI.resetPieces(); World.applyState(M.S, true);
       SC.hideIntro(); UI.showHud(true); UI.renderHUD(); UI.hintFade();
       Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch); Ctl.crouch = false; Ctl.clearInput();
       if (IS_TOUCH) { UI.enterFullscreen(); UI.lockLandscape(); }
+      Dir.begin(isNew);
     },
     restart: function () {
       M.startNew(); UI.resetPieces(); World.applyState(M.S, true); UI.renderHUD();
@@ -63,7 +71,7 @@
         setTimeout(function () { wo.classList.remove("on"); }, 900);
       });
     },
-    onEndingClosed: function () { Ctl.clearInput(); },
+    onEndingClosed: function () { Ctl.clearInput(); if (M.S.exitReady && !M.S.done) Dir.exitReady(); },
     goNextStage: function () {
       if (transitioning) return; transitioning = true; Ctl.clearInput();
       try { M.save(); } catch (e) {}
@@ -77,10 +85,11 @@
   };
   var UI = N1UI.create({ model: M, data: D, isTouch: IS_TOUCH, hooks: hooks });
   (function () { var clear = UI.clearHover; UI.clearHover = function () { clear(); if (K.outline && K.outline.mat) K.outline.hover(null); }; })();   /* 창이 열리면 테두리 강조도 끈다 */
+  var Dir = N1Director.create({ model: M, lines: N1Lines, ui: UI });
   var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
-  M.on(function (kind) { if (kind === "change") UI.renderHUD(); });
+  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); });
 
   /* ── 해상도·화각 ── */
   function fovFor(aspect) {
@@ -175,7 +184,7 @@
       onFullscreen: function () { UI.toggleFullscreen(); }
     });
     Ctl.sensitivity = UI.sensitivity;
-    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, world: World, controls: Ctl });
+    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, world: World, controls: Ctl, director: Dir });
     $("#crouch").onclick = function () { Ctl.toggleCrouch(); };
     $("#act").onclick = function () { Ctl.pickCenter(); };
     Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch);
@@ -205,6 +214,7 @@
     if (UI.flags.intro) { Ctl.yaw = OPEN.yaw + Math.sin(now * 0.11) * 0.06; Ctl.pitch = OPEN.pitch + Math.sin(now * 0.08) * 0.012; }
     Ctl.update(dt, now);
     World.update(dt, now, camera.position);
+    Dir.tick(dt, UI.blocked());
     if (K.outline && K.outline.mat) K.outline.tick(now);
     var wideSheet = UI.sheetOpen() && (doc.getElementById("sheet").classList.contains("wide") || doc.getElementById("sheet").classList.contains("center"));
     if (UI.flags.ending) return;                                    /* 엔딩이 화면을 덮는 동안 3D 는 쉰다 */

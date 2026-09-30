@@ -8,7 +8,7 @@
   "use strict";
 
   function create(o) {
-    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, W = o.world, C = o.controls, S = M.S;
+    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, W = o.world, C = o.controls, S = M.S, Dir = o.director;
     var DECOY = {}; Object.keys(D.DECOY).forEach(function (k) { DECOY[k] = D.DECOY[k]; });
     if (!DECOY.eraser) DECOY.eraser = "칠판지우개다. 하얀 분필 가루가 잔뜩 묻어 있다.";
     var toast = UI.toast;
@@ -18,6 +18,7 @@
       if (M.reveal() == null) return;
       W.reveal(n);
       toast(D.REVEAL_TEXT[n], "good");
+      if (Dir) Dir.letter(n);
     }
     function openRewardDiary(n) {
       if (S.revealed !== n) { toast("아직 읽을 수 있는 편지가 아닙니다.", "bad"); return; }
@@ -29,6 +30,7 @@
       W.stickToBoard(n, S);
       var slot = W.boardSlot(n + 1); C.lookAtPoint(slot.x, slot.y, slot.z);
       toast("편지를 읽고 칠판으로 옮겨 붙였다. " + n + "번째 조각을 얻었다.", "good");
+      if (Dir) Dir.attach(n);
     }
 
     function interact(id) {
@@ -62,7 +64,7 @@
       if (id === "computer") { SC.showComputer(); return; }
       if (id === "diary1obj") {
         M.takeDiary1(); W.setDiaryOnDesk(false);
-        SC.showDiary(1, { afterClose: function () { W.refreshBoard(S, 1); } }); return;
+        SC.showDiary(1, { afterClose: function () { W.refreshBoard(S, 1); if (Dir) Dir.diary1(); } }); return;
       }
       /* 챕터별 탐색 지점 */
       if (M.isSpot(id)) {
