@@ -48,10 +48,11 @@
     function sayNext() {
       clearTimeout(sayTimer); clearTimeout(sayHold);
       var it = sayQ.shift();
-      if (!it) { var was = !!sayNow; sayNow = null; sayFull = false; sayPaint(); if (was && hooks.onSpeak) hooks.onSpeak(false); return; }
+      if (!it) { var was = !!sayNow; sayNow = null; sayFull = false; sayPaint(); if (was && hooks.onSpeak) hooks.onSpeak(false); if (was && hooks.onVoice) hooks.onVoice(null); return; }
       var first = !sayNow;
       sayNow = { who: it.who || "감독교사", chars: Array.from(it.text) }; sayTyped = 0; sayFull = false; sayPaint();
       if (first && hooks.onSpeak) hooks.onSpeak(true);
+      if (hooks.onVoice) hooks.onVoice(it.text, it.mood);                /* 줄마다: 입 모양을 이 글에서 뽑는다 */
       sayTimer = setTimeout(sayStep, 120);
     }
     function sayTap(e) {
@@ -64,13 +65,14 @@
     UI.say = function (lines, opt) {
       if (UI.flags.ending || UI.flags.exiting) return;
       opt = opt || {}; if (opt.replace) UI.sayClear();
-      [].concat(lines).forEach(function (t) { if (t) sayQ.push({ text: String(t), who: opt.who }); });
+      [].concat(lines).forEach(function (t) { if (t) sayQ.push({ text: String(t), who: opt.who, mood: opt.mood }); });
       if (!sayNow) sayNext();
     };
     UI.sayClear = function () {
       sayQ.length = 0; clearTimeout(sayTimer); clearTimeout(sayHold);
       var was = !!sayNow; sayNow = null; sayFull = false; sayPaint();
       if (was && hooks.onSpeak) hooks.onSpeak(false);
+      if (was && hooks.onVoice) hooks.onVoice(null);
     };
     UI.saying = function () { return !!sayNow || sayQ.length > 0; };
 

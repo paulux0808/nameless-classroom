@@ -14,29 +14,30 @@
     var NUDGE_AFTER = 150;                                 /* 초. 이만큼 진전이 없으면 말을 건다 */
 
     function one(pool, key) { var t = Ln.pick(pool, last[key], rnd); last[key] = t; return t; }
+    /* 기분(mood): calm 담담 · glad 흐뭇 · puzzled 갸웃 · grave 진지 — 얼굴 표정으로 나타난다 */
     function speak(lines, opt) { UI.say(lines, opt); }
 
-    D.begin = function (isNew) { idle = 0; speak(isNew ? Ln.SAY.enter : Ln.SAY.resume, { replace: true }); };
-    D.diary1 = function () { if (M.sayOnce("diary1")) speak(Ln.SAY.diary1); };
+    D.begin = function (isNew) { idle = 0; speak(isNew ? Ln.SAY.enter : Ln.SAY.resume, { replace: true, mood: "calm" }); };
+    D.diary1 = function () { if (M.sayOnce("diary1")) speak(Ln.SAY.diary1, { mood: "calm" }); };
 
     D.wrong = function (n) {
       wrongN[n] = (wrongN[n] || 0) + 1;
-      if (wrongN[n] % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true }); UI.nudgeHint(true); }
-      else speak([one(Ln.SAY.wrong, "wrong")], { replace: true });
+      if (wrongN[n] % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true, mood: "puzzled" }); UI.nudgeHint(true); }
+      else speak([one(Ln.SAY.wrong, "wrong")], { replace: true, mood: "puzzled" });
     };
     /* 정답을 낸 건 아니지만 헛짚은 정도의 실수: 세 번째마다 한 마디 */
     var missN = {};
-    D.miss = function (n) { missN[n] = (missN[n] || 0) + 1; if (missN[n] % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true }); UI.nudgeHint(true); } };
+    D.miss = function (n) { missN[n] = (missN[n] || 0) + 1; if (missN[n] % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true, mood: "puzzled" }); UI.nudgeHint(true); } };
     D.solved = function (n, cue) {
       wrongN[n] = 0; idle = 0; UI.nudgeHint(false);
-      speak([].concat(Ln.SAY.solved[n] || [], Ln.fmt(Ln.SAY.cue, { cue: cue })), { replace: true });
+      speak([].concat(Ln.SAY.solved[n] || [], Ln.fmt(Ln.SAY.cue, { cue: cue })), { replace: true, mood: "glad" });
     };
-    D.letter = function () { idle = 0; speak([one(Ln.SAY.letter, "letter")], { replace: true }); };
-    D.attach = function (n) { idle = 0; speak([].concat(Ln.SAY.attach[n] || [], Ln.SAY.start[n + 1] || []), { replace: true }); };
-    D.asm = function () { if (M.sayOnce("asm")) speak(Ln.SAY.asm); };
-    D.nameAsk = function () { if (M.sayOnce("nameAsk")) speak(Ln.SAY.nameAsk, { replace: true }); };
-    D.exitReady = function () { idle = 0; speak(Ln.SAY.exitReady, { replace: true }); };
-    D.done = function () { speak(Ln.SAY.done, { replace: true }); };
+    D.letter = function () { idle = 0; speak([one(Ln.SAY.letter, "letter")], { replace: true, mood: "grave" }); };
+    D.attach = function (n) { idle = 0; speak([].concat(Ln.SAY.attach[n] || [], Ln.SAY.start[n + 1] || []), { replace: true, mood: n >= 8 ? "grave" : "glad" }); };
+    D.asm = function () { if (M.sayOnce("asm")) speak(Ln.SAY.asm, { mood: "calm" }); };
+    D.nameAsk = function () { if (M.sayOnce("nameAsk")) speak(Ln.SAY.nameAsk, { replace: true, mood: "grave" }); };
+    D.exitReady = function () { idle = 0; speak(Ln.SAY.exitReady, { replace: true, mood: "glad" }); };
+    D.done = function () { speak(Ln.SAY.done, { replace: true, mood: "glad" }); };
 
     /* 힌트 단추: 다음 단계를 말해 준다 */
     D.hint = function () {
@@ -44,8 +45,8 @@
       if (r.ok) {
         var out = []; if (r.first) out = out.concat(Ln.SAY.hintFirst);
         out.push(Ln.SAY.hintLead[r.tier]); out.push(r.text);
-        idle = 0; UI.nudgeHint(false); speak(out, { replace: true });
-      } else speak(r.reason === "max" ? Ln.SAY.hintNone : Ln.SAY.hintNow, { replace: true });
+        idle = 0; UI.nudgeHint(false); speak(out, { replace: true, mood: "calm" });
+      } else speak(r.reason === "max" ? Ln.SAY.hintNone : Ln.SAY.hintNow, { replace: true, mood: "calm" });
       if (UI.renderHint) UI.renderHint();
       return r;
     };
@@ -56,7 +57,7 @@
       var scope = M.hintScope();
       if (!scope) { idle = 0; return; }
       idle += dt;
-      if (idle > NUDGE_AFTER && !nudged[scope] && M.hintTier(scope) === 0) { nudged[scope] = true; speak(Ln.SAY.idle); UI.nudgeHint(true); }
+      if (idle > NUDGE_AFTER && !nudged[scope] && M.hintTier(scope) === 0) { nudged[scope] = true; speak(Ln.SAY.idle, { mood: "calm" }); UI.nudgeHint(true); }
     };
     D.progress = function () { idle = 0; };
 

@@ -38,6 +38,7 @@
     /* 감독교사: 힌트 단추, 말하는 동안의 몸짓, 답을 낸 뒤의 말 */
     askHint: function () { Dir.hint(); },
     onSpeak: function (on) { var t = Lay && Lay.obj && Lay.obj.teacher; if (t && t.userData.speak) t.userData.speak(on); },
+    onVoice: function (text, mood) { var t = Lay && Lay.obj && Lay.obj.teacher; if (!t) return; if (text == null) t.userData.hush(); else t.userData.say(text, mood); },
     onAnswered: function (n) { Dir.solved(n, D.CH[n - 1].cue); },
     onWrong: function (n) { Dir.wrong(n); },
     onMiss: function (n) { Dir.miss(n); },                                      /* 표식이 안 붙는 정도의 작은 실수: 세 번째마다만 말한다 */
