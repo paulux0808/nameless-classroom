@@ -4,7 +4,7 @@
 
 ## Play
 
-- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만들고, 카툰 렌더링이 기본이다. 메뉴에서 사실적 화면으로 바꿀 수 있다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md))
+- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만들고, 카툰 렌더링이 기본이다. 메뉴에서 사실적 화면으로 바꿀 수 있다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md). 2026-09-30 재설계 — 이야기는 그대로, 현장 퍼즐·감독교사 대사와 힌트·기억 소품을 더했다, [docs/STAGE1_REDESIGN.md](docs/STAGE1_REDESIGN.md))
 - Stage 2: `stage2/index.html` (챕터 선택)
 - Stage selector: `index.html`
 
@@ -21,6 +21,7 @@ npm test        # stage1/stage2 로직·프론트엔드 테스트 + 스포일러
 ```
 
 스테이지 1 종단 검증(진짜 브라우저로 8챕터~엔딩~뒷문~이어하기): `npm run e2e:stage1`
+재설계로 생긴 조작(날짜 도장·액자 표식·명단·VHS·연필 도구·대사/힌트·기억 소품·모바일 가로 화면): `npm run e2e:stage1:puzzles`
 (Chromium 필요. WebGL 이 없으면 SwiftShader 로 돌아 느리다.)
 
 ## Structure
@@ -32,8 +33,13 @@ stage1/kit/ props/ room/    코드로 만드는 3D 교실 (재질·소품·건�
 stage1/model.js storage.js  게임 규칙·진행 저장 (DOM 무관, 테스트 대상)
 stage1/logic.js             정답·해시·충돌 등 순수 로직 (테스트 대상)
 stage1/world.js ui.js ...   리빌 연출·HUD·화면·조작 (docs/STAGE1_REBUILD.md)
+stage1/lines.js director.js 감독교사의 대사·3단계 힌트와, 언제 무슨 말을 할지 정하는 감독
+stage1/puzzles.js stations.js tools.js  현장 퍼즐의 순수 논리 / 도장·표식·명단·VHS 패널 / 5~8장 연필 도구
+stage1/props/voice.js       글자에서 입 모양을 뽑는 순수 계산 (감독교사의 말하는 입)
 stage1/tests/               node:test 단위·구조 테스트
 tools/stage1-e2e.mjs        스테이지 1 종단 검증 (Playwright)
+tools/stage1-e2e-puzzles.mjs 재설계 조작 검증 (Playwright)
+tools/seal.mjs              문장을 U() 봉인 형식으로 바꾸거나(seal) 봉인된 문구를 읽는다(dump)
 stage2/index.html           Stage 2 — 챕터 선택 허브
 stage2/logic.js             순수 로직 (진행도·스포일러·검증 상태기계)
 stage2/engine.js            공용 런타임 (씬·입력·문서·도장·대사)
