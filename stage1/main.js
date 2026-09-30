@@ -151,7 +151,7 @@
     var portraits = await loadPortraits(); mark("portraits");
     UI.setLoading(0.55, "책상과 소품");
     await tick();
-    Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI }); scene.add(Lay.group); mark("layout");
+    Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI, roster: N1Puz.ROSTER }); scene.add(Lay.group); mark("layout");
     UI.setLoading(0.8, "마무리");
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */

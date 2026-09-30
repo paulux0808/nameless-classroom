@@ -148,6 +148,28 @@
       return crt;
     }
 
+    /* 정답 입력 단말: 교탁의 컴퓨터와 퍼즐 자리(명단·테이프)가 같은 것을 쓴다.
+       right: 통과하면 이 칸이 '암호 해제' 패널로 바뀐다. sheetApi: 패널 정리용 */
+    function answerCRT(c, right, sheetApi) {
+      var crt = makeCRT({ label: "SCHOLARSHIP TERMINAL — CHAPTER " + c.n, rule: "숫자 또는 영어 · 대소문자 무관 · 띄어쓰기 없음", mode: (c.n === 1 || c.n === 8) ? "number" : "alpha",
+        empty: "정답을 입력하세요", submitText: "확인",
+        onSubmit: function (raw) {
+          var r = M.answer(raw);
+          if (r.ok) {
+            UI.toast("암호 해제 — 단서: “" + r.cue + "”", "good");
+            crt.detach();                                  /* 통과했으니 Enter 는 이제 '조사하러 간다' 버튼의 것이다 */
+            right.innerHTML = ""; right.appendChild(acceptedPanel(c));
+            var eb = el("button", "btn primary", "교실을 조사하러 간다"); eb.style.marginTop = "12px"; eb.onclick = function () { UI.closeSheet(); }; right.appendChild(eb);
+            try { eb.focus({ preventScroll: true }); } catch (e) {}
+            hooks.onAnswered && hooks.onAnswered(c.n);
+            return true;
+          }
+          UI.toast(r.reason === "empty" ? "정답을 입력하세요." : "암호가 맞지 않습니다.", "bad");
+          if (r.reason === "wrong") hooks.onWrong && hooks.onWrong(c.n);
+          return false;
+        } });
+      return crt;
+    }
     /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
     var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" } };
     SC.showComputer = function () {
@@ -173,23 +195,7 @@
         panes.forEach(function (p, i) { p.hidden = i !== 0; tabs.children[i].setAttribute("aria-selected", i === 0 ? "true" : "false"); });
         if (panes.length > 1) left.appendChild(tabs); else panes[0].style.borderTop = "0";
         panes.forEach(function (p) { left.appendChild(p); });
-        var crt = makeCRT({ label: "SCHOLARSHIP TERMINAL — CHAPTER " + c.n, rule: "숫자 또는 영어 · 대소문자 무관 · 띄어쓰기 없음", mode: (c.n === 1 || c.n === 8) ? "number" : "alpha",
-          empty: "정답을 입력하세요", submitText: "확인",
-          onSubmit: function (raw) {
-            var r = M.answer(raw);
-            if (r.ok) {
-              UI.toast("암호 해제 — 단서: “" + r.cue + "”", "good");
-              crt.detach();                                  /* 통과했으니 Enter 는 이제 '조사하러 간다' 버튼의 것이다 */
-              right.innerHTML = ""; right.appendChild(acceptedPanel(c));
-              var eb = el("button", "btn primary", "교실을 조사하러 간다"); eb.style.marginTop = "12px"; eb.onclick = function () { UI.closeSheet(); }; right.appendChild(eb);
-              try { eb.focus({ preventScroll: true }); } catch (e) {}
-              hooks.onAnswered && hooks.onAnswered(c.n);
-              return true;
-            }
-            UI.toast(r.reason === "empty" ? "정답을 입력하세요." : "암호가 맞지 않습니다.", "bad");
-            if (r.reason === "wrong") hooks.onWrong && hooks.onWrong(c.n);
-            return false;
-          } });
+        var crt = answerCRT(c, right, api);
         right.appendChild(crt.el); layout.appendChild(left); layout.appendChild(right); b.appendChild(layout);
         crt.attach(api);
       } });
@@ -363,7 +369,7 @@
     SC.showIntro = function () { UI.flags.intro = true; doc.getElementById("intro").classList.remove("hidden"); SC.bindIntro(); UI.showHud(false); };
     SC.hideIntro = function () { UI.flags.intro = false; doc.getElementById("intro").classList.add("hidden"); };
 
-    SC.kit = { makeCRT: makeCRT, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
+    SC.kit = { makeCRT: makeCRT, answerCRT: answerCRT, acceptedPanel: acceptedPanel, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
     return SC;
   }
   root.N1Screens = { create: create };

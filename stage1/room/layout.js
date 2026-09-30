@@ -138,6 +138,15 @@
     hot("decoy:switches", "조명 스위치", 0.14, 0.16, 0.06, 2.62, 1.28, 3.95); hot("decoy:outlet", "콘센트", 0.12, 0.16, 0.06, 2.62, 0.4, 3.95);
     /* 앞 벽 왼쪽: 트로피 선반 */
     var shelf = P.trophyShelf(); place(shelf, -3.75, 1.45, -3.87); L.obj.trophy = shelf;
+    /* 3장 스포츠 코너: 선반 아래 명단 클립보드, 모서리에 세워 둔 노, 벽 위쪽 페넌트 */
+    var roster = P.rosterBoard(opts.roster || []); place(roster, -3.75, 0.98, -3.95); L.obj.roster = roster;
+    hot("roster", "명단", 0.3, 0.4, 0.1, -3.75, 0.98, -3.93);
+    var oar = P.oar(); place(oar, -4.62, PLAT, -3.72); oar.rotation.x = -0.075; oar.rotation.z = 0.05; L.obj.oar = oar;
+    var pen = P.pennants(6, 2.05); place(pen, -3.72, 2.5, -3.965); L.obj.pennants = pen;
+    /* 4장 AV 카트: 왼쪽 벽, 첫째 창과 둘째 창 사이 기둥 앞. TV 는 교실 안쪽(+x)을 본다 */
+    var cart = P.avCart(); place(cart, -4.5, 0, -1.85, PI / 2); L.obj.cart = cart;
+    L.updaters.push(function (dt, t) { cart.userData.update(dt, t); });
+    hot("tv", "TV", 0.55, 0.5, 0.5, -4.45, 1.28, -1.85);
     hot("decoy:trophy", "트로피", 0.4, 0.36, 0.3, -3.55, 1.6, -3.85); hot("decoy:books", "책 무더기", 0.5, 0.2, 0.3, -4.05, 1.5, -3.85);
 
     /* ── 문 ── */

@@ -49,6 +49,12 @@
       if (id.indexOf("diaryP:") === 0) { SC.showDiary(+id.split(":")[1]); return; }
       if (id.indexOf("refP:") === 0) { SC.showRefs(id.split(":")[1]); return; }
       if (id === "sheet") { ST.showStickers(); return; }
+      if (id === "roster") { ST.showRoster(); return; }
+      if (id === "tv") {
+        if (S.ch >= 4 && S.ch <= 4) { ST.showTape(); return; }
+        if (S.ch > 4 && M.isSolved(4)) { ST.showTape(); return; }
+        toast(S.ch < 4 ? "TV가 꺼져 있다. 아직 넣을 테이프가 없다." : "TV는 지금 아무것도 비추지 않는다."); return;
+      }
       if (id === "stamp") {
         if (!S.tookD1 && S.ch === 1) { toast("먼저 책상 위의 일기를 읽어 보세요."); return; }
         if (S.ch === 1 && S.phase === "read") W.guide(null);
