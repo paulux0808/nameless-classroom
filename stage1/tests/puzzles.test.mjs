@@ -151,3 +151,28 @@ test("정답 새지 않음: puzzles.js 원문(봉인 제외)에 정답이 평문
     else assert.ok(!flat.includes(a.toLowerCase()), `장 ${n} 정답 ${a} 이(가) 평문에 있다`);
   }
 });
+
+test("컴퓨터 전원: 1~4장은 꺼져 있고 5~8장은 답을 넣는 동안만 켜진다", () => {
+  const st = (ch, phase, extra = {}) => Object.assign({ ch, phase, exitReady: false, done: false }, extra);
+  for (const ch of [1, 2, 3, 4]) for (const phase of ["read", "search"]) assert.equal(Puz.computerState(st(ch, phase)), "off", `${ch}장 ${phase}`);
+  for (const ch of [5, 6, 7, 8]) {
+    assert.equal(Puz.computerState(st(ch, "read")), "input", `${ch}장 읽기`);
+    assert.equal(Puz.computerState(st(ch, "search")), "off", `${ch}장 탐색(답을 낸 뒤에는 다시 꺼진다)`);
+  }
+});
+
+test("컴퓨터 전원: 조각을 다 모으면 조립·이름에 켜지고, 이름을 맞힌 뒤에는 ‘마침’ 화면", () => {
+  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: false, done: false }), "input");
+  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: true, done: false }), "done");
+  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: true, done: true }), "done");
+  assert.equal(Puz.computerState(null), "off"); assert.equal(Puz.computerState(undefined), "off");
+});
+
+test("TV 전원: 4장(테이프)과 6장(영상)의 읽기 단계에서만 켜진다", () => {
+  const on = [];
+  for (let ch = 1; ch <= 9; ch++) for (const phase of ["read", "search"]) if (Puz.tvOn({ ch, phase, exitReady: false, done: false })) on.push(`${ch}${phase}`);
+  assert.deepEqual(on, ["4read", "6read"]);
+  assert.equal(Puz.tvOn({ ch: 4, phase: "read", exitReady: true, done: false }), false);
+  assert.equal(Puz.tvOn(null), false);
+});
+

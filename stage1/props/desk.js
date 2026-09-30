@@ -17,18 +17,41 @@
     b.rbox(0.09, 0.05, 0.08, 0.012, beige, { p: [0, 0.075, 0.03] });
     /* 앞 버튼과 전원 LED */
     [0.12, 0.15, 0.18].forEach(function (x, i) { b.rbox(0.02, 0.012, 0.01, 0.003, dark, { p: [x, 0.125, 0.19 + 0.0] }); });
-    b.sphere(0.005, K.mat("crt.led", function () { return K.std(0x39d27a, 0.3, 0, { emissive: 0x39d27a, ei: 1.4 }); }), { p: [0.075, 0.125, 0.196], ws: 8, hs: 6 });
+    var ledMat = K.mat("crt.led", function () { return K.std(0x39d27a, 0.3, 0, { emissive: 0x39d27a, ei: 1.4 }); });
+    b.sphere(0.005, ledMat, { p: [0.075, 0.125, 0.196], ws: 8, hs: 6 });
     g.add(b.build({ name: "crtBody" }));
-    /* 화면: 유리 곡면 + 터미널 화면 */
-    var scr = P.canvas(512, 384, function (x, w, h) { draw(x, w, h, 0); });
-    function draw(x, w, h, cur) {
+    /* 화면: 유리 곡면 + 터미널 화면. 필요할 때만 켜진다(꺼짐 · 답 입력 · 마침).
+       power(0..1)는 켜지고 꺼지는 연출: 가는 밝은 줄이 위아래로 벌어지며 켜진다. */
+    var view = { mode: "off", shown: "input", power: 0, target: 0, cursor: false, dirty: true };
+    function content(x, w, h, mode, cur) {
       x.fillStyle = "#061512"; x.fillRect(0, 0, w, h);
       x.fillStyle = "#1e6f5f"; x.font = "600 24px ui-monospace,Consolas,monospace";
-      x.fillText("ENTER PASSWORD", 34, 62); x.fillText("──────────────", 34, 84);
-      x.fillStyle = "#69e6c7"; x.font = "700 30px ui-monospace,Consolas,monospace";
-      x.fillText("> " + "*****".slice(0, 0) + (cur ? "_" : " "), 34, 138);
+      if (mode === "done") {
+        x.fillText("ACCESS GRANTED", 34, 62); x.fillText("──────────────", 34, 84);
+        x.fillStyle = "#69e6c7"; x.font = "700 30px ui-monospace,Consolas,monospace"; x.fillText("> ENDING " + (cur ? "\u25b6" : " "), 34, 138);
+      } else {
+        x.fillText("ENTER PASSWORD", 34, 62); x.fillText("──────────────", 34, 84);
+        x.fillStyle = "#69e6c7"; x.font = "700 30px ui-monospace,Consolas,monospace"; x.fillText("> " + (cur ? "_" : " "), 34, 138);
+      }
       x.fillStyle = "#1e6f5f"; x.font = "500 18px ui-monospace,Consolas,monospace"; x.fillText("SCHOLARSHIP TERMINAL v1.0", 34, h - 30);
     }
+    function paint(x, w, h) {
+      x.fillStyle = "#020504"; x.fillRect(0, 0, w, h);
+      var p = view.power;
+      if (p > 0.001) {
+        var k = p * p * (3 - 2 * p), bh = Math.max(4, h * k), y0 = (h - bh) / 2;
+        x.save(); x.beginPath(); x.rect(0, y0, w, bh); x.clip();
+        content(x, w, h, view.shown, view.cursor);
+        if (p < 1) { x.fillStyle = "rgba(190,255,235," + (0.55 * (1 - p)).toFixed(3) + ")"; x.fillRect(0, y0, w, bh); }
+        x.restore();
+        if (p < 0.35) { var lw = w * (0.3 + p * 2), a = 0.9 * (1 - p / 0.35); x.fillStyle = "rgba(210,255,240," + a.toFixed(3) + ")"; x.fillRect((w - lw) / 2, h / 2 - 1.5, lw, 3); }
+      }
+      if (p < 0.6) {                                                   /* 꺼진 유리에 비친 희미한 빛 */
+        var gl = x.createLinearGradient(0, 0, w, h); gl.addColorStop(0, "rgba(255,255,255," + (0.1 * (1 - p / 0.6)).toFixed(3) + ")"); gl.addColorStop(0.45, "rgba(255,255,255,0)");
+        x.fillStyle = gl; x.fillRect(0, 0, w, h);
+      }
+    }
+    var scr = P.canvas(512, 384, function (x, w, h) { paint(x, w, h); });
     var tex = new T.CanvasTexture(scr); tex.encoding = T.sRGBEncoding; tex.anisotropy = 4;
     var sg = new T.PlaneGeometry(0.34, 0.255, 8, 6), sp = sg.attributes.position;
     for (var i = 0; i < sp.count; i++) { var xx = sp.getX(i) / 0.17, yy = sp.getY(i) / 0.1275; sp.setZ(i, 0.012 * (1 - 0.5 * (xx * xx + yy * yy))); }
@@ -43,12 +66,29 @@
     for (var r = 0; r < 4; r++) for (var c = 0; c < 15; c++) kb.rbox(0.0235, 0.011, 0.0235, 0.004, key, { p: [-0.1725 + c * 0.0246 + (r % 2 ? 0.006 : 0), 0.029, 0.31 + r * 0.0265], segs: 1 });
     kb.rbox(0.19, 0.011, 0.0235, 0.004, key, { p: [0, 0.029, 0.416], segs: 1 });
     g.add(kb.build({ name: "crtKeyboard" }));
-    g.userData = { screen: screen, texture: tex, redraw: function (cur, text) { draw(scr.getContext("2d"), 512, 384, cur); tex.needsUpdate = true; }, size: [0.44, 0.5, 0.5] };
-    var blink = 0;
-    g.userData.update = function (t) {
-      var on = (Math.floor(t * 1.6) % 2) === 0;
-      if (on !== blink) { blink = on; g.userData.redraw(on); }
+    g.userData = { screen: screen, texture: tex, size: [0.44, 0.5, 0.5], glow: 0, mode: "off" };
+    function redraw() { paint(scr.getContext("2d"), 512, 384); tex.needsUpdate = true; view.dirty = false; }
+    function led() { ledMat.emissiveIntensity = 0.04 + 1.36 * view.power; }
+    g.userData.redraw = function (cur) { view.cursor = !!cur; redraw(); };
+    /* mode: off | input | done. animate 가 거짓이면 연출 없이 바로 바뀐다(저장 복원·새 게임) */
+    g.userData.setMode = function (mode, animate) {
+      g.userData.mode = mode; if (mode !== "off") view.shown = mode;
+      view.target = mode === "off" ? 0 : 1;
+      if (!animate) view.power = view.target;
+      view.dirty = true; g.userData.glow = view.power; led(); if (!animate) redraw();
     };
+    g.userData.update = function (t, dt) {
+      var moving = view.power !== view.target;
+      if (moving) {
+        var step = (dt || 0.016) / (view.target > view.power ? 0.6 : 0.4);
+        view.power = view.target > view.power ? Math.min(view.target, view.power + step) : Math.max(view.target, view.power - step);
+        g.userData.glow = view.power; led(); view.dirty = true;
+      }
+      var on = (Math.floor(t * 1.6) % 2) === 0;
+      if (on !== view.cursor && view.power > 0.001) { view.cursor = on; view.dirty = true; }
+      if (view.dirty) redraw();
+    };
+    g.userData.setMode("off", false);
     return g;
   };
 

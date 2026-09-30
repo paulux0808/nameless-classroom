@@ -94,7 +94,7 @@
   var ST = N1Stations.create({ ui: UI, model: M, data: D, assets: ASSETS, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
-  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); });
+  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); if (kind === "change" && World && World.syncDevices(M.S, true) && Ctl) Ctl.hover = null; });   /* 컴퓨터·TV 는 필요할 때 켜지고 꺼진다 */
 
   /* ── 해상도·화각 ── */
   function fovFor(aspect) {
@@ -182,7 +182,7 @@
     Ctl = N1C.create({
       canvas: cv, camera: camera, hotspots: World.active, joy: $("#joy"), joyKnob: $("#joyk"),
       blocked: function () { return UI.blocked(); },
-      onHover: function (t, far, x, y) { UI.setHover(t, far, x, y); if (TOON) K.outline.hover(t && !far ? t : null); },
+      onHover: function (t, far, x, y) { UI.setHover(t, far, x, y); if (TOON) K.outline.hover(t && !far && !t.userData.dormant ? t : null); },
       onHoverMove: function (x, y) { UI.moveLabel(x, y); },
       onPick: function (t) { Inter.interact(t.userData.hot.id); },
       onTooFar: function () { UI.toast("더 가까이 가세요."); },

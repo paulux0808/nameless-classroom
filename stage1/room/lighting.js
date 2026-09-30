@@ -141,7 +141,8 @@
     L.fill = new T.PointLight(K.srgb(0xa9bde0), PR.fill, 11, 2);
     L.fill.position.set(2.8, 2.3, 0.4);
     /* 컴퓨터 화면 빛 (밤 모드에서 강해진다) */
-    L.screen = new T.PointLight(K.srgb(0x8ad6c6), PR.screen, 3.6, 2);
+    L.screen = new T.PointLight(K.srgb(0x8ad6c6), 0, 3.6, 2);                 /* 교탁 컴퓨터의 화면빛. 컴퓨터가 켜져 있을 때만(setScreenPower) */
+    L.screenPower = 0; L.darkNow = 0;
     L.screen.position.set(0, 1.2, -2.55);
     /* 카툰: 그림자 없는 '주광'. 햇빛이 닿지 않는 곳에서도 모든 물체가 밝은 면·어두운 면을 갖게 해서 만화 같은 명암이 방 전체에 선다 */
     if (TOON) {
@@ -200,6 +201,11 @@
     var HEMI_DAY = K.srgb(PR.sky), HEMI_NIGHT = K.srgb(PR.hemiN);
     var KEY_DAY = K.srgb(PR.keyCol || 0xffffff), KEY_NIGHT = K.srgb(PR.keyColN || 0x7d90c0);
     var NIGHT_SKY = new T.Color(0.06, 0.085, 0.14), DAY_SKY = new T.Color(1, 1, 1), FOG_DAY = K.srgb(0x2c2419), FOG_NIGHT = K.srgb(0x0a0d14);
+    /* k: 0(꺼짐)..1(켜짐). 컴퓨터 화면이 켜지고 꺼지는 것과 같이 움직인다 */
+    L.setScreenPower = function (k) {
+      k = K.clamp(k, 0, 1); if (Math.abs(k - L.screenPower) < 0.004) return;
+      L.screenPower = k; L.screen.intensity = (PR.screen + PR.screenGain * L.darkNow) * k;
+    };
     L.setDark = function (d) {   /* d: 0..1 */
       L.sun.intensity = (PR.sun - PR.sunDrop * L.progress) * (1 - d) + 0.03 * d;
       L.hemi.intensity = (PR.hemi - PR.hemiDrop * L.progress) * (1 - d) + PR.hemiNight * d; L.hemi.color.copy(HEMI_DAY).lerp(HEMI_NIGHT, d);
@@ -207,7 +213,7 @@
       L.bounce.intensity = PR.bounce * (1 - d);
       L.fill.intensity = PR.fill * (1 - d) + PR.fillNight * d;
       if (L.key) { L.key.intensity = PR.key * (1 - d) + PR.keyNight * d; L.key.color.copy(KEY_DAY).lerp(KEY_NIGHT, d); }
-      L.screen.intensity = PR.screen + PR.screenGain * d; L.screen.distance = 3.6 + 1.6 * d;
+      L.darkNow = d; L.screen.intensity = (PR.screen + PR.screenGain * d) * L.screenPower; L.screen.distance = 3.6 + 1.6 * d;
       L.shafts.forEach(function (s) { s.visible = d < 0.5; });
       L.dust.material.opacity = PR.dustOp * (1 - d) + 0.1 * d;
       if (!TOON) { K.setEnvIntensity(scene, L.baseEnv * (1 - 0.85 * d)); renderer.toneMappingExposure = L.baseExposure * (1 + 0.3 * d); }

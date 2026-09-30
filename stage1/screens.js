@@ -330,7 +330,7 @@
             : row("W A S D / 방향키", "걸어 다니기") + row("화면 끌기", "둘러보기") + row("클릭 · E · Space", "조사하기") + row("C", "숙이기 (책상 아래)") + row("F", "전체 화면") + row("Esc", "이 메뉴 · 창 닫기")) +
           "</dl></div></div>";
         b.appendChild(guide);
-        b.appendChild(el("p", "mini", "암호는 교탁 위 컴퓨터에 입력합니다. 정답은 숫자 또는 영어만 쓰고, 대소문자와 띄어쓰기는 구분하지 않습니다."));
+        b.appendChild(el("p", "mini", "교탁의 컴퓨터는 답을 넣어야 할 때에만 켜집니다. 정답은 숫자 또는 영어만 쓰고, 대소문자와 띄어쓰기는 구분하지 않습니다."));
         var sens = el("div", "item"); sens.style.marginTop = "12px";
         sens.innerHTML = '<div class="in" style="border:0;padding:12px 14px"><label style="display:flex;gap:12px;align-items:center;font:700 14px ' + FONT + '">시선 감도<input type="range" min="0.5" max="2" step="0.1" style="flex:1;accent-color:#c2382b" value="' + UI.sensitivity + '" aria-label="시선 감도"><output style="min-width:2.4em;text-align:right;font:600 13px ui-monospace,monospace"></output></label></div>';
         var rng = sens.querySelector("input"), out = sens.querySelector("output"); out.textContent = "×" + (+rng.value).toFixed(1);

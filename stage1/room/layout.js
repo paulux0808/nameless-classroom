@@ -47,7 +47,7 @@
     var lectern = P.lectern(); place(lectern, 0, PLAT, deskZ); L.obj.lectern = lectern;
     var TOP = PLAT + 0.8;
     var crt = P.crt(); place(crt, 0.02, TOP, deskZ - 0.13); crt.rotation.y = 0.0; L.obj.crt = crt;
-    L.updaters.push(function (dt, t) { crt.userData.update(t); });
+    L.updaters.push(function (dt, t) { crt.userData.update(t, dt); });
     hot("computer", "컴퓨터", 0.5, 0.42, 0.42, 0.02, TOP + 0.3, deskZ + 0.0);
     var globe = P.globe(); place(globe, -0.62, TOP, deskZ - 0.02); L.obj.globe = globe;
     L.updaters.push(function (dt) { globe.userData.update(dt); });

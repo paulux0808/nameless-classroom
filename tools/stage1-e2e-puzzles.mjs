@@ -263,6 +263,33 @@ try {
   check((await page.$eval("#toast", (e) => e.textContent)).includes("지팡이"), "M. 소품을 조사하면 한 줄 감상이 나온다");
   await ev(() => { __n1.C.setView(2.2, -0.4, Math.atan2(3.9 - 2.2, -3.9 + 0.4), 0.02); __n1.UI.showHud(false); }); await page.waitForTimeout(500);
   await shot("13-memories");
+  /* N) 장치 전원: 교탁 컴퓨터와 TV 는 쓸 때만 켜진다 */
+  const range = (k) => Array.from({ length: k }, (_, i) => i + 1);
+  const powerAt = async (ch, phase) => { await setState(ch, phase, range(ch - 1)); return ev(() => ({ pc: __n1.W.computerMode(), tv: __n1.W.tvOn(), dormant: !!__n1.L.hotById.computer.userData.dormant, name: __n1.L.hotById.computer.userData.hot.name })); };
+  const pcOn = [], tvOnList = [];
+  for (let ch = 1; ch <= 8; ch++) for (const phase of ["read", "search"]) { const r = await powerAt(ch, phase); if (r.pc === "input") pcOn.push(`${ch}${phase}`); if (r.tv) tvOnList.push(`${ch}${phase}`); }
+  check(pcOn.join(",") === "5read,6read,7read,8read", "N. 컴퓨터는 5~8장의 답을 넣는 동안에만 켜진다 (" + pcOn.join(",") + ")");
+  check(tvOnList.join(",") === "4read,6read", "N. TV 는 4장(테이프)·6장(영상)을 푸는 동안에만 켜진다 (" + tvOnList.join(",") + ")");
+  await setState(9, "read", range(8));
+  check((await ev(() => __n1.W.computerMode())) === "input", "N. 조각 8개를 모으면 컴퓨터가 다시 켜진다(조립·이름)");
+  await ev(() => { __n1.M.S.exitReady = true; __n1.W.syncDevices(__n1.M.S, false); });
+  check((await ev(() => __n1.W.computerMode())) === "done", "N. 이름을 맞힌 뒤에는 ‘마침’ 화면이 된다");
+  await ev(() => { __n1.M.S.exitReady = false; });
+  /* 꺼진 컴퓨터: 이름표에 ‘꺼짐’, 후광·조준점 반응 없음, 눌러도 안 열리고 감독교사가 이유를 말해 준다 */
+  await powerAt(1, "read");
+  await ev(() => __n1.UI.sayClear());
+  const pc = await clickHot("computer", [0.15, -1.15, Math.PI, -0.42]); await page.waitForTimeout(600);
+  const dorm = await ev(() => ({ label: document.getElementById("label").textContent, hot: document.getElementById("reticle").classList.contains("hot"), halo: !!(__n1.L.obj.crt.userData.hullSets || []).some((h) => h.halo && h.halo.visible), sheet: __n1.UI.sheetOpen(), toast: document.getElementById("toast").textContent }));
+  check(dorm.label.includes("꺼짐") && !dorm.hot && (STYLE !== "toon" || !dorm.halo), "N. 꺼진 컴퓨터는 이름표에 ‘꺼짐’이 붙고 조준점·후광이 켜지지 않는다");
+  check(!dorm.sheet && dorm.toast.includes("꺼져"), "N. 꺼진 컴퓨터를 눌러도 열리지 않고 안내가 나온다");
+  check(await until(() => __n1.UI.saying(), null, 30000), "N. 꺼진 컴퓨터를 누르면 감독교사가 이유와 지금 할 일을 말해 준다");
+  await shot("14-computer-off");
+  await ev(() => __n1.UI.sayClear());
+  await powerAt(5, "read");
+  await clickHot("computer", [0.15, -1.15, Math.PI, -0.42]); await page.waitForTimeout(800);
+  check(await sheetOpen(), "N. 5장(답을 넣는 장)에서는 컴퓨터를 눌러 답 패널이 열린다");
+  await shot("15-computer-on");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
   check(errors.length === 0, "화면 오류 없음 " + errors.join(" | "));
 
   /* ══════ 모바일 가로(568×320) ══════ */

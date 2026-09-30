@@ -105,7 +105,7 @@
       /* 옛 화면에는 없던 안내: 다음에 할 일이 비어 있을 때만 한 줄 */
       if (!html && !S.done) {
         if (h.kicker === "FINAL") html = '<span class="hint">교탁의 컴퓨터에서 기억 조각을 맞추세요.</span>';
-        else if (S.phase === "read" && S.tookD1) html = '<span class="hint">교탁의 컴퓨터에 암호를 입력하세요.</span>';
+        else if (S.phase === "read" && S.tookD1) html = '<span class="hint">이번 장의 퍼즐을 풀어 보세요.</span>';
         else if (!S.tookD1) html = '<span class="hint">책상 위의 일기를 눌러 읽어 보세요.</span>';
       }
       if (noteEl.innerHTML !== html) { noteEl.innerHTML = html; if (html) { noteEl.style.animation = "none"; void noteEl.offsetWidth; noteEl.style.animation = ""; } }
@@ -175,7 +175,7 @@
     UI.setHover = function (t, far, x, y) {
       if (!t) { reticle.classList.remove("hot", "far"); label.classList.remove("show"); act.classList.remove("ready"); return; }
       var h = t.userData.hot;
-      reticle.classList.toggle("hot", !far); reticle.classList.toggle("far", !!far);
+      reticle.classList.toggle("hot", !far && !t.userData.dormant); reticle.classList.toggle("far", !!far);
       label.innerHTML = h.name + (far ? "<i>더 가까이 가세요</i>" : "");
       label.style.left = x + "px"; label.style.top = y + "px"; label.classList.add("show");
       act.innerHTML = "조사" + '<small>' + h.name + "</small>"; act.classList.toggle("ready", !far);
