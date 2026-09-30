@@ -51,7 +51,8 @@
       if (id === "sheet") { ST.showStickers(); return; }
       if (id === "roster") { ST.showRoster(); return; }
       if (id === "tv") {
-        if (S.ch >= 4 && S.ch <= 4) { ST.showTape(); return; }
+        if (S.ch === 4) { ST.showTape(); return; }
+        if (S.ch === 6 && S.phase === "read") { SC.showRefs("video"); return; }
         if (S.ch > 4 && M.isSolved(4)) { ST.showTape(); return; }
         toast(S.ch < 4 ? "TV가 꺼져 있다. 아직 넣을 테이프가 없다." : "TV는 지금 아무것도 비추지 않는다."); return;
       }

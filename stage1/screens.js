@@ -8,7 +8,7 @@
   var FONT = "'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif";
 
   function create(o) {
-    var UI = o.ui, M = o.model, D = o.data, hooks = o.hooks || {}, A = o.assets || {}, S = M.S;
+    var UI = o.ui, M = o.model, D = o.data, hooks = o.hooks || {}, A = o.assets || {}, S = M.S, TL = o.tools || {};
     var SC = {};
 
     /* ───────── 일기 ───────── */
@@ -68,6 +68,7 @@
     }
     /* kind: sci | sport | map | video | keyb | frames — 터미널 옆 탭과 자료 패널이 같은 함수를 쓴다 */
     function renderResource(kind, host) {
+      if (TL[kind]) { TL[kind](host); return; }                      /* 5~8장 연필 도구(tools.js) */
       var list = el("div", "list");
       if (kind === "frames") { host.appendChild(symbolSheet()); return; }
       if (kind === "sci") { D.SCI.forEach(function (s) { detail(list, enLabel(s.name, s.en), sciHTML(s)); }); host.appendChild(list); return; }
@@ -171,7 +172,7 @@
       return crt;
     }
     /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
-    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" } };
+    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" }, 7: { kind: "words", title: "쪽지 메모" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
       if (S.ch > 8) { SC.showAssembly(); return; }

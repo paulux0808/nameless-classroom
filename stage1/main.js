@@ -88,7 +88,8 @@
   var UI = N1UI.create({ model: M, data: D, isTouch: IS_TOUCH, hooks: hooks });
   (function () { var clear = UI.clearHover; UI.clearHover = function () { clear(); if (K.outline && K.outline.mat) K.outline.hover(null); }; })();   /* 창이 열리면 테두리 강조도 끈다 */
   var Dir = N1Director.create({ model: M, lines: N1Lines, ui: UI });
-  var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks });
+  var TL = N1Tools.create({ model: M, data: D, assets: ASSETS });
+  var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks, tools: TL });
   var ST = N1Stations.create({ ui: UI, model: M, data: D, assets: ASSETS, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
