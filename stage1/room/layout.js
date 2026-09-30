@@ -55,6 +55,27 @@
     var cal = P.deskCalendar(); place(cal, 0.62, TOP, deskZ - 0.06, -0.15); L.obj.calendar = cal;
     var pcup = P.pencilCup(); place(pcup, 0.42, TOP, deskZ + 0.13); L.obj.pencilCup = pcup;
     var deskBook = P.plainBook(0x6a2b2b, 0.22, 0.03, 0.16); place(deskBook, -0.2, TOP + 0.015, deskZ + 0.12, 0.3); L.obj.deskBook = deskBook;
+    var stamp = P.dateStamp(); place(stamp, -0.4, TOP, deskZ + 0.17, 0.4); L.obj.stamp = stamp;
+    hot("stamp", "날짜 도장", 0.13, 0.13, 0.11, -0.4, TOP + 0.05, deskZ + 0.17);
+    L.stampSpot = [-0.4, TOP + 0.2, deskZ + 0.17];                           /* 안내 화살표가 서는 곳 */
+    /* 기억 소품 여덟: 조각을 칠판에 붙일 때마다 하나씩 생긴다(처음엔 숨겨 둔다) */
+    L.mem = {};
+    function mem(n, obj, x, y, z, ry, name, extra) {
+      obj.visible = false; obj.position.set(x, y, z); if (ry) obj.rotation.y = ry; if (extra) extra(obj); g.add(obj); L.mem[n] = obj;
+      if (obj.userData.update) L.updaters.push(function (dt, t) { if (obj.visible) obj.userData.update(dt, t); });
+      var sz = obj.userData.size || [0.2, 0.2, 0.2];
+      hot("decoy:mem" + n, name, Math.max(sz[0], 0.16) + 0.06, Math.max(sz[1], 0.16) + 0.06, Math.max(sz[2], 0.1) + 0.06, x, y + (n === 1 ? -0.3 : n === 5 ? -0.17 : sz[1] / 2), z);
+      return obj;
+    }
+    mem(1, P.memStars(), -2.3, D.H, 0.3, 0, "별 모빌");
+    mem(2, P.memDoodle(), 2.28, 1.2, -3.93, 0, "낙서");
+    mem(3, P.memCane(), 1.1, PLAT, -2.62, 0, "지팡이", function (o) { o.rotation.z = 0.17; });
+    mem(4, P.memPoster(), 3.95, 1.9, -3.965, 0, "포스터");
+    mem(5, P.memMedal(), -3.3, 1.3, -3.965, 0, "메달");
+    mem(6, P.memBooks(), -1.3, PLAT, -2.95, 0.2, "책");
+    mem(7, P.memFlag(), -0.86, TOP, deskZ + 0.02, 0.15, "태극기");
+    mem(8, P.memLamp(), 0.86, TOP, deskZ - 0.14, -0.3, "스탠드");
+    L.lampLight = new T.PointLight(0xffc880, 0, 3.4, 2); L.lampLight.position.set(0.86, TOP + 0.2, deskZ - 0.14); g.add(L.lampLight);
     /* 리빌 1: 달력 아래 편지 자리 — 교탁 상판 위 */
     L.anchors[1] = { p: [0.62, TOP + 0.0035, deskZ - 0.06], n: [0, 1, 0], up: [0, 0, -1], roll: -0.05 };
     hot("calendar", "탁상달력", 0.2, 0.18, 0.14, 0.62, TOP + 0.09, deskZ - 0.06);
@@ -135,6 +156,15 @@
     hot("decoy:switches", "조명 스위치", 0.14, 0.16, 0.06, 2.62, 1.28, 3.95); hot("decoy:outlet", "콘센트", 0.12, 0.16, 0.06, 2.62, 0.4, 3.95);
     /* 앞 벽 왼쪽: 트로피 선반 */
     var shelf = P.trophyShelf(); place(shelf, -3.75, 1.45, -3.87); L.obj.trophy = shelf;
+    /* 3장 스포츠 코너: 선반 아래 명단 클립보드, 모서리에 세워 둔 노, 벽 위쪽 페넌트 */
+    var roster = P.rosterBoard(opts.roster || []); place(roster, -3.75, 0.98, -3.95); L.obj.roster = roster;
+    hot("roster", "명단", 0.3, 0.4, 0.1, -3.75, 0.98, -3.93);
+    var oar = P.oar(); place(oar, -4.62, PLAT, -3.72); oar.rotation.x = -0.075; oar.rotation.z = 0.05; L.obj.oar = oar;
+    var pen = P.pennants(6, 2.05); place(pen, -3.72, 2.5, -3.965); L.obj.pennants = pen;
+    /* 4장 AV 카트: 왼쪽 벽, 첫째 창과 둘째 창 사이 기둥 앞. TV 는 교실 안쪽(+x)을 본다 */
+    var cart = P.avCart(); place(cart, -4.5, 0, -1.85, PI / 2); L.obj.cart = cart;
+    L.updaters.push(function (dt, t) { cart.userData.update(dt, t); });
+    hot("tv", "TV", 0.55, 0.5, 0.5, -4.45, 1.28, -1.85);
     hot("decoy:trophy", "트로피", 0.4, 0.36, 0.3, -3.55, 1.6, -3.85); hot("decoy:books", "책 무더기", 0.5, 0.2, 0.3, -4.05, 1.5, -3.85);
 
     /* ── 문 ── */

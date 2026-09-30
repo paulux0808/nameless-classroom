@@ -24,6 +24,69 @@
       clearTimeout(toastT); toastT = setTimeout(function () { toastEl.classList.remove("show"); }, kind === "good" ? 3600 : 2800);
     };
 
+    /* ── 감독교사의 말 ───────────────────────────────────────────────────────
+       세계에서는 아래쪽 말풍선, 패널이 열려 있으면 패널 안의 띠(#sh-say)에 같은 말이 나온다.
+       한 글자씩 나타나고, 누르면 끝까지 보였다가 다음으로 넘어간다. 다 읽을 시간이 지나면 저절로 넘어간다. */
+    var sayBox = $("#say"), saySheet = $("#sh-say");
+    var sayQ = [], sayNow = null, sayTyped = 0, sayTimer = 0, sayHold = 0, sayFull = false;
+    function sayHost() { return cur ? saySheet : sayBox; }
+    function sayPaint() {
+      var host = sayHost(), other = host === sayBox ? saySheet : sayBox;
+      other.classList.remove("show", "done");
+      if (!sayNow) { host.classList.remove("show", "done"); return; }
+      $(".say-who", host).textContent = sayNow.who;
+      $(".say-txt", host).textContent = sayNow.chars.slice(0, sayTyped).join("");
+      host.classList.add("show"); host.classList.toggle("done", sayFull);
+    }
+    function sayStep() {
+      clearTimeout(sayTimer); clearTimeout(sayHold);
+      if (!sayNow) return;
+      if (sayTyped < sayNow.chars.length) { sayTyped++; sayPaint(); sayTimer = setTimeout(sayStep, 26); return; }
+      sayFull = true; sayPaint();
+      sayHold = setTimeout(sayNext, Math.min(8000, Math.max(2600, 1500 + sayNow.chars.length * 75)));
+    }
+    function sayNext() {
+      clearTimeout(sayTimer); clearTimeout(sayHold);
+      var it = sayQ.shift();
+      if (!it) { var was = !!sayNow; sayNow = null; sayFull = false; sayPaint(); if (was && hooks.onSpeak) hooks.onSpeak(false); if (was && hooks.onVoice) hooks.onVoice(null); return; }
+      var first = !sayNow;
+      sayNow = { who: it.who || "감독교사", chars: Array.from(it.text) }; sayTyped = 0; sayFull = false; sayPaint();
+      if (first && hooks.onSpeak) hooks.onSpeak(true);
+      if (hooks.onVoice) hooks.onVoice(it.text, it.mood);                /* 줄마다: 입 모양을 이 글에서 뽑는다 */
+      sayTimer = setTimeout(sayStep, 120);
+    }
+    function sayTap(e) {
+      if (!sayNow) return; e.stopPropagation();
+      if (!sayFull) { sayTyped = sayNow.chars.length; sayFull = true; clearTimeout(sayTimer); clearTimeout(sayHold); sayPaint(); sayHold = setTimeout(sayNext, 2200); }
+      else sayNext();
+    }
+    $(".say-more", sayBox).addEventListener("click", sayTap); saySheet.addEventListener("click", sayTap);
+    /* lines: 문자열 또는 배열. opt: { replace: 하던 말을 끊고 바로, who } */
+    UI.say = function (lines, opt) {
+      if (UI.flags.ending || UI.flags.exiting) return;
+      opt = opt || {}; if (opt.replace) UI.sayClear();
+      [].concat(lines).forEach(function (t) { if (t) sayQ.push({ text: String(t), who: opt.who, mood: opt.mood }); });
+      if (!sayNow) sayNext();
+    };
+    UI.sayClear = function () {
+      sayQ.length = 0; clearTimeout(sayTimer); clearTimeout(sayHold);
+      var was = !!sayNow; sayNow = null; sayFull = false; sayPaint();
+      if (was && hooks.onSpeak) hooks.onSpeak(false);
+      if (was && hooks.onVoice) hooks.onVoice(null);
+    };
+    UI.saying = function () { return !!sayNow || sayQ.length > 0; };
+
+    /* ── 힌트 단추: 이 범위에서 쓴 단계를 점 세 개로 보여 준다 ── */
+    var hintBtn = $("#t-hint");
+    hintBtn.onclick = function () { hooks.askHint && hooks.askHint(); };
+    UI.renderHint = function () {
+      var sc = M.hintScope ? M.hintScope() : null, tier = sc ? M.hintTier(sc) : 0, pips = hintBtn.querySelectorAll(".pips i");
+      for (var i = 0; i < pips.length; i++) pips[i].classList.toggle("on", i < tier);
+      hintBtn.classList.toggle("gone", !sc);
+      if (!sc) hintBtn.classList.remove("nudge");
+    };
+    UI.nudgeHint = function (on) { hintBtn.classList.toggle("nudge", !!on); };
+
     /* ── HUD ── */
     var hud = $("#hud"), hudCh = $("#hud-ch"), hudTitle = $("#hud-title"), slatsEl = $("#slats"), noteEl = $("#note");
     for (var i = 1; i <= 8; i++) slatsEl.appendChild(el("i", "slat", "" + i));
@@ -46,6 +109,7 @@
         else if (!S.tookD1) html = '<span class="hint">책상 위의 일기를 눌러 읽어 보세요.</span>';
       }
       if (noteEl.innerHTML !== html) { noteEl.innerHTML = html; if (html) { noteEl.style.animation = "none"; void noteEl.offsetWidth; noteEl.style.animation = ""; } }
+      UI.renderHint();
     };
     UI.resetPieces = function () { prevPieces = null; };
 
@@ -73,7 +137,7 @@
       if (s.build) s.build(body, foot, api);
       var xb = $("[data-x]", card); xb.textContent = "×"; xb.setAttribute("aria-label", s.closeText || "닫기"); xb.title = s.closeText || "닫기";
       if (s.closeText && s.closeText !== "닫기") { var cb = el("button", "btn primary", s.closeText); cb.onclick = function () { UI.closeSheet(); }; foot.appendChild(cb); }
-      sheet.classList.remove("hidden", "closing"); veil.classList.add("on"); doc.body.classList.add("sheet-open");
+      sheet.classList.remove("hidden", "closing"); veil.classList.add("on"); doc.body.classList.add("sheet-open"); sayPaint();
       doc.body.classList.toggle("sheet-wide", s.mode === "wide" || s.mode === "center");
       hooks.onSheet && hooks.onSheet(true);
       var first = $(s.focus || ".sheet-foot .btn, .sheet-body button, .sheet-body a[href], .sheet-body input", card) || xb;
@@ -86,7 +150,7 @@
       var c = cur; cur = null;
       c.cleanup.forEach(function (fn) { try { fn(); } catch (e) {} });
       body.querySelectorAll("video").forEach(function (v) { try { v.pause(); } catch (e) {} });
-      veil.classList.remove("on"); doc.body.classList.remove("sheet-open", "sheet-wide");
+      veil.classList.remove("on"); doc.body.classList.remove("sheet-open", "sheet-wide"); sayPaint();
       if (silent) sheet.classList.add("hidden");
       else { sheet.classList.add("closing"); setTimeout(function () { if (!cur) sheet.classList.add("hidden"); sheet.classList.remove("closing"); }, 190); }
       if (c.back && doc.contains(c.back)) { try { c.back.focus({ preventScroll: true }); } catch (e) {} }

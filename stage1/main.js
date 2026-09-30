@@ -24,7 +24,7 @@
     catch (e) { return { getItem: function () { return null; }, setItem: function () { throw new Error("storage blocked"); }, removeItem: function () {} }; }
   }
   var store = N1Storage.createStore({ localStorage: safeStorage(), emit: function (name, detail) { window.dispatchEvent(new CustomEvent(name, { detail: detail })); } });
-  var M = N1Model.create({ data: D, logic: window, storage: N1Storage, store: store });
+  var M = N1Model.create({ data: D, logic: window, storage: N1Storage, store: store, lines: window.N1Lines });
   window.addEventListener("nameless:save-memory-only", function () { if (!window.__warnedSave) { window.__warnedSave = 1; UI.toast("이 브라우저는 진행을 저장하지 못합니다. 창을 닫으면 처음부터 시작합니다.", "bad"); } });
   window.addEventListener("nameless:save-recovered", function () { UI.toast("손상된 저장을 복구했습니다.", "good"); });
 
@@ -35,12 +35,23 @@
   var hooks = {
     onSheet: function (open) { if (Ctl) Ctl.clearInput(); if (open) UI.clearHover(); },
     onSensitivity: function (v) { if (Ctl) Ctl.sensitivity = v; },
+    /* 감독교사: 힌트 단추, 말하는 동안의 몸짓, 답을 낸 뒤의 말 */
+    askHint: function () { Dir.hint(); },
+    onSpeak: function (on) { var t = Lay && Lay.obj && Lay.obj.teacher; if (t && t.userData.speak) t.userData.speak(on); },
+    onVoice: function (text, mood) { var t = Lay && Lay.obj && Lay.obj.teacher; if (!t) return; if (text == null) t.userData.hush(); else t.userData.say(text, mood); },
+    onAnswered: function (n) { Dir.solved(n, D.CH[n - 1].cue); },
+    onWrong: function (n) { Dir.wrong(n); },
+    onMiss: function (n) { Dir.miss(n); },                                      /* 표식이 안 붙는 정도의 작은 실수: 세 번째마다만 말한다 */
+    onSticker: function (id, sym) { if (World) World.setFrameSticker(id, D.SYMBOL_SVG[sym], true); },
+    onStackSolved: function () { Dir.nameAsk(); },
+    onAssembly: function () { Dir.asm(); },
     begin: function (isNew) {
       if (isNew) M.startNew(); else if (!M.continueSaved()) { UI.toast("저장된 진행이 없습니다.", "bad"); return; }
       UI.resetPieces(); World.applyState(M.S, true);
       SC.hideIntro(); UI.showHud(true); UI.renderHUD(); UI.hintFade();
       Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch); Ctl.crouch = false; Ctl.clearInput();
       if (IS_TOUCH) { UI.enterFullscreen(); UI.lockLandscape(); }
+      Dir.begin(isNew);
     },
     restart: function () {
       M.startNew(); UI.resetPieces(); World.applyState(M.S, true); UI.renderHUD();
@@ -63,7 +74,7 @@
         setTimeout(function () { wo.classList.remove("on"); }, 900);
       });
     },
-    onEndingClosed: function () { Ctl.clearInput(); },
+    onEndingClosed: function () { Ctl.clearInput(); if (M.S.exitReady && !M.S.done) Dir.exitReady(); },
     goNextStage: function () {
       if (transitioning) return; transitioning = true; Ctl.clearInput();
       try { M.save(); } catch (e) {}
@@ -77,10 +88,13 @@
   };
   var UI = N1UI.create({ model: M, data: D, isTouch: IS_TOUCH, hooks: hooks });
   (function () { var clear = UI.clearHover; UI.clearHover = function () { clear(); if (K.outline && K.outline.mat) K.outline.hover(null); }; })();   /* 창이 열리면 테두리 강조도 끈다 */
-  var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks });
+  var Dir = N1Director.create({ model: M, lines: N1Lines, ui: UI });
+  var TL = N1Tools.create({ model: M, data: D, assets: ASSETS });
+  var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks, tools: TL });
+  var ST = N1Stations.create({ ui: UI, model: M, data: D, assets: ASSETS, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
-  M.on(function (kind) { if (kind === "change") UI.renderHUD(); });
+  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); });
 
   /* ── 해상도·화각 ── */
   function fovFor(aspect) {
@@ -139,12 +153,12 @@
     var portraits = await loadPortraits(); mark("portraits");
     UI.setLoading(0.55, "책상과 소품");
     await tick();
-    Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI }); scene.add(Lay.group); mark("layout");
+    Lay = R.layout(scene, { portraits: portraits, sciences: D.SCI, roster: N1Puz.ROSTER }); scene.add(Lay.group); mark("layout");
     UI.setLoading(0.8, "마무리");
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
     var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
-      .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }));
+      .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }), Object.keys(Lay.mem).map(function (n) { return Lay.mem[n]; }));
     /* 카툰: 잉크 윤곽선. 합치기 전에 ① 히트박스와 물체의 짝을 정하고 ② 붙박이 소품의 껍질을 만든다(합쳐진 뒤엔 메시가 커서 나눌 수 없다) */
     var hullInfo = null;
     if (TOON) {
@@ -160,6 +174,7 @@
       [ob.calendar, ob.doll, ob.postit, ob.extinguisher, ob.math, ob.diary1, ob.globe, ob.crt, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board].forEach(function (d) { if (d) K.outline.attach(d, { mode: "rigid" }); });
       [ob.teacher, ob.clock].forEach(function (d) { if (d) K.outline.attach(d, { mode: "parent" }); });
       [ob.door].concat(Lay.frameOrder.map(function (id) { return Lay.frames[id]; })).forEach(function (d) { if (d) K.outline.attach(d); });
+      Object.keys(Lay.mem).forEach(function (n) { K.outline.attach(Lay.mem[n], { mode: "rigid" }); });
       mark("outline");
     }
     K.setEnvIntensity(scene, Light.baseEnv);
@@ -175,7 +190,7 @@
       onFullscreen: function () { UI.toggleFullscreen(); }
     });
     Ctl.sensitivity = UI.sensitivity;
-    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, world: World, controls: Ctl });
+    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, stations: ST, world: World, controls: Ctl, director: Dir });
     $("#crouch").onclick = function () { Ctl.toggleCrouch(); };
     $("#act").onclick = function () { Ctl.pickCenter(); };
     Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch);
@@ -205,6 +220,7 @@
     if (UI.flags.intro) { Ctl.yaw = OPEN.yaw + Math.sin(now * 0.11) * 0.06; Ctl.pitch = OPEN.pitch + Math.sin(now * 0.08) * 0.012; }
     Ctl.update(dt, now);
     World.update(dt, now, camera.position);
+    Dir.tick(dt, UI.blocked());
     if (K.outline && K.outline.mat) K.outline.tick(now);
     var wideSheet = UI.sheetOpen() && (doc.getElementById("sheet").classList.contains("wide") || doc.getElementById("sheet").classList.contains("center"));
     if (UI.flags.ending) return;                                    /* 엔딩이 화면을 덮는 동안 3D 는 쉰다 */

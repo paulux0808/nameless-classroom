@@ -19,6 +19,7 @@
     <div class="hud-tag"><b id="hud-ch">CHAPTER 1</b><span id="hud-title"></span></div>
     <div class="hud-right">
       <div id="slats" role="img" aria-label="모은 기억 조각"></div>
+      <button class="hud-btn" id="t-hint" type="button" aria-label="감독교사에게 힌트 청하기" title="힌트"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg><span class="pips" aria-hidden="true"><i></i><i></i><i></i></span></button>
       <button class="hud-btn" id="t-full" type="button" aria-label="전체 화면"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
       <button class="hud-btn" id="t-menu" type="button" aria-label="메뉴"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     </div>
@@ -41,9 +42,11 @@
       <button class="x" data-x type="button" aria-label="닫기">×</button>
     </div>
     <div class="sheet-mid"><div class="sheet-body" id="sh-body"></div><div class="more" aria-hidden="true">⌄</div></div>
+    <div class="sheet-say" id="sh-say"><b class="say-who">감독교사</b><span class="say-txt"></span><span class="say-more" aria-hidden="true">▾</span></div>
     <div class="sheet-foot" id="sh-foot"></div>
   </div>
 </div>
+<div id="say" role="status" aria-live="polite"><b class="say-who">감독교사</b><p class="say-txt"></p><button class="say-more" type="button" aria-label="다음 말">▾</button></div>
 <div id="toast" role="status"></div>
 <div id="whiteout"></div>
 
@@ -81,6 +84,8 @@
 <script src="logic.js"></script>
 <script src="portraits.js"></script>
 <script src="data.js"></script>
+<script src="lines.js"></script>
+<script src="puzzles.js"></script>
 <script src="storage.js"></script>
 <script src="model.js"></script>
 <script src="kit/core.js"></script>
@@ -98,7 +103,10 @@
 <script src="props/wallB.js"></script>
 <script src="props/desk.js"></script>
 <script src="props/paper.js"></script>
+<script src="props/voice.js"></script>
 <script src="props/person.js"></script>
+<script src="props/stations.js"></script>
+<script src="props/memory.js"></script>
 <script src="room/shell.js"></script>
 <script src="room/lighting.js"></script>
 <script src="room/layout.js"></script>
@@ -106,7 +114,10 @@
 <script src="controls.js"></script>
 <script src="world.js"></script>
 <script src="ui.js"></script>
+<script src="tools.js"></script>
 <script src="screens.js"></script>
+<script src="stations.js"></script>
+<script src="director.js"></script>
 <script src="interact.js"></script>
 <script src="main.js"></script>
 <noscript><p style="position:fixed;inset:0;display:grid;place-items:center;color:#e8eee4;background:#0f1c17;font:600 18px system-ui">이 게임은 JavaScript 가 필요합니다.</p></noscript>

@@ -4,7 +4,7 @@
    앞면 +Z, 원점은 발이 놓인 바닥 중앙. 앉은 자세의 골반 높이 0.5(안락의자 좌면). */
 (function (root) {
   "use strict";
-  var T = root.THREE, K = root.N1K, G = K.geo, X = K.tex, P = root.N1P, PI = Math.PI;
+  var T = root.THREE, K = root.N1K, G = K.geo, X = K.tex, P = root.N1P, V = root.N1Voice, PI = Math.PI;
 
   function S(t) { return t * t * (3 - 2 * t); }
   function sm(t) { return S(K.clamp(t, 0, 1)); }
@@ -42,7 +42,7 @@
       white: K.mat("person.eyewhite", function () { return K.std(0xf1efe8, 0.35, 0, { env: 0.8 }); }),
       iris: K.mat("person.iris", function () { return K.std(0x3a2a1c, 0.25, 0.1, { env: 1.2 }); }),
       lip: K.mat("person.lip", function () { return K.std(0xb27a72, 0.5, 0, { env: 0.5 }); }),
-      brow: K.mat("person.brow", function () { return K.std(0x6e6c68, 0.85, 0, { env: 0.3 }); }),
+      brow: K.mat("person.brow", function () { return K.std(0x3a3632, 0.85, 0, { env: 0.3 }); }),
       frame: K.mat("person.glasses", function () { return K.std(0x1d1c1a, 0.35, 0.6, { env: 1.2 }); }),
       lens: K.mat("person.lens", function () { var m = K.std(0xffffff, 0.04, 0, { opacity: 0.1, env: 1.5 }); m.depthWrite = false; return m; })
     };
@@ -146,38 +146,71 @@
       return hit ? hit.point.z : 0.09;
     }
     var hb = K.builder(), lensB = K.builder(), ey = 0.145;
-    /* 눈 */
-    var eyeZ = surfZ(0.033, ey) - 0.006;
+    /* 눈: 큼직한 흰자 위에 커다란 홍채·동공·반짝임(만화의 눈). 눈꺼풀은 껍질 두 장(위·아래)이라
+       깜빡임과 표정(웃을 때 가늘어짐, 걱정할 때 처짐)을 모두 이것으로 만든다. */
+    var eyeZ = surfZ(0.033, ey) - 0.006, ER = 0.0112, LID_OPEN = -0.42, LOW_OPEN = 0.72;
     var eyes = [];
+    var pupMat = K.mat("person.pupil", function () { return K.std(0x050505, 0.2, 0, { env: 1.4 }); });
+    var glintMat = new T.MeshBasicMaterial({ color: 0xffffff });
     [-1, 1].forEach(function (s) {
       var eg = new T.Group(); eg.position.set(s * 0.034, ey, eyeZ); head.add(eg);
-      var white = new T.Mesh(new T.SphereGeometry(0.0094, 20, 14), m.white); eg.add(white);
-      var iris = new T.Mesh(new T.CircleGeometry(0.0047, 20), m.iris); iris.position.z = 0.0092; eg.add(iris);
-      var pup = new T.Mesh(new T.CircleGeometry(0.0021, 14), K.mat("person.pupil", function () { return K.std(0x050505, 0.2, 0, { env: 1.4 }); })); pup.position.z = 0.0094; eg.add(pup);
-      var lid = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, 0, PI * 0.5), m.skin); lid.rotation.x = -0.04; lid.userData.animated = true; eg.add(lid);   /* 깜빡임: 껍질 병합에서 뺀다 */
-      var lidL = new T.Mesh(new T.SphereGeometry(0.0102, 20, 10, 0, PI * 2, PI * 0.5, PI * 0.5), m.skin); lidL.rotation.x = 0.72; eg.add(lidL);
+      var white = new T.Mesh(new T.SphereGeometry(ER, 24, 16), m.white); eg.add(white);
+      var gaze = new T.Group(); eg.add(gaze);                                    /* 홍채·동공·반짝임은 눈알 표면 위를 함께 돈다 */
+      var iris = new T.Mesh(new T.CircleGeometry(ER * 0.64, 24), m.iris); iris.position.z = ER * 0.985; gaze.add(iris);
+      var pup = new T.Mesh(new T.CircleGeometry(ER * 0.32, 18), pupMat); pup.position.z = ER * 0.99; gaze.add(pup);
+      var glint = new T.Mesh(new T.CircleGeometry(ER * 0.2, 12), glintMat); glint.position.set(ER * 0.2, ER * 0.22, ER * 0.995); gaze.add(glint);
+      var lid = new T.Mesh(new T.SphereGeometry(ER * 1.09, 24, 10, 0, PI * 2, 0, PI * 0.5), m.skin); lid.rotation.x = LID_OPEN; lid.userData.animated = true; eg.add(lid);   /* 깜빡임: 껍질 병합에서 뺀다 */
+      var lidL = new T.Mesh(new T.SphereGeometry(ER * 1.09, 24, 10, 0, PI * 2, PI * 0.5, PI * 0.5), m.skin); lidL.rotation.x = LOW_OPEN; lidL.userData.animated = true; eg.add(lidL);
       eg.traverse(function (o) { if (o.isMesh) { o.castShadow = false; o.receiveShadow = true; } });
-      eyes.push({ g: eg, lid: lid, iris: iris, pup: pup });
+      [iris, pup, glint].forEach(function (o) { o.userData.noHull = true; });
+      eyes.push({ g: eg, gaze: gaze, lid: lid, lidL: lidL, iris: iris, pup: pup });
     });
     /* 코 */
     var nz0 = surfZ(0, 0.117 - 0.02);
     hb.sphere(0.0122, m.skin, { p: [0, 0.087, nz0 + 0.0005], s: [0.95, 0.95, 1.1], ws: 16, hs: 12 });
     hb.limb(0.0055, 0.0082, 0.032, m.skin, { p: [0, 0.117, surfZ(0, 0.117) + 0.0015], r: [0.2, 0, 0], seg: 12 });
     [-1, 1].forEach(function (s) { hb.sphere(0.0072, m.skin, { p: [s * 0.0105, 0.084, nz0 - 0.002], s: [1, 0.8, 0.95], ws: 12, hs: 8 }); });
-    /* 입술과 입선 */
-    var mz = surfZ(0, 0.06);
-    /* 윗입술·아랫입술은 속이 찬 납작한 덩어리(윤곽선이 아니라 입술로 읽힌다) + 다문 입선 */
-    hb.sphere(0.0086, m.lip, { p: [0, 0.0607, mz + 0.0002], s: [2.05, 0.42, 0.55], ws: 18, hs: 10 });
-    hb.sphere(0.0092, m.lip, { p: [0, 0.0548, mz + 0.0004], s: [1.85, 0.52, 0.62], ws: 18, hs: 10 });
-    hb.cyl(0.0009, 0.0009, 0.034, K.mat("person.mouth", function () { return K.std(0x3a1a17, 0.6, 0); }), { p: [0, 0.0578, mz + 0.0026], r: [0, 0, PI / 2], seg: 6 });
+    /* 입: 윗입술·아랫입술을 따로 움직여 말하고 웃는다. 입속은 어두운 타원, 다문 입선은 끝이 올라가는 띠.
+       아래턱은 뒤로 물러나 있어, 입이 벌어질 때 아랫입술이 얼굴 곡면을 따라가도록 표면 z 를 표로 만들어 둔다. */
+    var mz = surfZ(0, 0.06), MY = 0.0578, MU = 0.0607, ML = 0.0548;
+    var zTab = []; for (var zi = 0; zi <= 10; zi++) zTab.push(surfZ(0, 0.03 + zi * 0.004));      /* y 0.030 … 0.070 */
+    function zAt(y) { var f = K.clamp((y - 0.03) / 0.004, 0, 9.999), i0 = Math.floor(f); return zTab[i0] + (zTab[i0 + 1] - zTab[i0]) * (f - i0); }
+    var mouthSlope = (zAt(MU) - zAt(ML)) / (MU - ML);                                              /* 위로 갈수록 앞으로 나오는 정도 */
+    function lipMesh(r, sc, y, dz, name) {
+      var l = new T.Mesh(new T.SphereGeometry(r, 18, 10), m.lip); l.name = name; l.scale.set(sc[0], sc[1], sc[2]);
+      l.position.set(0, y, zAt(y) + dz); l.userData.noHull = true; l.castShadow = false; l.receiveShadow = true; head.add(l); return l;   /* 윤곽선은 입선·입속이 맡는다(입술에 잉크를 두르면 덩어리로 보인다) */
+    }
+    var lipU = lipMesh(0.0086, [2.05, 0.42, 0.55], MU, 0.0002, "lipU"), lipL = lipMesh(0.0092, [1.85, 0.52, 0.62], ML, 0.0004, "lipL");
+    var mouthDark = K.mat("person.mouthIn", function () { return K.std(0x2a0e0d, 0.7, 0); });
+    var mIn = new T.Mesh(new T.CircleGeometry(1, 26), mouthDark); mIn.name = "mouthIn"; mIn.userData.noHull = true; mIn.castShadow = false;
+    mIn.position.set(0, MY, mz + 0.0011); mIn.scale.set(0.011, 0.0001, 1); mIn.rotation.x = Math.atan(mouthSlope); mIn.visible = false; head.add(mIn);
+    /* 다문 입선: 좌우 13점의 리본. 매 프레임 웃음(smile)만큼 끝을 올리거나 내린다 */
+    var LINE_N = 13, lineGeo = new T.PlaneGeometry(1, 1, LINE_N - 1, 1), lineMat = new T.MeshBasicMaterial({ color: K.srgb(0x2b100e) });   /* r128 은 색을 선형으로 바꿔 주지 않으므로 K.srgb */
+    var mLine = new T.Mesh(lineGeo, lineMat); mLine.name = "mouthLine"; mLine.userData.noHull = true; mLine.position.set(0, 0, 0); head.add(mLine);
+    function lineShape(smile, halfW) {
+      var p = lineGeo.attributes.position, th = 0.0014;
+      for (var li = 0; li < LINE_N; li++) {
+        var u = li / (LINE_N - 1) * 2 - 1;
+        var y0 = MY + smile * 0.0075 * u * u - smile * 0.0034;             /* 웃으면 가운데가 내려가고 양끝이 올라간다(찡그리면 반대) */
+        var zz = zAt(y0) + 0.0007 + 0.0058 * Math.sqrt(Math.max(0.04, 1 - u * u * 0.96));   /* 입술의 앞면을 따라간다 */
+        p.setXYZ(li, u * halfW, y0 + th, zz); p.setXYZ(LINE_N + li, u * halfW, y0 - th, zz);
+      }
+      p.needsUpdate = true; lineGeo.computeBoundingSphere();
+    }
+    lineShape(0, 0.017);
     /* 귀 */
     [-1, 1].forEach(function (s) {
       hb.sphere(0.024, m.skin, { p: [s * 0.0765, 0.112, 0.006], s: [0.32, 1.1, 0.72], ws: 16, hs: 12 });
       hb.torus(0.014, 0.0028, m.skin, { p: [s * 0.081, 0.114, 0.0055], r: [0, PI / 2, 0], arc: PI * 1.6, ts: 14, rs: 6, s: [1, 1.5, 1] });
     });
-    /* 눈썹 */
+    /* 눈썹: 진하고 도톰하게. 좌우 따로 피벗을 두어 올리고(brow) 기울이고(tilt) 한쪽만 치켜올린다(askew) */
+    var brows = [];
     [-1, 1].forEach(function (s) {
-      hb.limb(0.0062, 0.0046, 0.052, m.brow, { p: [s * 0.036, ey + 0.026, surfZ(s * 0.036, ey + 0.026) + 0.0022], r: [0.0, 0, PI / 2 + s * 0.12], s: [1, 1, 0.75], seg: 8 });
+      var bx = s * 0.038, by = ey + 0.028, bz = surfZ(bx, by) + 0.0046;
+      var pv = new T.Group(); pv.position.set(bx, by, bz); head.add(pv);
+      var bb = K.builder(); bb.limb(0.0068, 0.0046, 0.044, m.brow, { r: [0, 0, s > 0 ? PI / 2 : -PI / 2], s: [1, 1, 0.7], seg: 8 });
+      var bm = bb.build({ name: "brow" }); bm.castShadow = false; pv.add(bm);
+      brows.push({ pv: pv, s: s, y0: by, z0: bz });
     });
     add(head, hb.build({ name: "headParts" }));
     /* 안경 */
@@ -196,7 +229,7 @@
     for (var i = 0; i < hp.count; i++) {
       var ux = hp.getX(i), uy = hp.getY(i), uz = hp.getZ(i);
       var th = Math.acos(K.clamp(uy, -1, 1)), psi = Math.atan2(ux, uz), fr = Math.exp(-psi * psi / 0.5);
-      var th2 = th * (PI * (0.605 - 0.2 * fr) / LIM0), sn = Math.sin(th2);       /* 앞(psi 0)일수록 머리선이 높다 */
+      var th2 = th * (PI * (0.605 - 0.31 * fr) / LIM0), sn = Math.sin(th2);      /* 앞(psi 0)일수록 머리선이 높다 — 눈썹이 드러나도록 이마를 연다 */
       var dx = Math.sin(psi) * sn, dz = Math.cos(psi) * sn, dy = Math.cos(th2);
       var nn = K.noise2(dx * 7 + 3, dz * 7 + dy * 5, 64, 64), off = 0.0062 + 0.0042 * nn * (0.4 + 0.6 * th2 / LIM0);
       hp.setXYZ(i, dx * (0.078 + off), dy * (0.105 + off), dz * (0.094 + off));
@@ -317,6 +350,77 @@
     root.userData.setStanding = function (pos, yaw) { root.position.copy(pos); root.rotation.y = yaw; st.mode = "stand"; Object.keys(POSE.stand).forEach(function (n) { cur[n] = POSE.stand[n]; }); cur.elL = -1.05; cur.elR = -1.05; cur.shL = -0.32; cur.shR = -0.32; cur.wrL = 0.2; cur.wrR = 0.2; cur.rollL = 1.2; cur.rollR = -1.2; cur.shYL = 0.55; cur.shYR = -0.55; apply(cur); };
     root.userData.setSeated = function (pos, yaw) { root.position.copy(pos); root.rotation.y = yaw; st.mode = "sit"; Object.keys(POSE.sit).forEach(function (n) { cur[n] = POSE.sit[n]; }); apply(cur); };
 
+    /* ── 표정과 말 ───────────────────────────────────────────────────────────
+       face 는 지금 얼굴 값이고 매 프레임 목표(기분 + 말하는 입)로 부드럽게 다가간다.
+         brow 눈썹 올림   tilt 눈썹 기울기(+ 안쪽이 올라가 걱정스러움, − 화난 듯)   askew 한쪽 눈썹만 치켜올림
+         smile 입꼬리(+웃음, −찡그림)   squint 눈이 가늘어짐   open 입 벌림   wide 입 너비(+ 옆으로, − 오므림)
+         nod 고개 끄덕임   roll 고개 갸웃
+       say(글, 기분) 은 글자에서 입 모양(모음)을 뽑아 말하듯 입을 움직인다. 소리는 없다. */
+    var MOODS = {
+      calm:    { brow: 0,     tilt: 0.12, askew: 0,   smile: 0.3,  squint: 0.05, roll: 0 },
+      glad:    { brow: 0.3,   tilt: 0.22, askew: 0,   smile: 1,    squint: 0.55, roll: 0.03 },
+      puzzled: { brow: 0.35,  tilt: -0.1, askew: 0.85, smile: -0.2, squint: 0,   roll: 0.1 },
+      grave:   { brow: -0.05, tilt: 0.85, askew: 0,   smile: -0.45, squint: 0.18, roll: -0.04 }
+    };
+    var face = { brow: 0, tilt: 0.12, askew: 0, smile: 0.3, squint: 0.05, roll: 0, open: 0, wide: 0, nod: 0, lineSmile: 9 };
+    var fs = { mood: "calm", moodT: 0, seq: null, seqT: 0, seqEnd: 0, si: 0, talk: 0, gest: 0, q: false };
+    root.userData.say = function (text, mood) {
+      var v = V.parse(text); fs.seq = v.seq; fs.seqEnd = v.end; fs.seqT = 0; fs.si = 0;
+      fs.q = /[?？]\s*$/.test(String(text || ""));
+      if (mood && MOODS[mood]) { fs.mood = mood; fs.moodT = v.end + 2.2; }
+      else if (fs.mood !== "calm") fs.moodT = Math.max(fs.moodT, v.end + 1.2);
+    };
+    root.userData.hush = function () { fs.seq = null; };
+    root.userData.speak = function (on) { if (!on) fs.seq = null; };       /* 옛 호출 호환: 끝났을 때만 입을 다문다 */
+    root.userData.mood = function (name, hold) { if (MOODS[name]) { fs.mood = name; fs.moodT = hold || 3; } };
+    root.userData.talking = function () { return !!fs.seq; };
+    root.userData.face = face;
+
+    /* 지금 시각의 입 목표(음절 모양은 voice.js). 끝난 뒤 잠깐은 다문 채로 두었다가 말을 마친다 */
+    function mouthTarget() {
+      if (!fs.seq) return null;
+      var r = V.sample(fs.seq, fs.seqT, fs.si); fs.si = r.i;
+      if (r.over) { if (fs.seqT > fs.seqEnd + 0.05) { fs.seq = null; return null; } return { a: 0, w: 0 }; }
+      return r;
+    }
+
+    function faceTick(dt, t, lidK) {
+      var md = MOODS[fs.mood] || MOODS.calm, kf = K.damp(7, dt), talking = !!fs.seq;
+      if (fs.moodT > 0) { fs.moodT -= dt; if (fs.moodT <= 0) fs.mood = "calm"; }
+      if (talking) fs.seqT += dt;
+      var tg = mouthTarget(); talking = !!fs.seq;
+      fs.talk += ((talking ? 1 : 0) - fs.talk) * K.damp(6, dt);
+      fs.gest += ((talking ? 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 2.3)) : 0) - fs.gest) * K.damp(4, dt);
+      var raise = talking && fs.q && fs.seqT > fs.seqEnd * 0.55 ? 0.45 : 0;               /* 물음표로 끝나는 말: 끝에서 눈썹을 올린다 */
+      face.brow += (md.brow + raise - face.brow) * kf; face.tilt += (md.tilt - face.tilt) * kf; face.askew += (md.askew - face.askew) * kf;
+      face.smile += (md.smile - face.smile) * kf; face.squint += (md.squint - face.squint) * kf; face.roll += (md.roll - face.roll) * kf;
+      var a = tg ? tg.a : 0, w = tg ? tg.w : 0;
+      face.open += (a - face.open) * K.damp(30, dt); face.wide += (w - face.wide) * K.damp(22, dt);
+      face.nod = fs.talk * (0.03 * Math.sin(fs.seqT * 2 * PI * 2.3) + 0.012 * Math.sin(fs.seqT * 2 * PI * 0.9));
+      /* 눈: 눈꺼풀(깜빡임+가늘어짐) */
+      var sq = face.squint + Math.max(0, face.smile) * 0.0;
+      eyes.forEach(function (e) {
+        e.lid.rotation.x = K.lerp(LID_OPEN + sq * 0.55, 1.25, sm(lidK));
+        e.lidL.rotation.x = K.lerp(LOW_OPEN - sq * 0.85, LOW_OPEN - sq * 0.85 - 0.25, sm(lidK));
+      });
+      /* 눈썹 */
+      brows.forEach(function (b) {
+        var isR = b.s > 0, up = face.brow * 0.0085 + (isR ? face.askew * 0.0095 : 0) - lidK * 0.0016;
+        b.pv.position.y = b.y0 + up; b.pv.rotation.z = -b.s * (face.tilt + (isR ? face.askew * 0.35 : 0)) * 0.6;
+      });
+      /* 입 */
+      var open = K.clamp(face.open, 0, 1), sm0 = K.clamp(face.smile, -1, 1), wsc = 1 + face.wide * 0.16 + Math.max(0, sm0) * 0.1 - Math.max(0, -sm0) * 0.06;
+      var sU = 0.42 * (1 - Math.max(0, sm0) * 0.3), sL = 0.52 * (1 - Math.max(0, sm0) * 0.3);
+      lipU.scale.set(2.05 * wsc, sU, 0.55); lipL.scale.set(1.85 * wsc, sL, 0.62);
+      var yU = MU + open * 0.0025, yL = ML - open * 0.017;
+      lipU.position.y = yU; lipU.position.z = zAt(yU) + 0.0002; lipL.position.y = yL; lipL.position.z = zAt(yL) + 0.0004;
+      var eU = yU - 0.0086 * sU, eL = yL + 0.0092 * sL, gap = eU - eL;
+      mIn.visible = open > 0.02 && gap > 0.0004;
+      if (mIn.visible) { mIn.position.y = (eU + eL) / 2; mIn.scale.set(0.0105 * wsc * (1 - Math.max(0, 0.25 - open) * 0.6), gap / 2 + 0.0013, 1); }
+      mLine.visible = open < 0.06;
+      if (mLine.visible && Math.abs(face.lineSmile - sm0) > 0.01) { face.lineSmile = sm0; lineShape(sm0, 0.0165 * wsc); }
+    }
+
     /* 매 프레임: 숨쉬기·깜빡임·시선. camPos 는 월드 좌표의 플레이어 눈 */
     var _v = new T.Vector3(), _q = new T.Quaternion();
     root.userData.update = function (dt, t, camPos) {
@@ -327,14 +431,16 @@
       if (st.mode === "sit" || st.mode === "stand") {
         var sway = Math.sin(t * 0.5) * 0.008;
         spine.rotation.x = cur.spine + sway * 0.6; chest.rotation.x = cur.chest + br * 0.012;
-        sh.L.rotation.x = cur.shL - br * 0.01; sh.R.rotation.x = cur.shR - br * 0.01;
+        var ga = fs.gest * (st.mode === "stand" ? 0.1 : 0.05);                /* 말할 때 두 손이 함께 살짝 움직인다(손 모은 자세가 풀리지 않게 좌우 같이) */
+        sh.L.rotation.x = cur.shL - br * 0.01 - ga; sh.R.rotation.x = cur.shR - br * 0.01 - ga;
+        el.L.rotation.x = cur.elL - ga * 1.3; el.R.rotation.x = cur.elR - ga * 1.3;
       }
       /* 깜빡임 */
       st.blink -= dt;
       if (st.blink <= 0 && st.blinkT < 0) { st.blinkT = 0; st.blink = 2.2 + Math.random() * 3.6; }
       var lidK = 0;
       if (st.blinkT >= 0) { st.blinkT += dt; var bk = st.blinkT / 0.16; lidK = bk < 0.5 ? bk * 2 : Math.max(0, 2 - bk * 2); if (bk >= 1) st.blinkT = -1; }
-      eyes.forEach(function (e) { e.lid.rotation.x = K.lerp(-0.04, 1.25, sm(lidK)); });
+      faceTick(dt, t, lidK);
       /* 시선: 몸의 정면 기준 yaw/pitch 를 제한해 머리·목이 따라간다 */
       if (camPos) {
         head.getWorldPosition(_v); root.getWorldQuaternion(_q);
@@ -344,10 +450,10 @@
         var dist = Math.hypot(dx, dz), engage = dist < 6.5 ? 1 : 0;
         var ty = K.clamp(yaw, -0.95, 0.95) * engage, tp = K.clamp(-pitch, -0.35, 0.35) * engage;
         st.lookYaw += (ty - st.lookYaw) * K.damp(3.2, dt); st.lookPitch += (tp - st.lookPitch) * K.damp(3.2, dt);
-        neck.rotation.y = st.lookYaw * 0.4; head.rotation.y = st.lookYaw * 0.6; head.rotation.x = cur.head + st.lookPitch * 0.7; neck.rotation.x = cur.neck + st.lookPitch * 0.3;
+        neck.rotation.y = st.lookYaw * 0.4; head.rotation.y = st.lookYaw * 0.6; head.rotation.x = cur.head + st.lookPitch * 0.7 + face.nod; neck.rotation.x = cur.neck + st.lookPitch * 0.3; head.rotation.z = face.roll;
         var eyeYaw = K.clamp(yaw - st.lookYaw, -0.25, 0.25) * engage;
-        eyes.forEach(function (e) { e.iris.position.x = eyeYaw * 0.0094; e.pup.position.x = eyeYaw * 0.0094; });
-      }
+        eyes.forEach(function (e) { e.gaze.rotation.y = eyeYaw; });
+      } else { head.rotation.x = cur.head + face.nod; head.rotation.z = face.roll; }
     };
     root.userData.joints = J; root.userData.mode = function () { return st.mode; };
     root.userData.size = [0.5, 1.32, 0.6];

@@ -8,7 +8,8 @@
     "test:stage1": "node --test \"stage1/tests/*.test.mjs\"",
     "test:stage2": "node --test \"stage2/tests/*.test.mjs\"",
     "audit:spoiler": "node stage2/tools/spoiler-audit.mjs",
-    "e2e:stage1": "node tools/stage1-e2e.mjs"
+    "e2e:stage1": "node tools/stage1-e2e.mjs",
+    "e2e:stage1:puzzles": "node tools/stage1-e2e-puzzles.mjs"
   },
   "devDependencies": {
     "linkedom": "^0.18.13",

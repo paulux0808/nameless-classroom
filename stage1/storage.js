@@ -22,9 +22,13 @@
     return {
       started: false, ch: 1, phase: "read", pieces: [],
       rot: { apple: 0, compass: 0, sqrt: 0, sun: 0, pi: 0, einstein: 0 },
-      stack: null, revealed: 0, tookD1: false, exitReady: false, done: false
+      stack: null, revealed: 0, tookD1: false, exitReady: false, done: false,
+      hints: {},   /* 감독교사에게 받은 힌트 단계 (범위 c1~c8·s1~s8·asm·name → 0~3) */
+      pz: {},      /* 퍼즐별 진행(현장 상호작용의 중간 상태) */
+      said: {}     /* 한 번만 하는 대사를 이미 했는지 */
     };
   }
+  var HINT_KEY = /^(c[1-8]|s[1-8]|asm|name)$/;
   function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
   function checksum(text) {
     var h = 2166136261;
@@ -59,6 +63,14 @@
     Object.keys(state.rot).forEach(function (k) { if (ROT_KEYS.indexOf(k) < 0) delete state.rot[k]; });
     if (state.stack !== null && !isValidStack(state.stack)) state.stack = null;
     FLAG_KEYS.forEach(function (k) { state[k] = !!state[k]; });
+    /* 새 필드: 옛 저장에는 없다. 모양이 틀리면 비운다(진행 자체는 살린다) */
+    var hints = {};
+    if (state.hints && typeof state.hints === "object") Object.keys(state.hints).forEach(function (k) {
+      var v = state.hints[k]; if (HINT_KEY.test(k) && Number.isInteger(v) && v >= 1 && v <= 3) hints[k] = v;
+    });
+    state.hints = hints;
+    if (!state.pz || typeof state.pz !== "object" || Array.isArray(state.pz)) state.pz = {};
+    if (!state.said || typeof state.said !== "object" || Array.isArray(state.said)) state.said = {};
     if (Array.isArray(state.pieces)) {
       var seen = {};
       state.pieces = state.pieces.filter(function (n) {

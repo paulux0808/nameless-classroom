@@ -93,6 +93,12 @@
       g.traverse(function (x) { x.castShadow = false; }); return g;
     })();
     W.arrow = arrow;
+    var arrowBase = L.arrowSpot[1];
+    /* 안내 화살표: 다음에 눌러야 할 곳을 가리킨다. spot=[x,y,z] 이면 거기서, null 이면 숨긴다 */
+    W.guide = function (spot) {
+      if (!spot) { arrow.visible = false; return; }
+      arrow.position.set(spot[0], spot[1], spot[2]); arrowBase = spot[1]; arrow.visible = true;
+    };
 
     /* ── 액자 ── */
     var frameIds = L.frameOrder;
@@ -161,6 +167,7 @@
       var h = Lt.holder, base = Lt.base.clone(), nrm = new T.Vector3(L.anchors[n].n[0], L.anchors[n].n[1], L.anchors[n].n[2]);
       if (!animate) { h.position.copy(base); h.scale.setScalar(1); Lt.glow.material.opacity = 0.5; return; }
       h.scale.setScalar(0.35);
+      burst(base.clone().addScaledVector(nrm, 0.05), 18, 0xffe2a8);                                      /* 편지가 나타나는 순간의 반짝임 */
       A.tween({ dur: 0.9, ease: A.ease.outBack, update: function (k) {
         h.scale.setScalar(K.lerp(0.35, 1, k)); h.position.copy(base).addScaledVector(nrm, (1 - k) * 0.06);
         Lt.glow.material.opacity = Math.min(1, k * 1.6) * 0.5;
@@ -229,12 +236,55 @@
       if (S.revealed) { clueHot(S.revealed, false); applyAway(S.revealed, true); W.showLetter(S.revealed, false); }
       frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); });
       W.setDiaryOnDesk(!(S.tookD1 || S.ch > 1));
+      for (var mi = 1; mi <= 8; mi++) { if (S.pieces.indexOf(mi) >= 0) W.showMemory(mi, false); else W.hideMemory(mi); }
+      var pl = (o.model.pz && o.model.pz("c2") && o.model.pz("c2").placed) || {};
+      frameIds.forEach(function (id) { W.setFrameSticker(id, null); });
+      Object.keys(pl).forEach(function (sym) { W.setFrameSticker(pl[sym], D.SYMBOL_SVG[sym], false); });
       W.openDoor(S.done ? 1 : 0);
       W.setProgress(S.pieces.length / 8, true);
       W.refreshBoard(S);
       W.setExitGlow(S.done ? 0.6 : 0);
     };
-    W.setDiaryOnDesk = function (v) { L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v); arrow.visible = v; };
+    W.setDiaryOnDesk = function (v) {
+      L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v);
+      if (v) W.guide(L.arrowSpot); else W.refreshGuide(o.model.S);
+    };
+    /* 첫 일기를 집은 뒤에도 1장을 풀 때까지는 도장을 가리킨다 */
+    W.refreshGuide = function (S) {
+      var stampNow = S.tookD1 && S.ch === 1 && S.phase === "read" && L.stampSpot;
+      if (L.obj.diary1.visible) return;
+      W.guide(stampNow ? L.stampSpot : null);
+    };
+    /* 반짝이 터짐: 정답·기억 소품이 생길 때 쓴다 */
+    function burst(p, n, color) {
+      var geo = new T.BufferGeometry(), pos = new Float32Array(n * 3), vel = [], i;
+      for (i = 0; i < n; i++) { pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z; var a = Math.random() * PI * 2, b = (Math.random() - 0.3) * PI, sp = 0.25 + Math.random() * 0.45; vel.push([Math.cos(a) * Math.cos(b) * sp, Math.sin(b) * sp + 0.15, Math.sin(a) * Math.cos(b) * sp]); }
+      geo.setAttribute("position", new T.BufferAttribute(pos, 3));
+      var mat = new T.PointsMaterial({ map: glowTex, color: color || 0xffdf9a, size: 0.085, transparent: true, opacity: 1, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true, fog: false });
+      var pts = new T.Points(geo, mat); pts.frustumCulled = false; pts.renderOrder = 9; scene.add(pts);
+      A.tween({ dur: 1.0, ease: A.ease.outCubic, update: function (k) {
+        for (var j = 0; j < n; j++) { pos[j * 3] = p.x + vel[j][0] * k; pos[j * 3 + 1] = p.y + vel[j][1] * k - 0.25 * k * k; pos[j * 3 + 2] = p.z + vel[j][2] * k; }
+        geo.attributes.position.needsUpdate = true; mat.opacity = 1 - k * k;
+      }, done: function () { scene.remove(pts); geo.dispose(); mat.dispose(); } });
+    }
+    W.burst = burst;
+    /* 기억 소품: 조각 n 을 붙이면 교실에 그 조각의 물건이 생긴다 */
+    W.showMemory = function (n, animate) {
+      var m = L.mem && L.mem[n]; if (!m) return;
+      m.visible = true; setHot(L.hotById["decoy:mem" + n], true);
+      if (n === 8) { if (animate) A.tween({ dur: 1.4, update: function (k) { L.lampLight.intensity = 0.7 * k; } }); else L.lampLight.intensity = 0.7; }
+      if (animate) {
+        m.scale.setScalar(0.01); A.tween({ dur: 0.7, ease: A.ease.outBack, update: function (k) { m.scale.setScalar(Math.max(0.01, k)); }, done: function () { m.scale.setScalar(1); } });
+        var wp = new T.Vector3(); m.updateWorldMatrix(true, false); wp.setFromMatrixPosition(m.matrixWorld); wp.y += (m.userData.size ? m.userData.size[1] * (n === 1 ? -0.5 : 0.5) : 0.1); burst(wp, 22, n === 8 ? 0xffc880 : 0xffdf9a);
+      }
+    };
+    W.hideMemory = function (n) { var m = L.mem && L.mem[n]; if (!m) return; m.visible = false; setHot(L.hotById["decoy:mem" + n], false); if (n === 8) L.lampLight.intensity = 0; };
+    /* 2장 표식 카드: 액자에 스티커가 붙는다(튀어 오르며) */
+    W.setFrameSticker = function (id, svg, pop) {
+      var fr = L.frames[id]; if (!fr || !fr.userData.setSticker) return;
+      var st = fr.userData.setSticker(svg);
+      if (st && pop) { st.scale.setScalar(0.01); A.tween({ dur: 0.45, ease: A.ease.outBack, update: function (k) { st.scale.setScalar(Math.max(0.01, k)); } }); }
+    };
 
     /* ── 리빌 연출: 물건이 치워지고 편지가 나타난다 ── */
     W.reveal = function (n, done) {
@@ -252,7 +302,7 @@
       A.tween({ dur: 1.15, ease: A.ease.inOutCubic, update: function (t) {
         h.position.set(K.lerp(from.x, target.x, t), K.lerp(from.y, target.y, t) + Math.sin(t * PI) * 0.45, K.lerp(from.z, target.z, t) + Math.sin(t * PI) * 0.5 * (1 - t));
         h.quaternion.slerpQuaternions(fq, tq, t); h.scale.setScalar(K.lerp(1, 1.24, t));
-      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); if (done) done(); } });
+      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); burst(target.clone().add(new T.Vector3(0, 0, 0.08)), 14, 0xfff0c8); W.showMemory(n, true); if (done) done(); } });
     };
 
     /* ── 소소한 반응: 지구본, 흔들림 ── */
@@ -314,7 +364,7 @@
       for (var i = 0; i < L.updaters.length; i++) L.updaters[i](dt, t);
       teacher.userData.update(dt, t, camPos);
       light.update(dt, t);
-      if (arrow.visible) { arrow.position.y = L.arrowSpot[1] + Math.sin(t * 2.6) * 0.03; arrow.rotation.y += dt * 1.4; }
+      if (arrow.visible) { arrow.position.y = arrowBase + Math.sin(t * 2.6) * 0.03; arrow.rotation.y += dt * 1.4; }
       for (var n = 1; n <= 8; n++) {
         var Lt = W.letters[n]; if (!Lt.shown) continue;
         var p = 0.5 + 0.5 * Math.sin(t * 2.1 + n);

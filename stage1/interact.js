@@ -8,9 +8,18 @@
   "use strict";
 
   function create(o) {
-    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, W = o.world, C = o.controls, S = M.S;
+    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, ST = o.stations, W = o.world, C = o.controls, S = M.S, Dir = o.director;
     var DECOY = {}; Object.keys(D.DECOY).forEach(function (k) { DECOY[k] = D.DECOY[k]; });
     if (!DECOY.eraser) DECOY.eraser = "칠판지우개다. 하얀 분필 가루가 잔뜩 묻어 있다.";
+    /* 기억 소품: 조각을 붙일 때마다 생기는 물건들 */
+    DECOY.mem1 = "금빛 별 모빌이 천천히 돈다. 아기 침대 위에 달려 있던 것 같다.";
+    DECOY.mem2 = "칠판 구석에 누군가 그린 낙서다. 머리카락이 사방으로 뻗친 얼굴 옆에 ‘천재?!’라고 적혀 있다.";
+    DECOY.mem3 = "교탁 옆에 기대어 놓은 지팡이다. 손잡이가 오래 쥔 손을 따라 닳았다.";
+    DECOY.mem4 = "한 점에서 퍼져 나가는 고리를 그린 포스터다. ‘시간을 거꾸로 돌리면’이라고 적혀 있다.";
+    DECOY.mem5 = "벽에 걸린 금메달이다. 가운데에 십자가가 새겨져 있다.";
+    DECOY.mem6 = "같은 책이 세 권 쌓여 있다. 표지에는 은하가 그려져 있다.";
+    DECOY.mem7 = "작은 태극기가 꽂혀 있다. 바람이 없는데도 천이 살짝 흔들린다.";
+    DECOY.mem8 = "초록 갓 스탠드다. 어둠이 내려도 이 불빛만은 꺼지지 않을 것 같다.";
     var toast = UI.toast;
 
     function revealReward(n) {
@@ -18,6 +27,7 @@
       if (M.reveal() == null) return;
       W.reveal(n);
       toast(D.REVEAL_TEXT[n], "good");
+      if (Dir) Dir.letter(n);
     }
     function openRewardDiary(n) {
       if (S.revealed !== n) { toast("아직 읽을 수 있는 편지가 아닙니다.", "bad"); return; }
@@ -29,6 +39,7 @@
       W.stickToBoard(n, S);
       var slot = W.boardSlot(n + 1); C.lookAtPoint(slot.x, slot.y, slot.z);
       toast("편지를 읽고 칠판으로 옮겨 붙였다. " + n + "번째 조각을 얻었다.", "good");
+      if (Dir) Dir.attach(n);
     }
 
     function interact(id) {
@@ -46,7 +57,19 @@
       /* 읽기 전용 자료: 언제든 */
       if (id.indexOf("diaryP:") === 0) { SC.showDiary(+id.split(":")[1]); return; }
       if (id.indexOf("refP:") === 0) { SC.showRefs(id.split(":")[1]); return; }
-      if (id === "sheet") { SC.showSheet(); return; }
+      if (id === "sheet") { ST.showStickers(); return; }
+      if (id === "roster") { ST.showRoster(); return; }
+      if (id === "tv") {
+        if (S.ch === 4) { ST.showTape(); return; }
+        if (S.ch === 6 && S.phase === "read") { SC.showRefs("video"); return; }
+        if (S.ch > 4 && M.isSolved(4)) { ST.showTape(); return; }
+        toast(S.ch < 4 ? "TV가 꺼져 있다. 아직 넣을 테이프가 없다." : "TV는 지금 아무것도 비추지 않는다."); return;
+      }
+      if (id === "stamp") {
+        if (!S.tookD1 && S.ch === 1) { toast("먼저 책상 위의 일기를 읽어 보세요."); return; }
+        if (S.ch === 1 && S.phase === "read") W.guide(null);
+        ST.showStamp(); return;
+      }
       if (id.indexOf("note:") === 0) {
         var sc = D.SCI.filter(function (x) { return x.id === id.split(":")[1]; })[0];
         if (!sc) { toast("자료를 찾을 수 없습니다.", "bad"); return; }
@@ -62,7 +85,7 @@
       if (id === "computer") { SC.showComputer(); return; }
       if (id === "diary1obj") {
         M.takeDiary1(); W.setDiaryOnDesk(false);
-        SC.showDiary(1, { afterClose: function () { W.refreshBoard(S, 1); } }); return;
+        SC.showDiary(1, { afterClose: function () { W.refreshBoard(S, 1); if (Dir) Dir.diary1(); } }); return;
       }
       /* 챕터별 탐색 지점 */
       if (M.isSpot(id)) {

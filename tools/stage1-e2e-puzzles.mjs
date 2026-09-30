@@ -1,0 +1,294 @@
+#!/usr/bin/env node
+/* 스테이지 1 재설계 종단 검증 — 현장 퍼즐(날짜 도장·액자 표식·명단·VHS)과 5~8장 연필 도구,
+   감독교사의 대사·힌트·표정, 기억 소품을 진짜 브라우저(Chromium)로 확인한다.
+   (8챕터 전체 흐름과 정답 경로는 tools/stage1-e2e.mjs 가 맡는다. 여기서는 새로 생긴 조작 하나하나를 짚는다.)
+   사용법: node tools/stage1-e2e-puzzles.mjs [--shots 폴더] [--headed] [--style toon|real] [--mobile-only]
+   정답은 게임과 같은 수준(U 난독화)으로만 보관한다. npm test 에는 넣지 않았다(브라우저 필요). */
+import http from "node:http";
+import { readFileSync, existsSync, mkdirSync } from "node:fs";
+import { extname, join, normalize } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const ROOT = fileURLToPath(new URL("../", import.meta.url));
+const args = process.argv.slice(2);
+const shotsDir = args.includes("--shots") ? args[args.indexOf("--shots") + 1] : null;
+const STYLE = args.includes("--style") ? args[args.indexOf("--style") + 1] : "toon";
+const MOBILE_ONLY = args.includes("--mobile-only");                 /* 모바일 가로 화면 검사만 (빠르게 다시 볼 때) */
+if (shotsDir) mkdirSync(shotsDir, { recursive: true });
+
+const { chromium } = require("playwright");
+const L = require("../stage1/logic.js");
+const SEALED = [[[92, 70, 77, 189, 161], 101], [[16, 235, 225, 239, 221, 211, 170, 190], 117], [[230, 253, 231, 223, 206, 167, 186, 142], 133], [[247, 203, 200, 222, 168, 184, 132], 149],
+  [[211, 211, 203, 165, 186, 135, 157], 165], [[221, 171, 188, 168, 134, 132, 122, 127, 123, 94, 94, 41, 52], 181], [[183, 183, 175, 153, 155, 106, 122, 67, 66, 92, 44, 59, 19, 11, 26], 197], [[228, 212, 220], 213]];
+const answerOf = (n) => L.U(SEALED[n - 1][0], SEALED[n - 1][1]);
+
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".mp4": "video/mp4", ".json": "application/json" };
+const server = http.createServer((req, res) => {
+  const p = normalize(decodeURIComponent(req.url.split("?")[0])).replace(/^(\.\.[/\\])+/, "");
+  let f = join(ROOT, p); if (f.endsWith("/") || (existsSync(f) && !extname(f))) f = join(f, "index.html");
+  if (!existsSync(f)) { res.writeHead(404); res.end("not found"); return; }
+  res.writeHead(200, { "content-type": MIME[extname(f)] || "application/octet-stream" }); res.end(readFileSync(f));
+});
+await new Promise((ok) => server.listen(0, "127.0.0.1", ok));
+const base = `http://127.0.0.1:${server.address().port}`;
+
+let failures = 0;
+const check = (cond, msg) => { console.log(`${cond ? "ok  " : "FAIL"} ${msg}`); if (!cond) failures++; };
+const browser = await chromium.launch({ headless: !args.includes("--headed"), args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-webgl"] });
+const errors = [];
+
+async function open(viewport, touch) {
+  const ctx = await browser.newContext({ viewport, hasTouch: !!touch, isMobile: !!touch });
+  const page = await ctx.newPage();
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text().slice(0, 200)); });
+  await page.goto(`${base}/stage1/index.html?debug=1&style=${STYLE}`, { waitUntil: "load", timeout: 180000 });
+  await page.waitForFunction(() => window.__ready === true, null, { timeout: 180000 });
+  return page;
+}
+const helpers = (page, prefix) => {
+  const ev = (f, a) => page.evaluate(f, a);
+  const shot = async (name) => { if (shotsDir) { await page.waitForTimeout(300); await page.screenshot({ path: join(shotsDir, prefix + name + ".png") }); } };
+  const until = (f, a, ms = 20000) => page.waitForFunction(f, a, { timeout: ms }).then(() => true, () => false);
+  /* 소프트웨어 렌더링은 프레임이 느려서 시점을 바꾼 직후엔 카메라 행렬이 옛 값이다. 두 프레임 기다린 뒤 화면 좌표를 잰다 */
+  const screenOf = (id) => ev(async (id) => {
+    await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok)));
+    __n1.camera.updateMatrixWorld(true);
+    const h = __n1.L.hotById[id] || __n1.W.active.find((m) => m.userData.hot && m.userData.hot.id === id), v = new THREE.Vector3();   /* 칠판 종이의 조사 상자는 배치표가 아니라 활성 목록에 있다 */
+    h.getWorldPosition(v); v.project(__n1.camera);
+    return { x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight };
+  }, id);
+  /* 진짜 클릭: 시점을 잡고, 물건 위로 마우스를 옮겨 누른다 */
+  const clickHot = async (id, view) => {
+    await ev((v) => { __n1.C.crouch = false; __n1.C.eye = 1.6; __n1.C.setView(v[0], v[1], v[2], v[3]); }, view); await page.waitForTimeout(350);
+    const p = await screenOf(id); await page.mouse.move(p.x - 5, p.y + 2); await page.mouse.move(p.x, p.y); await page.waitForTimeout(150); await page.mouse.click(p.x, p.y);
+    return p;
+  };
+  const sheetOpen = () => ev(() => __n1.UI.sheetOpen());
+  const setState = (ch, phase, pieces) => ev(([ch, phase, pieces]) => {
+    const M = __n1.M; M.takeDiary1(); M.S.ch = ch; M.S.phase = phase; M.S.pieces = pieces; M.S.revealed = 0;
+    __n1.W.setDiaryOnDesk(false); __n1.W.applyState(M.S, true); __n1.UI.sayClear(); __n1.UI.renderHUD();
+  }, [ch, phase, pieces]);
+  return { ev, shot, until, screenOf, clickHot, sheetOpen, setState };
+};
+
+try {
+  if (!MOBILE_ONLY) {
+  /* ══════ 데스크톱 ══════ */
+  const page = await open({ width: 1280, height: 720 });
+  const { ev, shot, until, clickHot, sheetOpen, setState, screenOf } = helpers(page, "");
+  check(errors.length === 0, "부팅 중 오류 없음 " + errors.join(" | "));
+  const D = await ev(() => ({ sci: N1Data.SCI.map((s) => ({ id: s.id, sym: s.sym || null })), symOf: N1Data.SYM_OF, symbols: N1Puz.SYMBOLS, rowing: N1Data.SPORTS.findIndex((s) => s.roles && s.roles.length === 9), sports: N1Data.SPORTS.length, cipher: N1Data.CIPHER.length, rows: N1Data.MAP_ROWS, cols: N1Data.MAP_COLS, routes: N1Data.MAP_ROUTES.length }));
+
+  /* A) 시작: 감독교사가 말을 건다 */
+  await page.click("#go-new"); await page.waitForTimeout(500);
+  check(await until(() => __n1.UI.saying(), null, 30000), "A. 시작하면 감독교사가 말을 건다");
+  check(await until(() => document.querySelector("#say.show .say-txt").textContent.length > 2, null, 30000), "A. 말풍선에 글자가 한 글자씩 나타난다");
+  check((await ev(() => document.querySelector("#say .say-who").textContent)) === "감독교사", "A. 말하는 이는 ‘감독교사’");
+  check(await until(() => __n1.L.obj.teacher.userData.talking(), null, 30000), "A. 말하는 동안 감독교사의 입이 움직이는 상태다");
+  const talkOpen = await ev(async () => { let mx = 0; for (let i = 0; i < 18; i++) { mx = Math.max(mx, __n1.L.obj.teacher.userData.face.open); await new Promise((ok) => requestAnimationFrame(ok)); } return mx; });
+  check(talkOpen > 0.05, "A. 말하는 동안 입이 실제로 벌어진다 (최대 " + talkOpen.toFixed(2) + ")");
+  check((await ev(() => getComputedStyle(document.getElementById("say")).pointerEvents)) === "none", "A. 말풍선은 클릭을 가로채지 않는다");
+  await shot("01-enter");
+  await ev(() => __n1.UI.sayClear());
+  check(await until(() => !__n1.L.obj.teacher.userData.talking(), null, 10000), "A. 말이 끝나면 입이 멈춘다");
+
+  /* B) 첫 일기 → 도장을 가리키는 화살표 */
+  await clickHot("diary1obj", [-0.1, 2.3, Math.PI, -0.35]); await page.waitForTimeout(600);
+  check(await ev(() => __n1.M.S.tookD1), "B. 첫 일기를 클릭으로 집었다");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(500);
+  check(await until(() => __n1.M.S.said && __n1.M.S.said.diary1 && __n1.UI.saying(), null, 30000), "B. 일기를 덮으면 감독교사가 빈칸과 도장을 알려 준다");
+  const arrow = await ev(() => { const a = __n1.W.arrow, s = __n1.L.stampSpot; return { vis: a.visible, d: Math.hypot(a.position.x - s[0], a.position.z - s[2]) }; });
+  check(arrow.vis && arrow.d < 0.05, "B. 안내 화살표가 교탁의 날짜 도장을 가리킨다");
+  await ev(() => __n1.UI.sayClear());
+
+  /* C) 1장 날짜 도장 */
+  await clickHot("stamp", [-0.2, -1.4, Math.PI, -0.32]); await page.waitForTimeout(700);
+  check(await sheetOpen(), "C. 도장을 클릭하면 도장 패널이 열린다");
+  check((await page.$$(".wheel")).length === 5, "C. 숫자 바퀴가 다섯 개");
+  const goal0 = await ev(() => __n1.M.hud().objective.main);
+  await page.click(".stamp-btn"); await page.waitForTimeout(1800);
+  check(await ev(() => __n1.M.S.phase) === "read", "C. 틀린 날짜(0 0 0 0 0)로는 통과하지 못한다");
+  check((await page.$$(".stamp-prints .print")).length >= 1, "C. 틀린 도장은 종이에 자국으로 남는다");
+  check(await until(() => __n1.UI.saying(), null, 30000), "C. 틀리면 감독교사가 한마디 한다");
+  await shot("02-stamp-wrong");
+  const ans1 = answerOf(1), wheels = await page.$$(".wheel");
+  for (let i = 0; i < 5; i++) for (let k = 0; k < +ans1[i]; k++) await (await wheels[i].$(".w-up")).click();
+  const shown = await page.$$eval(".wheel .w-d", (els) => els.map((e) => e.textContent).join(""));
+  check(shown === ans1, "C. 바퀴를 눌러 일기 빈칸의 날짜를 맞췄다");
+  await page.click(".stamp-btn");
+  check(await until(() => __n1.M.S.phase === "search", null, 30000), "C. 맞는 날짜를 찍으면 탐색 단계로 넘어간다");
+  check((await ev(() => __n1.M.solvedAnswer(1))) === ans1, "C. 낸 답이 저장돼 일기 빈칸 복원에 쓰인다");
+  check((await ev(() => __n1.M.hud().objective.main)) !== goal0, "C. 정답 뒤 목표 안내가 바뀐다");
+  await shot("03-stamp-ok");
+  await page.waitForTimeout(1500);
+  await page.click(".sheet-foot .btn.primary"); await page.waitForTimeout(600);
+  check(await ev(() => __n1.M.S.hints && Object.keys(__n1.M.S.hints).length === 0), "C. 힌트를 청하지 않았으니 힌트 기록이 비어 있다");
+
+  /* D) 조사 → 편지 → 칠판에 붙이기 → 기억 소품 */
+  await ev(() => __n1.UI.sayClear());
+  await clickHot("calendar", [0.5, -1.7, Math.PI, -0.22]); await page.waitForTimeout(3600);
+  check(await ev(() => __n1.M.S.revealed) === 1, "D. 달력을 클릭해 편지가 드러난다");
+  await ev(() => __n1.I.interact("reward:1")); await page.waitForTimeout(500);
+  await page.click(".sheet-foot .btn.primary"); await page.waitForTimeout(2200);
+  check(await ev(() => __n1.M.S.ch) === 2, "D. 편지를 읽고 붙이면 2장으로 넘어간다");
+  await until(() => __n1.L.mem[1].visible, null, 90000);            /* 붙는 연출(약 1초)이 끝나야 소품이 나타난다. 느린 화면에서는 프레임 수로 센다 */
+  const mem1 = await ev(() => ({ vis: __n1.L.mem[1].visible, hot: __n1.W.active.indexOf(__n1.L.hotById["decoy:mem1"]) >= 0, others: [2, 3, 4, 5, 6, 7, 8].filter((n) => __n1.L.mem[n].visible).length }));
+  check(mem1.vis && mem1.hot && mem1.others === 0, "D. 첫 조각을 붙이자 기억 소품 1(별 모빌)만 생기고 조사할 수 있다");
+  await shot("04-memory-1");
+
+  /* E) 2장 액자 표식 붙이기 + 힌트 단추 */
+  await clickHot("sheet", [-1.1, -1.6, Math.atan2(-1.77 + 1.1, -3.97 + 1.6), 0.02]); await page.waitForTimeout(800);
+  check(await sheetOpen(), "E. 칠판의 ‘종이 한 장’을 클릭하면 표식 패널이 열린다");
+  const nCards = (await page.$$(".stk-tray .card")).length, nFr = (await page.$$(".stk-frames .fr")).length;
+  check(nCards === 5 && nFr === 6, `E. 표식 카드 5장, 액자 6개 (실제 ${nCards}·${nFr})`);
+  const cards = await page.$$(".stk-tray .card"), frames = await page.$$(".stk-frames .fr");
+  const frameIdx = (id) => D.sci.findIndex((s) => s.id === id), wrongFrame = D.sci.findIndex((s) => s.sym && s.sym !== D.symbols[0]);
+  await cards[0].click(); await frames[wrongFrame].click(); await page.waitForTimeout(500);
+  check((await ev(() => (__n1.M.pz("c2") || {}).placed && Object.keys(__n1.M.pz("c2").placed).length || 0)) === 0, "E. 맞지 않는 액자에는 표식이 붙지 않는다");
+  check((await page.$eval(".stk-msg", (e) => e.textContent.trim().length)) > 0, "E. 안 맞으면 안내 문구가 나온다");
+  await shot("05-stickers-wrong");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  /* 힌트 단추: 세 번까지 점점 구체적으로, 그 뒤엔 더 없다 */
+  const tiers = [];
+  for (let i = 0; i < 4; i++) { await page.click("#t-hint"); await page.waitForTimeout(700); tiers.push(await ev(() => (__n1.M.S.hints || {}).c2 || 0)); }
+  check(tiers.join(",") === "1,2,3,3", "E. 힌트 단추: 1→2→3단계, 넷째부터는 더 주지 않는다 (" + tiers.join(",") + ")");
+  check((await ev(() => document.querySelectorAll("#t-hint .pips i.on").length)) === 3, "E. 힌트 단추의 점 세 개가 모두 켜진다");
+  check(await until(() => __n1.UI.saying(), null, 30000), "E. 힌트를 청하면 감독교사가 말해 준다");
+  await ev(() => __n1.UI.sayClear());
+  await ev(() => __n1.I.interact("sheet")); await page.waitForTimeout(700);
+  const cards2 = await page.$$(".stk-tray .card"), frames2 = await page.$$(".stk-frames .fr");
+  for (let i = 0; i < 5; i++) { await cards2[i].click(); await frames2[frameIdx(Object.keys(D.symOf).find((id) => D.symOf[id] === D.symbols[i]))].click(); await page.waitForTimeout(250); }
+  check((await ev(() => Object.keys(__n1.M.pz("c2").placed).length)) === 5, "E. 카드 다섯 장을 알맞은 액자에 모두 붙였다");
+  const spare = frameIdx(D.sci.find((s) => !s.sym).id);
+  await frames2[spare].click();
+  check(await until(() => __n1.M.S.phase === "search", null, 30000), "E. 표식이 없는 남은 액자를 고르면 탐색 단계로 넘어간다");
+  await shot("06-stickers-solved");
+  await page.waitForTimeout(1200); await page.click(".sheet-foot .btn.primary"); await page.waitForTimeout(500);
+
+  /* F) 3장 명단 클립보드 */
+  await setState(3, "read", [1, 2]);
+  await clickHot("roster", [-2.9, -2.3, Math.atan2(-3.75 + 2.9, -3.93 + 2.3), 0.0]); await page.waitForTimeout(800);
+  check(await sheetOpen(), "F. 스포츠 코너의 명단 클립보드를 클릭하면 패널이 열린다");
+  const tabs = await page.$$(".tabs .tab");
+  check(tabs.length === D.sports, `F. 종목 탭이 ${D.sports}개`);
+  await tabs[0].click(); await page.waitForTimeout(300);
+  const v0 = await page.$eval(".verdict", (e) => e.textContent.trim());
+  await tabs[D.rowing].click(); await page.waitForTimeout(400);
+  const v1 = await page.$eval(".verdict", (e) => e.textContent.trim());
+  check(v0.length > 0 && v1.length > 0 && v0 !== v1, "F. 종목마다 자리 수와 판정 문구가 다르다");
+  await shot("07-roster");
+  for (const ch of answerOf(3).toUpperCase()) await page.click(`.key:text-is("${ch}")`);
+  await page.click(".key.enter");
+  check(await until(() => __n1.M.S.phase === "search", null, 30000), "F. 아홉 자리 종목의 ‘나’의 자리를 답하면 탐색 단계");
+  await page.waitForTimeout(1200); await page.click(".sheet-foot .btn.primary, .term-right .btn.primary"); await page.waitForTimeout(500);
+
+  /* G) 4장 AV 카트 VHS */
+  await setState(4, "read", [1, 2, 3]);
+  await clickHot("tv", [-3.0, 0.0, Math.atan2(-4.45 + 3.0, -1.85 - 0.0), -0.1]); await page.waitForTimeout(800);
+  check(await sheetOpen() && (await page.$$(".vb")).length === 3, "G. AV 카트를 클릭하면 VCR 패널(되감기·재생·정지)이 열린다");
+  const pos0 = await page.$eval(".jog", (e) => +e.value);
+  await page.$eval(".jog", (e) => { e.value = 700; e.dispatchEvent(new Event("input", { bubbles: true })); }); await page.waitForTimeout(500);
+  check(pos0 === 0 && (await page.$eval(".jog", (e) => +e.value)) === 700, "G. 테이프는 끝(0)에서 시작하고 조그 바로 위치를 옮길 수 있다");
+  await shot("08-tape");
+  await page.click('.vb:has-text("되감기")'); await page.waitForTimeout(1500);
+  check((await page.$eval(".jog", (e) => +e.value)) > 700, "G. ‘되감기’를 누르면 테이프가 처음 쪽으로 감긴다");
+  await page.click('.vb:has-text("정지")');
+  for (const ch of answerOf(4).toUpperCase()) await page.click(`.key:text-is("${ch}")`);
+  await page.click(".key.enter");
+  check(await until(() => __n1.M.S.phase === "search", null, 30000), "G. 튀어나온 글자를 읽어 답하면 탐색 단계");
+  await page.waitForTimeout(1500); await page.click(".sheet-foot .btn.primary, .term-right .btn.primary"); await page.waitForTimeout(500);
+
+  /* H) 5장 지도 메모 */
+  await setState(5, "read", [1, 2, 3, 4]);
+  await ev(() => __n1.I.interact("refP:map")); await page.waitForTimeout(700);
+  const blanks = await page.$$(".mnote");
+  check(blanks.length > 0 && (await page.$$(".mc")).length === D.rows * D.cols, `H. 지도에 적을 수 있는 빈 칸이 ${blanks.length}개 있다`);
+  await blanks[0].fill("Q"); await page.waitForTimeout(700);
+  check((await ev(() => ((__n1.M.pz("c5") || {}).cells || {}))) && Object.values(await ev(() => (__n1.M.pz("c5") || {}).cells || {})).includes("Q"), "H. 적은 글자가 저장된다");
+  await (await page.$$(".trace"))[0].click(); await page.waitForTimeout(900);
+  check(((await page.$$(".mc.hi")).length >= 1) || ((await page.$eval(".mapmsg", (e) => e.textContent.trim().length)) > 0), "H. ‘따라가기’를 누르면 칸이 차례로 강조되거나 안내가 나온다");
+  check((await page.$$(".trace")).length === D.routes, `H. 안내 문장마다 따라가기 단추가 있다 (${D.routes}개)`);
+  await shot("09-map");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+
+  /* I) 6장 영상 + 암호 글자 지우기 */
+  await setState(6, "read", [1, 2, 3, 4, 5]);
+  await clickHot("tv", [-3.0, 0.0, Math.atan2(-4.45 + 3.0, -1.85 - 0.0), -0.1]); await page.waitForTimeout(800);
+  check(await sheetOpen() && (await page.$$(".cipherbox .ct")).length === D.cipher, `I. 6장에 AV 카트의 TV 를 누르면 영상과 암호 글자 ${D.cipher}개가 나온다`);
+  check((await page.$$("video")).length >= 1, "I. 영상 요소가 있다");
+  const before = await page.$eval(".cout", (e) => e.textContent);
+  await (await page.$$(".ct"))[0].click(); await page.waitForTimeout(150);
+  check((await page.$eval(".cout", (e) => e.textContent)) !== before, "I. 암호 글자를 누르면 지워져 ‘남은 글자’가 줄어든다");
+  await page.fill(".cfield", "xyz"); await page.waitForTimeout(700);
+  check((await page.$eval(".cfield", (e) => e.value)) === "XYZ" && (await page.$$(".ct.struck")).length >= 2, "I. 칸에 적은 글자(대문자로 바뀜)가 한꺼번에 지워진다");
+  check((await ev(() => (__n1.M.pz("c6") || {}).f)) === "XYZ", "I. 적은 글자가 저장된다");
+  await shot("10-video-tool");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+
+  /* J) 7장 쪽지 낱말 메모 (단말기 옆 탭) */
+  await setState(7, "read", [1, 2, 3, 4, 5, 6]);
+  await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(800);
+  await page.click("text=쪽지 메모"); await page.waitForTimeout(500);
+  const wn = await page.$$(".wnote");
+  check(wn.length >= 5, `J. 붉은 낱말마다 적을 칸이 있다 (${wn.length}개)`);
+  await wn[0].fill("apple"); await wn[1].fill("Zebra"); await page.waitForTimeout(700);
+  const strip = await page.$eval(".wstrip", (e) => e.textContent);
+  check(strip.includes("A") && strip.includes("Z"), "J. 적은 영어 뜻의 머리글자가 위쪽 줄에 모인다 (" + strip.trim() + ")");
+  check((await ev(() => ((__n1.M.pz("c7") || {}).w || []).slice(0, 2).join("|"))) === "apple|Zebra", "J. 적은 낱말이 저장된다");
+  await shot("11-words");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+
+  /* K) 8장 설명서: 글자별 움직임 횟수표 */
+  await setState(8, "read", [1, 2, 3, 4, 5, 6, 7]);
+  await ev(() => __n1.I.interact("refP:keyb")); await page.waitForTimeout(700);
+  check((await page.$$(".kc .k")).length === 27, "K. 알파벳 26자와 마침표의 근육 움직임 횟수표가 있다");
+  check((await page.$eval(".kc .k:nth-child(1)", (e) => e.textContent.replace(/\s/g, ""))) === "A1" && (await page.$eval(".kc .k.dot", (e) => e.textContent.replace(/\s/g, ""))) === ".28", "K. A=1 … 마침표=28");
+  await shot("12-keyb");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+
+  /* L) 저장: 도구에 적은 것과 힌트, 기억 소품은 새로고침 뒤에도 남는다 */
+  const saved = JSON.parse(JSON.parse(await ev(() => { __n1.M.save(); return localStorage.getItem("nameless-classroom-v2") || "{}"; })).payload || "{}");   /* 저장은 { payload: "<상태 JSON>", checksum } 모양 */
+  check(["c2", "c5", "c6", "c7"].every((k) => saved.pz && saved.pz[k]) && saved.hints && saved.hints.c2 === 3, "L. 진행 저장(localStorage)에 퍼즐 메모(pz)와 힌트 기록이 함께 들어 있다");
+
+  /* M) 기억 소품: 조각 수만큼 소품이 생긴다 */
+  await setState(9, "read", [1, 2, 3, 4, 5, 6, 7, 8]);
+  const mems = await ev(() => [1, 2, 3, 4, 5, 6, 7, 8].map((n) => __n1.L.mem[n].visible));
+  check(mems.every(Boolean), "M. 조각 8개를 모으면 기억 소품 8개가 모두 나타난다");
+  const dark = await ev(() => __n1.L.lampLight.intensity);
+  check(dark > 0.3, "M. 8번째 소품(스탠드)의 불빛이 켜진다 (" + dark.toFixed(2) + ")");
+  await ev(() => __n1.I.interact("decoy:mem3")); await page.waitForTimeout(300);
+  check((await page.$eval("#toast", (e) => e.textContent)).includes("지팡이"), "M. 소품을 조사하면 한 줄 감상이 나온다");
+  await ev(() => { __n1.C.setView(2.2, -0.4, Math.atan2(3.9 - 2.2, -3.9 + 0.4), 0.02); __n1.UI.showHud(false); }); await page.waitForTimeout(500);
+  await shot("13-memories");
+  check(errors.length === 0, "화면 오류 없음 " + errors.join(" | "));
+
+  /* ══════ 모바일 가로(568×320) ══════ */
+  await page.context().close();                                   /* 데스크톱 창을 닫아 소프트웨어 렌더링 부담을 덜어 준다 */
+  }
+  const mp = await open({ width: 568, height: 320 }, true);
+  const mh = helpers(mp, "m-");
+  await mp.tap("#go-new").catch(() => mp.click("#go-new")); await mp.waitForTimeout(600);
+  check(await mh.until(() => __n1.UI.saying(), null, 30000), "모바일: 시작하면 감독교사가 말한다");
+  await mp.waitForTimeout(800);
+  const box = await mp.evaluate(() => { const r = document.getElementById("say").getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
+  check(box.l >= 0 && box.r <= box.w + 1 && box.b <= box.h + 1 && box.t >= 0, `모바일: 말풍선이 화면 안에 들어온다 (${Math.round(box.l)},${Math.round(box.t)} → ${Math.round(box.r)},${Math.round(box.b)} / ${box.w}×${box.h})`);
+  await mh.shot("01-say");
+  for (const [name, fn, sel] of [["stamp", () => { __n1.M.takeDiary1(); __n1.I.interact("stamp"); }, ".stamp-btn"], ["sheet", () => { __n1.M.S.ch = 2; __n1.I.interact("sheet"); }, ".stk-tray .card"], ["roster", () => { __n1.M.S.ch = 3; __n1.I.interact("roster"); }, ".tabs .tab"], ["tv", () => { __n1.M.S.ch = 4; __n1.I.interact("tv"); }, ".vb"]]) {
+    await mp.evaluate(() => { __n1.UI.sayClear(); if (__n1.UI.sheetOpen()) __n1.UI.closeSheet && __n1.UI.closeSheet(); });
+    await mp.waitForTimeout(400);
+    await mp.evaluate(fn); await mp.waitForTimeout(900);
+    const ok = await mp.evaluate((sel) => { const e = document.querySelector(sel), sh = document.getElementById("sheet"); if (!e || !sh) return { has: !!e }; const r = e.getBoundingClientRect(), s = sh.getBoundingClientRect(); return { has: true, inW: s.left >= -1 && s.right <= innerWidth + 1, scrollX: document.documentElement.scrollWidth <= innerWidth + 1, visible: r.width > 0 && r.height > 0 }; }, sel);
+    check(ok.has && ok.inW && ok.scrollX && ok.visible, `모바일: ${name} 패널이 화면 폭 안에서 열리고 핵심 조작(${sel})이 있다`);
+    await mh.shot("02-" + name);
+  }
+  check(errors.length === 0, "모바일 포함 화면 오류 없음 " + errors.join(" | "));
+} catch (e) {
+  failures++; console.log("FAIL 예외: " + (e && e.stack || e));
+} finally {
+  await browser.close(); server.close();
+}
+console.log(failures ? `\n${failures}개 실패` : "\n모두 통과");
+process.exit(failures ? 1 : 0);
