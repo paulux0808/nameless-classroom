@@ -178,7 +178,7 @@ try {
   const v1 = await page.$eval(".verdict", (e) => e.textContent.trim());
   check(v0.length > 0 && v1.length > 0 && v0 !== v1, "F. 종목마다 자리 수와 판정 문구가 다르다");
   await shot("07-roster");
-  for (const ch of answerOf(3)) await page.click(`.key:text-is("${ch}")`);
+  for (const ch of answerOf(3).toUpperCase()) await page.click(`.key:text-is("${ch}")`);
   await page.click(".key.enter");
   check(await until(() => __n1.M.S.phase === "search", null, 30000), "F. 아홉 자리 종목의 ‘나’의 자리를 답하면 탐색 단계");
   await page.waitForTimeout(1200); await page.click(".sheet-foot .btn.primary, .term-right .btn.primary"); await page.waitForTimeout(500);
@@ -194,7 +194,7 @@ try {
   await page.click('.vb:has-text("되감기")'); await page.waitForTimeout(1500);
   check((await page.$eval(".jog", (e) => +e.value)) > 700, "G. ‘되감기’를 누르면 테이프가 처음 쪽으로 감긴다");
   await page.click('.vb:has-text("정지")');
-  for (const ch of answerOf(4)) await page.click(`.key:text-is("${ch}")`);
+  for (const ch of answerOf(4).toUpperCase()) await page.click(`.key:text-is("${ch}")`);
   await page.click(".key.enter");
   check(await until(() => __n1.M.S.phase === "search", null, 30000), "G. 튀어나온 글자를 읽어 답하면 탐색 단계");
   await page.waitForTimeout(1500); await page.click(".sheet-foot .btn.primary, .term-right .btn.primary"); await page.waitForTimeout(500);
