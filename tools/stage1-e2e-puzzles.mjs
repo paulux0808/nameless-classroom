@@ -168,7 +168,7 @@ try {
 
   /* F) 3장 명단 클립보드 */
   await setState(3, "read", [1, 2]);
-  await clickHot("roster", [-2.2, -1.2, Math.atan2(-3.75 + 2.2, -3.95 + 1.2), 0.0]); await page.waitForTimeout(800);
+  await clickHot("roster", [-2.9, -2.3, Math.atan2(-3.75 + 2.9, -3.93 + 2.3), 0.0]); await page.waitForTimeout(800);
   check(await sheetOpen(), "F. 스포츠 코너의 명단 클립보드를 클릭하면 패널이 열린다");
   const tabs = await page.$$(".tabs .tab");
   check(tabs.length === D.sports, `F. 종목 탭이 ${D.sports}개`);
@@ -185,7 +185,7 @@ try {
 
   /* G) 4장 AV 카트 VHS */
   await setState(4, "read", [1, 2, 3]);
-  await clickHot("tv", [-2.6, 0.5, Math.atan2(-4.5 + 2.6, -1.85 - 0.5), -0.1]); await page.waitForTimeout(800);
+  await clickHot("tv", [-3.0, 0.0, Math.atan2(-4.45 + 3.0, -1.85 - 0.0), -0.1]); await page.waitForTimeout(800);
   check(await sheetOpen() && (await page.$$(".vb")).length === 3, "G. AV 카트를 클릭하면 VCR 패널(되감기·재생·정지)이 열린다");
   const pos0 = await page.$eval(".jog", (e) => +e.value);
   await page.$eval(".jog", (e) => { e.value = 700; e.dispatchEvent(new Event("input", { bubbles: true })); }); await page.waitForTimeout(500);
@@ -214,7 +214,7 @@ try {
 
   /* I) 6장 영상 + 암호 글자 지우기 */
   await setState(6, "read", [1, 2, 3, 4, 5]);
-  await clickHot("tv", [-2.6, 0.5, Math.atan2(-4.5 + 2.6, -1.85 - 0.5), -0.1]); await page.waitForTimeout(800);
+  await clickHot("tv", [-3.0, 0.0, Math.atan2(-4.45 + 3.0, -1.85 - 0.0), -0.1]); await page.waitForTimeout(800);
   check(await sheetOpen() && (await page.$$(".cipherbox .ct")).length === D.cipher, `I. 6장에 AV 카트의 TV 를 누르면 영상과 암호 글자 ${D.cipher}개가 나온다`);
   check((await page.$$("video")).length >= 1, "I. 영상 요소가 있다");
   const before = await page.$eval(".cout", (e) => e.textContent);
