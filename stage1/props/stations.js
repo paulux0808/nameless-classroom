@@ -10,19 +10,26 @@
     var tex = new T.CanvasTexture(cv); tex.encoding = T.sRGBEncoding; tex.minFilter = tex.magFilter = T.LinearFilter; tex.generateMipmaps = false;
     var seed = 1, roll = 0;
     function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
-    function draw(t, lit) {
+    function draw(t, lit, gain) {
+      gain = gain == null ? 1 : gain;
       var d = img.data, i, y, xx, rb = ((t * 0.35) % 1) * h;
       for (y = 0; y < h; y++) {
         var band = Math.abs(y - rb) < 5 ? 55 : 0, row = (y & 1) ? 0.82 : 1;
         for (xx = 0; xx < w; xx++) {
-          var v = (14 + rnd() * (lit ? 70 : 46) + band) * row; i = (y * w + xx) * 4;
+          var v = (14 + rnd() * (lit ? 70 : 46) + band) * row * gain; i = (y * w + xx) * 4;
           d[i] = v * 0.86; d[i + 1] = v * 0.98; d[i + 2] = v; d[i + 3] = 255;
         }
       }
       x.putImageData(img, 0, 0); tex.needsUpdate = true;
     }
-    draw(0, false);
-    return { canvas: cv, tex: tex, draw: draw };
+    /* 꺼진 화면: 어두운 유리에 희미한 빛만 비친다 */
+    function off() {
+      x.fillStyle = "#050707"; x.fillRect(0, 0, w, h);
+      var gl = x.createLinearGradient(0, 0, w, h); gl.addColorStop(0, "rgba(255,255,255,.10)"); gl.addColorStop(0.45, "rgba(255,255,255,0)");
+      x.fillStyle = gl; x.fillRect(0, 0, w, h); tex.needsUpdate = true;
+    }
+    off();
+    return { canvas: cv, tex: tex, draw: draw, off: off };
   }
 
   /* ── AV 카트: 학교 시청각실의 바퀴 달린 카트. 위에 TV, 아래에 VCR. 앞면 +Z ── */
@@ -73,11 +80,16 @@
     });
     var lm = new T.Mesh(new T.PlaneGeometry(0.11, 0.035), P.canvasMat(lab, { rough: 0.7 })); lm.rotation.x = -PI / 2; lm.position.set(0.02, 0.0135, 0); tape.add(lm);
     tape.position.set(-0.03, SH0 + 0.013 + 0.09 + 0.014, 0.03); tape.rotation.y = 0.32; g.add(tape);
-    g.userData = { screen: screen, noise: ns, tape: tape, size: [0.66, 1.3, 0.52], lit: false };
-    var acc = 0;
-    g.userData.update = function (dt, t, on) {
+    g.userData = { screen: screen, noise: ns, tape: tape, size: [0.66, 1.3, 0.52], lit: false, power: 0 };
+    /* TV 는 4장(테이프)·6장(영상)을 풀 때만 켜진다. 꺼지면 어두운 유리, 켜지면 지지직거리는 화면 */
+    var acc = 0, target = 0, drewOff = true;
+    g.userData.setPower = function (on, animate) { target = on ? 1 : 0; if (!animate) g.userData.power = target; drewOff = false; acc = 1; };
+    g.userData.update = function (dt, t) {
+      var pw = g.userData.power;
+      if (pw !== target) { pw += (target > pw ? 1 : -1) * dt / 0.35; g.userData.power = pw = Math.max(0, Math.min(1, pw)); if (Math.abs(pw - target) < 0.001) g.userData.power = pw = target; }
       acc += dt; if (acc < 0.09) return; acc = 0;
-      ns.draw(t, !!g.userData.lit);
+      if (pw <= 0.01) { if (!drewOff) { ns.off(); drewOff = true; } return; }
+      drewOff = false; ns.draw(t, !!g.userData.lit, pw);
     };
     return g;
   };

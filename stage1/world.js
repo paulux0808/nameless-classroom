@@ -228,6 +228,20 @@
       A.tween({ dur: 2.4, update: function (t) { light.setProgress(K.lerp(k0, k, t)); if (W.dark) light.setDark(W.dark); } });
     };
 
+    /* ── 장치 전원: 교탁 컴퓨터와 AV 카트 TV 는 쓸 때만 켜진다(규칙은 puzzles.js) ──
+       꺼진 컴퓨터는 화면·LED·화면빛이 꺼지고, 마우스를 올려도 노란 후광이 켜지지 않는다(이름표에 ‘꺼짐’). */
+    var compMode = "off", tvIsOn = false, crtOb = L.obj.crt, cartOb = L.obj.cart, compHot = L.hotById.computer;
+    W.computerMode = function () { return compMode; };
+    W.tvOn = function () { return tvIsOn; };
+    W.syncDevices = function (S, animate) {
+      var mode = root.N1Puz.computerState(S), tv = root.N1Puz.tvOn(S), changed = false;
+      if (mode !== compMode) { compMode = mode; changed = true; crtOb.userData.setMode(mode, animate); }
+      if (compHot) { compHot.userData.dormant = mode === "off"; compHot.userData.hot.name = mode === "off" ? "컴퓨터 (꺼짐)" : "컴퓨터"; }
+      if (tv !== tvIsOn) { tvIsOn = tv; changed = true; cartOb.userData.setPower(tv, animate); }
+      light.setScreenPower(compMode === "done" ? crtOb.userData.glow * 0.55 : crtOb.userData.glow);
+      return changed;
+    };
+
     /* ── 상태 일괄 반영 ── */
     W.applyState = function (S, instant) {
       for (var i = 1; i <= 8; i++) { restoreAway(i); W.hideLetter(i); clueHot(i, true); }
@@ -244,6 +258,7 @@
       W.setProgress(S.pieces.length / 8, true);
       W.refreshBoard(S);
       W.setExitGlow(S.done ? 0.6 : 0);
+      W.syncDevices(S, !instant);
     };
     W.setDiaryOnDesk = function (v) {
       L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v);
@@ -364,6 +379,7 @@
       for (var i = 0; i < L.updaters.length; i++) L.updaters[i](dt, t);
       teacher.userData.update(dt, t, camPos);
       light.update(dt, t);
+      light.setScreenPower(compMode === "done" ? crtOb.userData.glow * 0.55 : crtOb.userData.glow);
       if (arrow.visible) { arrow.position.y = arrowBase + Math.sin(t * 2.6) * 0.03; arrow.rotation.y += dt * 1.4; }
       for (var n = 1; n <= 8; n++) {
         var Lt = W.letters[n]; if (!Lt.shown) continue;

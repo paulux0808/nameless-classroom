@@ -21,6 +21,7 @@
     DECOY.mem7 = "작은 태극기가 꽂혀 있다. 바람이 없는데도 천이 살짝 흔들린다.";
     DECOY.mem8 = "초록 갓 스탠드다. 어둠이 내려도 이 불빛만은 꺼지지 않을 것 같다.";
     var toast = UI.toast;
+    var Puz = root.N1Puz;
 
     function revealReward(n) {
       if (S.revealed === n) { toast("드러난 편지를 눌러 읽으세요."); return; }
@@ -79,6 +80,12 @@
         var sci = id.split(":")[1], rot = M.rotateFrame(sci);
         W.setFrameRot(sci, rot);
         toast("액자 — " + (rot * 90) + "°"); return;
+      }
+      /* 교탁 컴퓨터는 답을 넣을 때에만 켜져 있다(규칙은 puzzles.js computerState) */
+      if (id === "computer") {
+        var cs = Puz.computerState(S);
+        if (cs === "off") { toast("컴퓨터 화면이 꺼져 있다. 지금은 쓸 일이 없다."); if (Dir) Dir.computerOff(); return; }
+        if (cs === "done") { SC.showEnding(); return; }
       }
       if (S.done) { if (id === "computer") SC.showEnding(); else toast("특별한 것이 없다."); return; }
       if (S.ch > 8) { if (id === "computer") SC.showAssembly(); else toast("마지막 조각을 교탁에서 맞추세요."); return; }

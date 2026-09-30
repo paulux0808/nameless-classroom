@@ -95,6 +95,22 @@
   /* 재생(→) 방향은 같은 시간표를 거꾸로 돈다: e 를 줄이면 글자가 슬롯에서 한 점으로 떨어진다 */
   function tapeOrderFallen() { var o = []; for (var i = TAPE_WORD.length - 1; i >= 0; i--) o.push(TAPE_WORD.charAt(i)); return o.join(""); }
 
+  /* ── 장치 전원: 교탁 컴퓨터와 AV 카트 TV 는 쓸 때에만 켜진다 ─────────────────
+     1~4장은 현장(도장·표식·명단·테이프)에서 푼다. 5~8장은 답을 컴퓨터에 넣는다. 탐색·편지 단계에는 필요 없다.
+     여덟 조각을 모으면 조립·이름 입력에 다시 켜지고, 이름을 맞힌 뒤에는 엔딩을 다시 보는 화면("done")이 된다. */
+  var AT_COMPUTER = { 5: 1, 6: 1, 7: 1, 8: 1 };
+  /* "off" 꺼짐(조사해도 반응이 없다) · "input" 답을 넣는 화면 · "done" 마친 뒤(엔딩 다시 보기) */
+  function computerState(S) {
+    if (!S) return "off";
+    if (S.done || S.exitReady) return "done";
+    if (S.ch > 8) return "input";
+    return S.phase === "read" && AT_COMPUTER[S.ch] ? "input" : "off";
+  }
+  /* TV: 4장(테이프)과 6장(영상)을 풀 때만 켜진다 */
+  function tvOn(S) {
+    return !!S && !S.done && !S.exitReady && S.ch <= 8 && S.phase === "read" && (S.ch === 4 || S.ch === 6);
+  }
+
   /* ── 기억 복원: 맞힌 장의 일기에서 검게 지워졌던 낱말(봉인) ── */
   var RESTORE = { 2: U([50485,50950,49667,53336,51165],113), 4: U([48698,48329],127) };
 
@@ -103,6 +119,7 @@
     STAMP: STAMP, stampAnswer: stampAnswer, dateParts: dateParts,
     SYMBOLS: SYMBOLS, stickerFits: stickerFits, stickerState: stickerState, stickerPlace: stickerPlace,
     ROSTER: ROSTER, rosterFit: rosterFit,
+    computerState: computerState, tvOn: tvOn,
     TAPE_WORD: TAPE_WORD, TAPE_SLOT: TAPE_SLOT, TAPE_POINT: TAPE_POINT, tapeFrame: tapeFrame, tapeSlotXY: tapeSlotXY, tapePointSize: tapePointSize, tapeOrderFallen: tapeOrderFallen
   };
 });

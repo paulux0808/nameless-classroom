@@ -39,6 +39,14 @@
     D.exitReady = function () { idle = 0; speak(Ln.SAY.exitReady, { replace: true, mood: "glad" }); };
     D.done = function () { speak(Ln.SAY.done, { replace: true, mood: "glad" }); };
 
+    /* 꺼진 컴퓨터를 눌렀을 때: 왜 꺼져 있는지와 지금 할 일을 말해 준다. 말하는 중이면 조용히 있는다 */
+    D.computerOff = function () {
+      if (UI.saying()) return;
+      var g = Ln.goal(M.S, { stackSolved: M.stackSolved() }), out = [one(Ln.SAY.computerOff, "pc")];
+      if (g && g.main) out.push(Ln.fmt(Ln.SAY.computerOffGoal, { goal: g.main }));
+      speak(out, { replace: true, mood: "calm" });
+    };
+
     /* 힌트 단추: 다음 단계를 말해 준다 */
     D.hint = function () {
       var r = M.hint();
