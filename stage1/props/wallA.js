@@ -148,9 +148,8 @@
       g.fillStyle = "#2b2419"; g.textAlign = "center"; g.textBaseline = "top";
       g.font = "700 " + 38 * S + "px 'Noto Sans KR','Malgun Gothic','Apple SD Gothic Neo',sans-serif"; g.fillText(sc.name, w / 2, 20 * S);
       g.font = "500 " + 24 * S + "px Arial,sans-serif"; g.fillStyle = "#7a6c55"; g.fillText(sc.born + " ~ " + sc.died, w / 2, 70 * S);
-      g.fillStyle = "#a03528"; g.font = "700 " + 24 * S + "px 'Noto Sans KR','Malgun Gothic',sans-serif"; g.fillText(sc.key, w / 2, 110 * S);
-      g.textAlign = "left"; g.fillStyle = "#3a332a"; g.font = "400 " + 22 * S + "px 'Noto Sans KR','Malgun Gothic',sans-serif";
-      var words = sc.body.split(" "), line = "", y = 155 * S, max = w - 52 * S;
+      g.textAlign = "left"; g.fillStyle = "#3a332a"; g.font = "400 " + 22 * S + "px 'Noto Sans KR','Malgun Gothic',sans-serif";    /* 머리말(핵심 줄)은 싣지 않는다 — 본문을 읽고 스스로 가린다 */
+      var words = sc.body.split(" "), line = "", y = 118 * S, max = w - 52 * S;
       for (var wi = 0; wi < words.length; wi++) {
         var t = line + words[wi] + " ";
         if (g.measureText(t).width > max) { g.fillText(line, 26 * S, y); line = words[wi] + " "; y += 28 * S; if (y > h - 32 * S) { g.fillText(line + "…", 26 * S, y); line = ""; break; } } else line = t;

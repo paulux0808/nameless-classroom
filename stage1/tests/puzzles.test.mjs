@@ -84,7 +84,7 @@ test("2장: 설명판 본문만으로 기호의 주인이 하나로 정해진다
   const spare = [...D.SCI.map((s) => s.id)].filter((id) => !Object.values(found[0]).includes(id));
   assert.deepEqual([...spare], ["einstein"]);
   /* 화면은 머리말 줄(핵심)을 보여 주지 않는다 */
-  assert.ok(!/s\.key\b/.test(readFileSync(new URL("../screens.js", import.meta.url), "utf8")), "설명판에 ‘핵심’ 줄을 싣지 않는다");
+  for (const f of ["../screens.js", "../props/wallA.js"]) assert.ok(!/\b(s|sc)\.key\b/.test(readFileSync(new URL(f, import.meta.url), "utf8")), f + ": 설명판에 ‘핵심’ 줄을 싣지 않는다");
 });
 
 test("2장: 종이의 순서대로 주인 액자의 뒷면 글자를 이어 읽으면 정답이다", () => {
