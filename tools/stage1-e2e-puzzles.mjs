@@ -162,6 +162,8 @@ try {
   /* 종이 한 장: 기호가 위에서 아래로 번호 순서대로 */
   await clickHot("sheet", [-1.1, -1.6, Math.atan2(-1.77 + 1.1, -3.97 + 1.6), 0.02]); await page.waitForTimeout(800);
   check(await sheetOpen() && (await page.$$(".symlist li")).length === 5, "E. 칠판의 ‘종이 한 장’을 클릭하면 기호 다섯 개가 순서대로 나온다");
+  const symShown = await page.$$eval(".symlist li", (els) => els.map((e) => e.getAttribute("aria-label"))), expectKo = await ev(() => N1Puz.sheetOrder(N1Data).map((s) => N1Data.SYM_KO[s]));
+  check(symShown.join("|") === expectKo.join("|"), "E. 종이에 보이는 기호의 차례가 풀이의 기호 순서와 같다 (" + symShown.join("→") + ")");
   await shot("06-sheet");
   await page.keyboard.press("Escape"); await page.waitForTimeout(400);
   /* 힌트 단추: 세 번까지 점점 구체적으로, 그 뒤엔 더 없다 */
