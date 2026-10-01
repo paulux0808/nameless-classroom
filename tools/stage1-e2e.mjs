@@ -130,9 +130,9 @@ try {
   check(await until(() => __n1.L.obj.tower.userData.count() === 8, null, 90000), "교단 위 기억의 탑에 같은 규격의 블록 8개가 쌓여 있다");
   await page.waitForTimeout(1500);
   /* 블록은 모두 같은 두께로 쌓인다(내려앉는 연출이 끝날 때까지 기다린다) */
-  await until(() => { const t = __n1.L.obj.tower, ys = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => { const p = t.userData.blockPos(n); return p ? p.y : null; }); if (ys.some((y) => y == null)) return false; ys.sort((a, b) => a - b); return ys.slice(1).every((y, i) => Math.abs(y - ys[i] - 0.103) < 0.002); }, null, 90000);
+  await until(() => { const t = __n1.L.obj.tower, ys = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => { const p = t.userData.blockPos(n); return p ? p.y : null; }); if (ys.some((y) => y == null)) return false; ys.sort((a, b) => a - b); return ys.slice(1).every((y, i) => Math.abs(y - ys[i] - 0.103) < 0.0006); }, null, 120000);
   const sizes = await ev(() => { const t = __n1.L.obj.tower, ys = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => t.userData.blockPos(n).y).sort((a, b) => a - b); return ys.slice(1).map((y, i) => +(y - ys[i]).toFixed(4)); });
-  check(sizes.every((d) => Math.abs(d - sizes[0]) < 0.002), "탑의 블록은 모두 같은 두께로 쌓여 있다 (" + sizes.join(",") + ")");
+  check(sizes.every((d) => Math.abs(d - sizes[0]) < 0.001), "탑의 블록은 모두 같은 두께로 쌓여 있다 (" + sizes.join(",") + ")");
   const TOWER_VIEW = [-1.1, -1.6, Math.atan2(-0.9, -1.7), -0.44];
   await ev((v) => __n1.C.setView(v[0], v[1], v[2], v[3]), TOWER_VIEW); await page.waitForTimeout(500);
   p = await screenOf("tower"); await page.mouse.move(p.x - 4, p.y + 2); await page.mouse.move(p.x, p.y); await page.waitForTimeout(250);
