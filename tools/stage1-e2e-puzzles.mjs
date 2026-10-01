@@ -358,7 +358,7 @@ try {
   const box = await mp.evaluate(() => { const r = document.getElementById("say").getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
   check(box.l >= 0 && box.r <= box.w + 1 && box.b <= box.h + 1 && box.t >= 0, `모바일: 말풍선이 화면 안에 들어온다 (${Math.round(box.l)},${Math.round(box.t)} → ${Math.round(box.r)},${Math.round(box.b)} / ${box.w}×${box.h})`);
   await mh.shot("01-say");
-  for (const [name, fn, sel] of [["stamp", () => { __n1.M.takeDiary1(); __n1.I.interact("stamp"); }, ".stamp-btn"], ["frame", () => { __n1.M.S.ch = 2; __n1.I.interact("frame:newton"); }, ".fb-chunk"], ["roster", () => { __n1.M.S.ch = 3; __n1.I.interact("roster"); }, ".roster-paper li"], ["tv", () => { __n1.M.S.ch = 4; __n1.I.interact("tv"); }, ".vb"]]) {
+  for (const [name, fn, sel] of [["stamp", () => { __n1.M.takeDiary1(); __n1.I.interact("stamp"); }, ".stamp-btn"], ["frame", () => { __n1.M.S.ch = 2; __n1.I.interact("frame:newton"); }, ".fb-chunk"], ["roster", () => { __n1.M.S.ch = 3; __n1.I.interact("roster"); }, ".roster-paper li"], ["tv", () => { __n1.M.S.ch = 4; __n1.I.interact("tv"); }, ".vb"], ["morse", () => { __n1.M.S.ch = 4; __n1.I.interact("refP:morseChart"); }, ".mc-cell"], ["tower", () => { __n1.M.S.ch = 9; __n1.M.S.pieces = [1, 2, 3, 4, 5, 6, 7, 8]; __n1.M.S.tower = []; __n1.I.interact("tower"); }, ".tw-block"], ["dict", () => { __n1.M.S.ch = 7; __n1.I.interact("dict"); }, ".dsearch"], ["name", () => { __n1.M.S.ch = 9; __n1.SC.showName(); }, ".name-engrave"]]) {
     await mp.evaluate(() => { __n1.UI.sayClear(); if (__n1.UI.sheetOpen()) __n1.UI.closeSheet && __n1.UI.closeSheet(); });
     await mp.waitForTimeout(400);
     await mp.evaluate(fn); await mp.waitForTimeout(900);
