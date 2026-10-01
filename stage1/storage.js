@@ -22,7 +22,7 @@
     return {
       started: false, ch: 1, phase: "read", pieces: [],
       rot: { apple: 0, compass: 0, sqrt: 0, sun: 0, pi: 0, einstein: 0 },
-      stack: null, revealed: 0, tookD1: false, exitReady: false, done: false,
+      stack: null, tower: [], revealed: 0, tookD1: false, exitReady: false, done: false,
       hints: {},   /* 감독교사에게 받은 힌트 단계 (범위 c1~c8·s1~s8·asm·name → 0~3) */
       pz: {},      /* 퍼즐별 진행(현장 상호작용의 중간 상태) */
       said: {}     /* 한 번만 하는 대사를 이미 했는지 */
@@ -41,6 +41,12 @@
     if (stack.some(function (n) { return !Number.isInteger(n) || n < 1 || n > 8; })) return false;
     return new Set(stack).size === 8;
   }
+  /* 탑: 모은 조각을 쌓은 순서(0 번이 맨 아래). 일부만 있어도 된다 */
+  function cleanTower(t) {
+    var seen = {}, out = [];
+    if (Array.isArray(t)) t.forEach(function (n) { if (Number.isInteger(n) && n >= 1 && n <= 8 && !seen[n]) { seen[n] = 1; out.push(n); } });
+    return out;
+  }
   function isValidState(v) {
     if (!v || typeof v !== "object") return false;
     if (!Number.isInteger(v.ch) || v.ch < 1 || v.ch > 9) return false;
@@ -52,6 +58,7 @@
     if (!v.rot || typeof v.rot !== "object") return false;
     if (ROT_KEYS.some(function (k) { return !Number.isInteger(v.rot[k]) || v.rot[k] < 0 || v.rot[k] > 3; })) return false;
     if (v.stack !== null && !isValidStack(v.stack)) return false;
+    if (!Array.isArray(v.tower) || cleanTower(v.tower).length !== v.tower.length) return false;
     if (FLAG_KEYS.some(function (k) { return typeof v[k] !== "boolean"; })) return false;
     return true;
   }
@@ -62,6 +69,7 @@
     ROT_KEYS.forEach(function (k) { var v = state.rot[k]; state.rot[k] = Number.isInteger(v) ? ((v % 4) + 4) % 4 : 0; });
     Object.keys(state.rot).forEach(function (k) { if (ROT_KEYS.indexOf(k) < 0) delete state.rot[k]; });
     if (state.stack !== null && !isValidStack(state.stack)) state.stack = null;
+    state.tower = cleanTower(state.tower);
     FLAG_KEYS.forEach(function (k) { state[k] = !!state[k]; });
     /* 새 필드: 옛 저장에는 없다. 모양이 틀리면 비운다(진행 자체는 살린다) */
     var hints = {};

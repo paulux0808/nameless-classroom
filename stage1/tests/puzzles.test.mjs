@@ -27,17 +27,20 @@ const game = () => { const M = Model.create({ data: D, logic: Lg, storage: St, s
 const plain = (html) => html.replace(/<[^>]+>/g, "");
 
 /* ── 1장 날짜 도장 ── */
+const WHEELS = () => [...answerOf(1)].map(Number);                          /* 정답 숫자는 봉인 문자열에서 꺼낸다(평문으로 두지 않는다) */
 test("1장: 바퀴 다섯 개의 숫자가 곧 정답 문자열이다(터미널 입력과 같은 답)", () => {
-  const good = Puz.stampAnswer([9, 4, 2, 1, 8]);
+  const w = WHEELS(), good = Puz.stampAnswer(w);
   assert.equal(good, answerOf(1));
   const M = game(); assert.equal(M.answer(good).ok, true);
-  const M2 = game(); assert.equal(M2.answer(Puz.stampAnswer([9, 4, 2, 1, 9])).ok, false, "하루만 틀려도 통과하지 못한다");
+  const off = w.slice(); off[4] = (off[4] + 1) % 10;
+  const M2 = game(); assert.equal(M2.answer(Puz.stampAnswer(off)).ok, false, "하루만 틀려도 통과하지 못한다");
 });
 
 test("1장: 바퀴 수·범위가 틀리면 null", () => {
-  assert.equal(Puz.stampAnswer([9, 4, 2, 1]), null); assert.equal(Puz.stampAnswer([9, 4, 2, 1, 8, 0]), null);
-  assert.equal(Puz.stampAnswer([9, 4, 2, 1, 10]), null); assert.equal(Puz.stampAnswer([9, 4, 2, 1, -1]), null);
-  assert.equal(Puz.stampAnswer([9, 4, 2, 1, 1.5]), null); assert.equal(Puz.stampAnswer("94218"), null); assert.equal(Puz.stampAnswer(null), null);
+  const w = WHEELS(), head = w.slice(0, 4);
+  assert.equal(Puz.stampAnswer(head), null); assert.equal(Puz.stampAnswer(w.concat(0)), null);
+  assert.equal(Puz.stampAnswer(head.concat(10)), null); assert.equal(Puz.stampAnswer(head.concat(-1)), null);
+  assert.equal(Puz.stampAnswer(head.concat(1.5)), null); assert.equal(Puz.stampAnswer(answerOf(1)), null); assert.equal(Puz.stampAnswer(null), null);
 });
 
 test("1장: 도장 바퀴 모양이 일기 1편의 빈칸 모양과 같다(빈칸 3+1+1, 앞의 1 은 인쇄)", () => {
@@ -48,7 +51,8 @@ test("1장: 도장 바퀴 모양이 일기 1편의 빈칸 모양과 같다(빈�
 
 test("1장: dateParts 는 복원된 날짜를 글자 그대로 잇는다", () => {
   const parts = Puz.dateParts(answerOf(1));
-  assert.equal(parts.map((p) => p.text).join(""), "1942년 1월 8일");
+  const a = answerOf(1);
+  assert.equal(parts.map((p) => p.text).join(""), "1" + a.slice(0, 3) + "년 " + a[3] + "월 " + a[4] + "일");
   assert.equal(parts.filter((p) => p.blank).length, Puz.STAMP.wheels);
   assert.equal(Puz.dateParts("").map((p) => p.text).join(""), "1년 월 일", "빈 답이면 빈칸이 비어 있다");
 });
@@ -161,8 +165,10 @@ test("컴퓨터 전원: 1~4장은 꺼져 있고 5~8장은 답을 넣는 동안�
   }
 });
 
-test("컴퓨터 전원: 조각을 다 모으면 조립·이름에 켜지고, 이름을 맞힌 뒤에는 ‘마침’ 화면", () => {
-  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: false, done: false }), "input");
+test("컴퓨터 전원: 탑이 완성되면 이름 입력에 켜지고, 이름을 맞힌 뒤에는 ‘마침’ 화면", () => {
+  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: false, done: false }), "off", "탑을 완성하기 전에는 꺼져 있다");
+  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: false, done: false }, { stackSolved: false }), "off");
+  assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: false, done: false }, { stackSolved: true }), "input", "탑이 완성되면 이름 입력에 켜진다");
   assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: true, done: false }), "done");
   assert.equal(Puz.computerState({ ch: 9, phase: "read", exitReady: true, done: true }), "done");
   assert.equal(Puz.computerState(null), "off"); assert.equal(Puz.computerState(undefined), "off");

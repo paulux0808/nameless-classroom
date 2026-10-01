@@ -45,7 +45,7 @@ test("레이아웃의 모든 핫스팟이 상호작용 처리를 갖는다", () 
   vm.runInContext(read("data.js"), ctx);
   const D = ctx.N1Data, inter = read("interact.js");
   const special = new Set(["computer", "diary1obj", "exitdoor", "calendar", "doll", "postit", "teacher", "extinguisher", "clock", "mathbook", "curtain"]);
-  const stations = ["stamp", "roster", "tv"];                         /* 퍼즐 자리: interact.js 가 stations 로 넘긴다 */
+  const stations = ["stamp", "roster", "tv", "tower"];                /* 퍼즐 자리: interact.js 가 stations·tower 로 넘긴다 */
   for (const id of new Set(ids)) {
     if (id === "decoy:mem") for (let n = 1; n <= 8; n++) assert.ok(inter.includes(`DECOY.mem${n} =`), `기억 소품 ${n} 의 말이 없다`);   /* hot("decoy:mem" + n, …) 로 만든다 */
     else if (id.startsWith("decoy:")) assert.ok(D.DECOY[id.slice(6)] || inter.includes(`DECOY.${id.slice(6)} =`), `말이 없는 소품: ${id}`);

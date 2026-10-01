@@ -70,6 +70,7 @@
     M.finishReward = function (n) {
       if (S.revealed !== n) return false;
       if (S.pieces.indexOf(n) < 0) S.pieces.push(n);
+      M.towerSync();                                                  /* 새 조각은 탑 맨 위에 올라온다 */
       S.ch = n + 1; S.phase = "read"; S.revealed = 0; save(); emit("change"); return true;
     };
     /* 액자를 90° 돌린다: 신호 키는 기호 이름(없으면 과학자 id) */
@@ -81,15 +82,43 @@
     M.frameSignature = function (id) { var sym = D.SYM_OF[id]; return sym ? D.FRAME_SIG[sym] : [1, 1, 1, 1]; };
 
     /* 최종 조립 */
-    M.ensureStack = function () { if (!S.stack) S.stack = [1, 2, 3, 4, 5, 6, 7, 8]; return S.stack; };
-    M.swapStack = function (a, b) {
-      var st = M.ensureStack(); if (a < 0 || b < 0 || a > 7 || b > 7 || M.stackSolved()) return false;
-      var t = st[a]; st[a] = st[b]; st[b] = t; save(); emit("change"); return true;
-    };
     M.stackSolved = function () { return !!S.stack && S.stack.join(",") === Lg.stackOrder().join(","); };
+
+    /* ── 기억의 탑: 모은 조각은 언제든 쌓아 볼 수 있다. 맞고 틀림은 ‘완성’을 눌렀을 때 한 번만 알려 준다.
+       배열은 위에서 아래로(0 번이 맨 위) — 마지막 일기의 목록과 같은 방향이다 ── */
+    M.towerSync = function () {
+      var have = {}, seen = {}, t = [], before = (S.tower || []).join(",");
+      S.pieces.forEach(function (n) { have[n] = 1; });
+      (S.tower || []).forEach(function (n) { if (have[n] && !seen[n]) { seen[n] = 1; t.push(n); } });
+      if (!t.length && S.stack && S.pieces.length === 8) S.stack.forEach(function (n) { if (!seen[n]) { seen[n] = 1; t.push(n); } });   /* 옛 조립 화면에서 하던 배열 */
+      S.pieces.forEach(function (n) { if (!seen[n]) { seen[n] = 1; t.unshift(n); } });             /* 새 조각은 맨 위(0 번)로 */
+      S.tower = t; return t;
+    };
+    M.tower = function () { return M.towerSync().slice(); };
+    /* 블록 라벨에 쓰는 연도: 일기 날짜. 1장은 도장으로 맞힌 날짜에서 읽는다 */
+    M.pieceYear = function (n) {
+      if (n === 1) { var a = M.solvedAnswer(1); return a ? "1" + String(a).slice(0, 3) : "19??"; }
+      var m = /(\d{4})년/.exec(String((D.DIARY_HTML && D.DIARY_HTML["diary" + n]) || "").replace(/<[^>]+>/g, ""));
+      return m ? m[1] : "";
+    };
+    /* from 번째 조각을 to 번째로 옮긴다(나머지는 밀린다). 완성된 뒤에는 움직이지 않는다 */
+    M.towerMove = function (from, to) {
+      var t = M.towerSync();
+      if (M.stackSolved() || from === to || from < 0 || to < 0 || from >= t.length || to >= t.length) return false;
+      var n = t.splice(from, 1)[0]; t.splice(to, 0, n); save(); emit("tower", { move: [from, to] }); return true;
+    };
+    M.towerSubmit = function () {
+      if (M.stackSolved()) return { ok: true, already: true };
+      var t = M.towerSync();
+      if (t.length < 8) return { ok: false, reason: "incomplete" };
+      if (t.join(",") !== Lg.stackOrder().join(",")) { emit("tower", { wrong: true }); return { ok: false, reason: "wrong" }; }
+      S.stack = t.slice(); save(); emit("change"); return { ok: true };
+    };
+
     M.submitFinal = function (raw) {
       var v = Lg.answerCode(raw); if (!v) return { ok: false, reason: "empty" };
-      if (v !== Lg.norm(Lg.finalName())) return { ok: false, reason: "wrong" };
+      var okNames = Lg.finalAccepts ? Lg.finalAccepts() : [Lg.norm(Lg.finalName())];
+      if (okNames.indexOf(Lg.norm(v)) < 0) return { ok: false, reason: "wrong" };
       S.exitReady = true; save(); emit("change"); return { ok: true };
     };
     M.submitExitCode = function (raw) {

@@ -217,28 +217,14 @@ body.touch #joy,body.touch #act,body.touch #crouch{display:grid}
 .shake{animation:shake .32s}
 @keyframes shake{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(2px)}}
 
-/* ───────────── 기억 조립 ───────────── */
-.assembly{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.25fr);gap:18px;min-width:0;align-items:start}
-.assembly .a-diary{max-height:calc(100dvh - 150px);overflow:auto;padding-right:6px}
-.stackview{overflow-x:auto;overflow-y:visible;padding:6px 4px 12px;min-width:0}
-.stack{display:grid;gap:16px;padding:12px 0 6px 14px;min-width:0}
-.srow{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end}
-.bar{position:relative;transition:margin .4s var(--ease);min-width:0}
-.bar .face{height:38px;padding:0 16px;display:flex;gap:10px;align-items:center;font-size:14px;font-weight:600;color:#fff3e0;white-space:nowrap;overflow:hidden;
-  background:linear-gradient(160deg,#c99b64,#a97f4d 60%,#946c40);border:1px solid rgba(255,232,190,.32);border-bottom:0;transform:skewX(-24deg);transform-origin:100% 100%;transition:height .4s var(--ease),opacity .3s}
-.bar .face>*{transform:skewX(24deg)}
-.bar .face .n{width:26px;height:26px;border-radius:50%;background:rgba(30,14,2,.36);flex:none;display:grid;place-items:center;font-size:14px;font-weight:900}
-.bar .band{height:26px;background-repeat:no-repeat;background-color:#6b4a2c;border:1px solid rgba(255,232,190,.22);border-top:0;box-shadow:inset 0 3px 6px rgba(0,0,0,.34)}
-.srow .mv{display:flex;gap:6px;transition:opacity .3s}
-.srow .mv button{width:40px;height:40px;border-radius:4px;border:2px solid var(--ink);background:transparent;font-size:14px;color:var(--ink)}
-.srow .mv button:disabled{opacity:.25}
-.stack.locked{gap:0}.stack.locked .bar{margin-left:0!important}
-.stack.locked .srow:not(:first-child) .bar .face{height:0;opacity:0;border:0}
-.stack.locked .bar .band{border-top:0;border-bottom:0}.stack.locked .srow:last-child .bar .band{border-bottom:1px solid rgba(255,232,190,.22)}
-.stack.locked .srow .mv{display:none}.stack.locked .srow{grid-template-columns:1fr}
-.a-final{margin-top:12px}
-@media(max-height:520px){.stack{gap:8px}.bar .face{height:28px;font-size:12.5px}.bar .band{height:20px}.srow .mv button{width:32px;height:32px}.assembly{gap:12px}}
-@media(max-width:1000px) and (min-height:521px){.assembly{grid-template-columns:minmax(0,1fr)}.assembly .a-diary{max-height:32vh}}
+/* ───────────── 이름 말하기 ───────────── */
+.name-layout{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:20px;align-items:start;min-width:0}
+.name-plate{min-width:0}
+.name-engrave{display:block;width:100%;height:auto;border-radius:6px;border:2px solid #4a2f1a;box-shadow:inset 0 3px 10px rgba(0,0,0,.35),0 3px 0 rgba(0,0,0,.18)}
+.name-plate .mini{margin-top:10px}
+.a-final{min-width:0}
+@media(max-width:860px){.name-layout{grid-template-columns:minmax(0,1fr)}}
+@media(max-height:520px){.name-layout{gap:12px}.name-plate .mini{display:none}}
 
 /* ───────────── 인트로·엔딩·기타 ───────────── */
 #intro{position:fixed;inset:0;z-index:180;display:grid;place-items:center;padding:calc(var(--sa-t) + 12px) 16px calc(var(--sa-b) + 12px);background:radial-gradient(120% 100% at 50% 40%,rgba(6,10,8,.5),rgba(2,4,3,.86))}
@@ -492,3 +478,39 @@ body.sheet-open #say{opacity:0!important}                                       
 .kc .k b{font:800 15px var(--font-mono);color:var(--ink)} .kc .k i{font:700 12px var(--font-mono);font-style:normal;color:var(--red-2)} .kc .k.dot{grid-column:span 2;background:#fff4ef}
 .tabpane .tv video{display:block;width:100%;border-radius:10px;background:#000;box-shadow:inset 0 0 0 3px #1a1c1f}
 @media(max-height:460px){.wordlist li{font-size:12.5px}.kc{grid-template-columns:repeat(13,minmax(0,1fr))}.ct{min-height:32px;min-width:28px}}
+
+/* ───────────── 기억의 탑 ─────────────
+   HUD 의 나무 조각(.slat)과 같은 재료: 나무 블록 위에 크림색 종이 라벨(그림 + 연도). 3D 탑의 블록과 같은 모양이다. */
+.tw-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,370px);gap:18px;align-items:start;min-width:0}
+.tw-note{max-height:calc(100dvh - 170px);overflow:auto;padding-right:6px;min-width:0}
+.tw-note-h{font:700 11px/1 var(--font-mono);letter-spacing:.18em;color:var(--red-2);margin:2px 0 10px}
+.tw-legend{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
+.tw-legend li{display:grid;grid-template-columns:26px 46px minmax(0,1fr);gap:8px;align-items:center;font-size:14px;color:var(--ink)}
+.tw-legend li b{font:800 14px var(--font-mono)}
+.tw-legend .tw-none{display:block;color:var(--ink-2)}
+.tw-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.tw-stack{display:grid;gap:5px;padding:10px 10px 12px;border-radius:6px;background:linear-gradient(180deg,#6a4326,#4e321a);box-shadow:inset 0 2px 8px rgba(0,0,0,.45),0 2px 0 rgba(255,255,255,.06)}
+.tw-slot.empty{height:52px;border:1.5px dashed rgba(255,232,190,.28);border-radius:4px;background:rgba(0,0,0,.18)}
+.tw-block{position:relative;height:52px;border-radius:4px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 8px 0 9px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+  background:linear-gradient(90deg,#c48d54,var(--wood) 40%,var(--wood-2));border:1px solid rgba(255,232,190,.4);
+  box-shadow:inset 0 1px 0 rgba(255,236,200,.5),inset 0 -4px 6px rgba(60,30,8,.4),0 2px 3px rgba(0,0,0,.4);transition:transform .22s var(--ease),box-shadow .15s}
+.tw-block:hover{box-shadow:inset 0 1px 0 rgba(255,236,200,.6),inset 0 -4px 6px rgba(60,30,8,.4),0 3px 8px rgba(0,0,0,.5)}
+.tw-block.sel{outline:2px solid var(--pencil);outline-offset:1px;box-shadow:inset 0 1px 0 rgba(255,236,200,.6),inset 0 -4px 6px rgba(60,30,8,.4),0 0 14px rgba(239,196,60,.45)}
+.tw-block.dragging{z-index:5;cursor:grabbing;transition:none;box-shadow:0 12px 26px rgba(0,0,0,.55)}
+.tw-label{flex:1;min-width:0;display:flex;align-items:center;gap:9px;height:40px;padding:0 11px 0 7px;background:#f2efe0;border-top:3px solid var(--red);border-radius:3px;box-shadow:inset 0 0 0 1px rgba(27,38,64,.18)}
+.tw-label canvas{flex:none}
+.tw-title{flex:1;min-width:0;font:700 14px/1.15 var(--font-ui);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tw-year{flex:none;font:800 16px/1 var(--font-mono);color:var(--ink-2);letter-spacing:.02em}
+.tw-mv{flex:none;display:flex;gap:3px;opacity:.62;transition:opacity .15s}
+.tw-block.sel .tw-mv,.tw-block:hover .tw-mv,.tw-block:focus-within .tw-mv{opacity:1}
+.tw-mv button{width:30px;height:34px;border-radius:4px;border:1.5px solid rgba(60,30,8,.55);background:rgba(255,236,200,.24);color:#2b1808;font-size:12px;padding:0}
+.tw-mv button:disabled{opacity:.25}
+.tw-block.engraved{cursor:default;background-size:100% 100%;background-color:#b07a44;border:0;border-radius:0;box-shadow:inset 0 0 0 1px rgba(255,232,190,.12)}
+.tw-stack.solved{gap:0;padding:8px;box-shadow:0 0 24px rgba(255,170,80,.4),inset 0 2px 8px rgba(0,0,0,.45)}
+.tw-stack.fall{animation:twfall .52s ease-in forwards;transform-origin:50% 100%}
+@keyframes twfall{0%{transform:none}25%{transform:translateX(-6px) rotate(-1deg)}55%{transform:translateX(8px) rotate(1.6deg)}100%{transform:translateY(26px) rotate(3.5deg);opacity:.25}}
+.tw-actions{display:flex;gap:8px}.tw-go{flex:1;min-height:var(--tap)}
+.tw-msg{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+@media(max-width:700px){.tw-layout{grid-template-columns:minmax(0,1fr)}.tw-note{max-height:34vh}}
+@media(max-height:520px){.tw-slot.empty,.tw-block{height:34px}.tw-label{height:26px;gap:6px;padding:0 8px 0 5px}.tw-label canvas{width:20px!important;height:20px!important}.tw-title{font-size:12.5px}.tw-year{font-size:13px}.tw-mv button{width:26px;height:26px}.tw-stack{gap:3px;padding:6px}.tw-layout{gap:12px}}
+@media(hover:none){.tw-block:not(.sel) .tw-mv{opacity:.5}}

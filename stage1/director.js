@@ -34,7 +34,17 @@
     };
     D.letter = function () { idle = 0; speak([one(Ln.SAY.letter, "letter")], { replace: true, mood: "grave" }); };
     D.attach = function (n) { idle = 0; speak([].concat(Ln.SAY.attach[n] || [], Ln.SAY.start[n + 1] || []), { replace: true, mood: n >= 8 ? "grave" : "glad" }); };
-    D.asm = function () { if (M.sayOnce("asm")) speak(Ln.SAY.asm, { mood: "calm" }); };
+    /* 기억의 탑: 처음 열 때(조각이 다 모였으면 쌓는 법, 아니면 탑이 무엇인지), 틀린 ‘완성’, 완성 */
+    D.towerOpen = function (n) {
+      if (n >= 8 && !M.stackSolved()) { if (M.sayOnce("asm")) speak(Ln.SAY.asm, { mood: "calm" }); }
+      else if (n < 8 && M.sayOnce("towerFirst")) speak(Ln.SAY.towerFirst, { mood: "calm" });
+    };
+    var towerWrongN = 0;
+    D.towerWrong = function () {
+      towerWrongN++; idle = 0;
+      if (towerWrongN % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true, mood: "puzzled" }); UI.nudgeHint(true); }
+      else speak([one(Ln.SAY.towerWrong, "towerWrong")], { replace: true, mood: "puzzled" });
+    };
     D.nameAsk = function () { if (M.sayOnce("nameAsk")) speak(Ln.SAY.nameAsk, { replace: true, mood: "grave" }); };
     D.exitReady = function () { idle = 0; speak(Ln.SAY.exitReady, { replace: true, mood: "glad" }); };
     D.done = function () { speak(Ln.SAY.done, { replace: true, mood: "glad" }); };

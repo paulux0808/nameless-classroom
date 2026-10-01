@@ -75,6 +75,9 @@
     mem(6, P.memBooks(), -1.3, PLAT, -2.95, 0.2, "책");
     mem(7, P.memFlag(), -0.86, TOP, deskZ + 0.02, 0.15, "태극기");
     mem(8, P.memLamp(), 0.86, TOP, deskZ - 0.14, -0.3, "스탠드");
+    /* 기억의 탑: 교탁 왼쪽 교단 위. 조각을 얻을 때마다 블록이 올라오고, 언제든 눌러 순서를 바꿔 볼 수 있다 */
+    var tower = P.memoryTower(); place(tower, -2.0, PLAT, -3.3, 0.12); L.obj.tower = tower;
+    hot("tower", "기억의 탑", 0.7, 1.15, 0.55, -2.0, PLAT + 0.58, -3.3, 0.12);
     L.lampLight = new T.PointLight(0xffc880, 0, 3.4, 2); L.lampLight.position.set(0.86, TOP + 0.2, deskZ - 0.14); g.add(L.lampLight);
     /* 리빌 1: 달력 아래 편지 자리 — 교탁 상판 위 */
     L.anchors[1] = { p: [0.62, TOP + 0.0035, deskZ - 0.06], n: [0, 1, 0], up: [0, 0, -1], roll: -0.05 };

@@ -8,7 +8,7 @@
   "use strict";
 
   function create(o) {
-    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, ST = o.stations, W = o.world, C = o.controls, S = M.S, Dir = o.director;
+    var M = o.model, D = o.data, UI = o.ui, SC = o.screens, ST = o.stations, TW = o.tower, W = o.world, C = o.controls, S = M.S, Dir = o.director;
     var DECOY = {}; Object.keys(D.DECOY).forEach(function (k) { DECOY[k] = D.DECOY[k]; });
     if (!DECOY.eraser) DECOY.eraser = "칠판지우개다. 하얀 분필 가루가 잔뜩 묻어 있다.";
     /* 기억 소품: 조각을 붙일 때마다 생기는 물건들 */
@@ -58,6 +58,7 @@
       /* 읽기 전용 자료: 언제든 */
       if (id.indexOf("diaryP:") === 0) { SC.showDiary(+id.split(":")[1]); return; }
       if (id.indexOf("refP:") === 0) { SC.showRefs(id.split(":")[1]); return; }
+      if (id === "tower") { TW.show(); return; }
       if (id === "sheet") { ST.showStickers(); return; }
       if (id === "roster") { ST.showRoster(); return; }
       if (id === "tv") {
@@ -83,12 +84,12 @@
       }
       /* 교탁 컴퓨터는 답을 넣을 때에만 켜져 있다(규칙은 puzzles.js computerState) */
       if (id === "computer") {
-        var cs = Puz.computerState(S);
+        var cs = Puz.computerState(S, { stackSolved: M.stackSolved() });
         if (cs === "off") { toast("컴퓨터 화면이 꺼져 있다. 지금은 쓸 일이 없다."); if (Dir) Dir.computerOff(); return; }
         if (cs === "done") { SC.showEnding(); return; }
       }
       if (S.done) { if (id === "computer") SC.showEnding(); else toast("특별한 것이 없다."); return; }
-      if (S.ch > 8) { if (id === "computer") SC.showAssembly(); else toast("마지막 조각을 교탁에서 맞추세요."); return; }
+      if (S.ch > 8) { if (id === "computer") SC.showName(); else toast(M.stackSolved() ? "탑에 새겨진 글자를 읽고, 교탁의 컴퓨터에 그의 이름을 입력하세요." : "조각을 모두 모았다. 교단 위 기억의 탑에서 순서를 맞춰 보세요."); return; }
       if (id === "computer") { SC.showComputer(); return; }
       if (id === "diary1obj") {
         M.takeDiary1(); W.setDiaryOnDesk(false);

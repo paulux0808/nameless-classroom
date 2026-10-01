@@ -43,8 +43,20 @@
     onWrong: function (n) { Dir.wrong(n); },
     onMiss: function (n) { Dir.miss(n); },                                      /* 표식이 안 붙는 정도의 작은 실수: 세 번째마다만 말한다 */
     onSticker: function (id, sym) { if (World) World.setFrameSticker(id, D.SYMBOL_SVG[sym], true); },
-    onStackSolved: function () { Dir.nameAsk(); },
-    onAssembly: function () { Dir.asm(); },
+    /* 기억의 탑: 열 때·옮길 때·완성할 때·틀릴 때. 3D 탑은 모델의 배열을 따라 다시 쌓인다 */
+    onTowerOpen: function (n) { Dir.towerOpen(n); },
+    onTowerChange: function () { Dir.progress(); if (World) World.refreshTower(M.S, true); },
+    onTowerSolved: function () {
+      if (World) { World.refreshTower(M.S, true); var p = World.towerPos(); Ctl.lookAtPoint(p.x, p.y, p.z); }
+      Dir.nameAsk();
+    },
+    onTowerWrong: function () {
+      if (World) {
+        var p = World.towerPos(); Ctl.lookAtPoint(p.x, p.y, p.z);
+        World.towerCollapse();
+      }
+      Dir.towerWrong();
+    },
     begin: function (isNew) {
       if (isNew) M.startNew(); else if (!M.continueSaved()) { UI.toast("저장된 진행이 없습니다.", "bad"); return; }
       UI.resetPieces(); World.applyState(M.S, true);
@@ -92,6 +104,7 @@
   var TL = N1Tools.create({ model: M, data: D, assets: ASSETS });
   var SC = N1Screens.create({ ui: UI, model: M, data: D, assets: ASSETS, hooks: hooks, tools: TL });
   var ST = N1Stations.create({ ui: UI, model: M, data: D, assets: ASSETS, screens: SC, hooks: hooks });
+  var TW = N1Tower.create({ ui: UI, model: M, data: D, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
   M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); if (kind === "change" && World && World.syncDevices(M.S, true) && Ctl) Ctl.hover = null; });   /* 컴퓨터·TV 는 필요할 때 켜지고 꺼진다 */
@@ -157,7 +170,7 @@
     UI.setLoading(0.8, "마무리");
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
-    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board]
+    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board, ob.tower]
       .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }), Object.keys(Lay.mem).map(function (n) { return Lay.mem[n]; }));
     /* 카툰: 잉크 윤곽선. 합치기 전에 ① 히트박스와 물체의 짝을 정하고 ② 붙박이 소품의 껍질을 만든다(합쳐진 뒤엔 메시가 커서 나눌 수 없다) */
     var hullInfo = null;
@@ -175,6 +188,7 @@
       [ob.teacher, ob.clock].forEach(function (d) { if (d) K.outline.attach(d, { mode: "parent" }); });
       [ob.door].concat(Lay.frameOrder.map(function (id) { return Lay.frames[id]; })).forEach(function (d) { if (d) K.outline.attach(d); });
       Object.keys(Lay.mem).forEach(function (n) { K.outline.attach(Lay.mem[n], { mode: "rigid" }); });
+      if (ob.tower) K.outline.attach(ob.tower, { mode: "rigid" });                 /* 받침대. 블록은 쌓일 때 각자 붙인다(props/tower.js) */
       mark("outline");
     }
     K.setEnvIntensity(scene, Light.baseEnv);
@@ -190,7 +204,7 @@
       onFullscreen: function () { UI.toggleFullscreen(); }
     });
     Ctl.sensitivity = UI.sensitivity;
-    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, stations: ST, world: World, controls: Ctl, director: Dir });
+    Inter = N1I.create({ model: M, data: D, ui: UI, screens: SC, stations: ST, tower: TW, world: World, controls: Ctl, director: Dir });
     $("#crouch").onclick = function () { Ctl.toggleCrouch(); };
     $("#act").onclick = function () { Ctl.pickCenter(); };
     Ctl.setView(OPEN.x, OPEN.z, OPEN.yaw, OPEN.pitch);

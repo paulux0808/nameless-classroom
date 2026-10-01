@@ -97,13 +97,14 @@
 
   /* ── 장치 전원: 교탁 컴퓨터와 AV 카트 TV 는 쓸 때에만 켜진다 ─────────────────
      1~4장은 현장(도장·표식·명단·테이프)에서 푼다. 5~8장은 답을 컴퓨터에 넣는다. 탐색·편지 단계에는 필요 없다.
-     여덟 조각을 모으면 조립·이름 입력에 다시 켜지고, 이름을 맞힌 뒤에는 엔딩을 다시 보는 화면("done")이 된다. */
+     여덟 조각을 모으면 탑을 쌓는다(컴퓨터는 꺼져 있다). 탑이 맞게 완성되면 이름 입력에 켜지고,
+     이름을 맞힌 뒤에는 엔딩을 다시 보는 화면("done")이 된다. ctx.stackSolved: 탑이 완성되었는가 */
   var AT_COMPUTER = { 5: 1, 6: 1, 7: 1, 8: 1 };
   /* "off" 꺼짐(조사해도 반응이 없다) · "input" 답을 넣는 화면 · "done" 마친 뒤(엔딩 다시 보기) */
-  function computerState(S) {
+  function computerState(S, ctx) {
     if (!S) return "off";
     if (S.done || S.exitReady) return "done";
-    if (S.ch > 8) return "input";
+    if (S.ch > 8) return ctx && ctx.stackSolved ? "input" : "off";
     return S.phase === "read" && AT_COMPUTER[S.ch] ? "input" : "off";
   }
   /* TV: 4장(테이프)과 6장(영상)을 풀 때만 켜진다 */
