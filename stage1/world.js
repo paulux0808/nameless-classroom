@@ -272,7 +272,7 @@
       L.curtains[3].userData.setClosed(0); W.curtain = 0; setDarkRaw(0);
       S.pieces.forEach(function (n) { clueHot(n, false); applyAway(n, true); });
       if (S.revealed) { clueHot(S.revealed, false); applyAway(S.revealed, true); W.showLetter(S.revealed, false); }
-      frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); if (L.frames[id].userData.base) { L.frames[id].userData.lift = 0; L.frames[id].position.copy(L.frames[id].userData.base); L.frames[id].rotation.z = 0; } });
+      frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); var fu = L.frames[id].userData; if (fu.base) { if (fu.liftTw) { fu.liftTw.cancel(); fu.liftTw = null; } fu.lift = 0; L.frames[id].position.copy(fu.base); L.frames[id].rotation.z = 0; } });
       W.setDiaryOnDesk(!(S.tookD1 || S.ch > 1));
       for (var mi = 1; mi <= 8; mi++) { if (S.pieces.indexOf(mi) >= 0) W.showMemory(mi, false); else W.hideMemory(mi); }
       W.refreshTower(S, false);
