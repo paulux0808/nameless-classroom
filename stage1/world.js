@@ -234,7 +234,7 @@
     W.computerMode = function () { return compMode; };
     W.tvOn = function () { return tvIsOn; };
     W.syncDevices = function (S, animate) {
-      var mode = root.N1Puz.computerState(S), tv = root.N1Puz.tvOn(S), changed = false;
+      var mode = root.N1Puz.computerState(S, { stackSolved: o.model.stackSolved() }), tv = root.N1Puz.tvOn(S), changed = false;
       if (mode !== compMode) { compMode = mode; changed = true; crtOb.userData.setMode(mode, animate); }
       if (compHot) { compHot.userData.dormant = mode === "off"; compHot.userData.hot.name = mode === "off" ? "컴퓨터 (꺼짐)" : "컴퓨터"; }
       if (tv !== tvIsOn) { tvIsOn = tv; changed = true; cartOb.userData.setPower(tv, animate); }
@@ -251,6 +251,7 @@
       frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); });
       W.setDiaryOnDesk(!(S.tookD1 || S.ch > 1));
       for (var mi = 1; mi <= 8; mi++) { if (S.pieces.indexOf(mi) >= 0) W.showMemory(mi, false); else W.hideMemory(mi); }
+      W.refreshTower(S, false);
       var pl = (o.model.pz && o.model.pz("c2") && o.model.pz("c2").placed) || {};
       frameIds.forEach(function (id) { W.setFrameSticker(id, null); });
       Object.keys(pl).forEach(function (sym) { W.setFrameSticker(pl[sym], D.SYMBOL_SVG[sym], false); });
@@ -283,6 +284,25 @@
       }, done: function () { scene.remove(pts); geo.dispose(); mat.dispose(); } });
     }
     W.burst = burst;
+    /* ── 기억의 탑: 얻은 조각이 같은 규격의 블록으로 쌓인다. 순서는 모델의 탑 배열(위→아래) ──
+       새 조각은 맨 위에 내려앉고, 순서를 바꾸거나 완성하면 여기서 다시 그린다. */
+    var towerOb = L.obj.tower, towerWasSolved = false;
+    W.refreshTower = function (S, animate) {
+      if (!towerOb) return [];
+      var M = o.model, ys = {};
+      S.pieces.forEach(function (n) { ys[n] = M.pieceYear(n); });
+      towerOb.userData.setYears(ys);
+      var added = towerOb.userData.setOrder(M.tower(), animate);
+      var solved = M.stackSolved();
+      towerOb.userData.setSolved(solved, root.finalSkeleton().split(" "), animate && solved && !towerWasSolved);
+      towerWasSolved = solved;
+      if (animate && added.length) { var top = new T.Vector3(); towerOb.updateWorldMatrix(true, false); top.setFromMatrixPosition(towerOb.matrixWorld); top.y += towerOb.userData.height() + 0.05; burst(top, 20, 0xffe0a0); }
+      return added;
+    };
+    /* 틀린 ‘완성’: 탑이 우르르 무너졌다가 지금 순서대로 다시 쌓인다 */
+    W.towerCollapse = function (done) { return towerOb ? towerOb.userData.collapse(done) : (done && done(), 0); };
+    W.towerPos = function () { var p = new T.Vector3(); if (towerOb) { towerOb.updateWorldMatrix(true, false); p.setFromMatrixPosition(towerOb.matrixWorld); p.y += towerOb.userData.height() * 0.5; } return p; };
+
     /* 기억 소품: 조각 n 을 붙이면 교실에 그 조각의 물건이 생긴다 */
     W.showMemory = function (n, animate) {
       var m = L.mem && L.mem[n]; if (!m) return;
@@ -317,7 +337,7 @@
       A.tween({ dur: 1.15, ease: A.ease.inOutCubic, update: function (t) {
         h.position.set(K.lerp(from.x, target.x, t), K.lerp(from.y, target.y, t) + Math.sin(t * PI) * 0.45, K.lerp(from.z, target.z, t) + Math.sin(t * PI) * 0.5 * (1 - t));
         h.quaternion.slerpQuaternions(fq, tq, t); h.scale.setScalar(K.lerp(1, 1.24, t));
-      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); burst(target.clone().add(new T.Vector3(0, 0, 0.08)), 14, 0xfff0c8); W.showMemory(n, true); if (done) done(); } });
+      }, done: function () { W.hideLetter(n); h.scale.setScalar(1); W.refreshBoard(S, k); burst(target.clone().add(new T.Vector3(0, 0, 0.08)), 14, 0xfff0c8); W.showMemory(n, true); W.refreshTower(S, true); if (done) done(); } });
     };
 
     /* ── 소소한 반응: 지구본, 흔들림 ── */

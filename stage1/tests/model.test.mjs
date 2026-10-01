@@ -85,13 +85,14 @@ test("액자 회전, 기억 조립, 최종 이름, 뒷문 코드", () => {
   assert.deepEqual(M.frameSignature("gauss"), D.FRAME_SIG.compass);
 
   M.S.ch = 9; M.S.pieces = [1, 2, 3, 4, 5, 6, 7, 8];
-  assert.deepEqual(M.ensureStack(), [1, 2, 3, 4, 5, 6, 7, 8]);
   assert.equal(M.stackSolved(), false);
-  // 정답 순서로 만든다
+  // 정답 순서로 만든다(탑에서 옮겨 쌓는다). 완성은 ‘완성’을 눌러야 알려 준다
   const target = Lg.stackOrder();
-  for (let i = 0; i < 8; i++) { const j = M.S.stack.indexOf(target[i]); if (j !== i) assert.equal(M.swapStack(i, j), true); }
+  for (let i = 0; i < 8; i++) { const j = M.tower().indexOf(target[i]); if (j !== i) assert.equal(M.towerMove(j, i), true); }
+  assert.equal(M.stackSolved(), false, "순서가 맞아도 완성을 누르기 전에는 확정되지 않는다");
+  assert.equal(M.towerSubmit().ok, true);
   assert.equal(M.stackSolved(), true);
-  assert.equal(M.swapStack(0, 1), false, "완성되면 더는 못 바꾼다");
+  assert.equal(M.towerMove(0, 1), false, "완성되면 더는 못 바꾼다");
   assert.equal(M.submitFinal("").reason, "empty");
   assert.equal(M.submitFinal("someone").reason, "wrong");
   assert.equal(M.submitFinal("Stephen William Hawking".replace(/ /g, "")).ok, true);

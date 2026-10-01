@@ -175,7 +175,7 @@
     var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" }, 7: { kind: "words", title: "쪽지 메모" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
-      if (S.ch > 8) { SC.showAssembly(); return; }
+      if (S.ch > 8) { SC.showName(); return; }
       var c = M.chapter(), spec = AID[c.n] || D.TERMINAL_AID[c.n] || { kind: null };
       var head = { title: "장학금 단말기", sub: "CHAPTER " + c.n + " · " + c.title };
       if (S.phase === "search") {
@@ -202,69 +202,26 @@
       } });
     };
 
-    /* ───────── 기억 조립 ───────── */
-    var BANDS = 8, BAND_H = 18, ENGRAVE_W = 1600, engrave = null;
-    function engraveURL() {
-      if (engrave) return engrave;
-      var H = BANDS * BAND_H, cv = doc.createElement("canvas"); cv.width = ENGRAVE_W; cv.height = H;
-      var g = cv.getContext("2d"), name = root.finalName();
-      g.textAlign = "center"; g.textBaseline = "middle"; g.font = "900 200px " + FONT;
-      var m = g.measureText(name), asc = m.actualBoundingBoxAscent || 150, desc = m.actualBoundingBoxDescent || 10;
-      var sy = (H - 4) / (asc + desc), sx = (ENGRAVE_W - 60) / m.width;
-      g.save(); g.translate(ENGRAVE_W / 2, 2 + asc * sy); g.scale(sx, sy);
-      g.fillStyle = "rgba(255,236,200,.32)"; g.fillText(name, 0, -3 / sy);
-      g.fillStyle = "rgba(24,13,4,.92)"; g.fillText(name, 0, 0); g.restore();
-      engrave = cv.toDataURL("image/png"); return engrave;
-    }
-    function buildStack(order, opt) {
-      var url = engraveURL(), wrap = el("div", "stack");
-      order.forEach(function (n, i) {
-        var row = el("div", "srow"), bar = el("div", "bar");
-        bar.style.marginLeft = (opt.spread === false ? 0 : (i * 13)) + "px";
-        bar.appendChild(el("div", "face", '<span class="n">' + n + "</span><span>" + D.CH[n - 1].title + "</span>"));
-        var band = el("div", "band");
-        band.style.backgroundImage = "url(" + url + ")"; band.style.backgroundSize = "100% " + (BANDS * BAND_H) + "px";
-        band.style.backgroundPosition = "0 -" + (root.bandOf(n) * BAND_H) + "px";
-        bar.appendChild(band); row.appendChild(bar);
-        var mv = el("div", "mv");
-        if (opt.move) {
-          var u = el("button", null, "▲"), d = el("button", null, "▼"); u.type = d.type = "button";
-          u.setAttribute("aria-label", n + "번 조각을 위로"); d.setAttribute("aria-label", n + "번 조각을 아래로");
-          u.disabled = i === 0; d.disabled = i === order.length - 1;
-          u.onclick = function () { opt.move(i, i - 1); }; d.onclick = function () { opt.move(i, i + 1); };
-          mv.appendChild(u); mv.appendChild(d);
-        }
-        row.appendChild(mv); wrap.appendChild(row);
-      });
-      return wrap;
-    }
-    SC.showAssembly = function () {
-      M.ensureStack(); hooks.onAssembly && hooks.onAssembly();
-      UI.openSheet({ title: "기억을 쌓다", sub: "마지막 일기를 보며 기억 조각을 맞추세요", mode: "center", cls: "assembly-sheet", build: function (b, foot, api) {
-        var layout = el("div", "assembly"), diaryCol = el("div", "a-diary"), work = el("div"), host = el("div", "stackview"), term = el("div", "a-final");
-        diaryCol.appendChild(diaryArticle("diary9", 9)); work.appendChild(host); work.appendChild(term);
-        layout.appendChild(diaryCol); layout.appendChild(work); b.appendChild(layout);
-        function paint() {
-          var ok = M.stackSolved();
-          host.innerHTML = ""; var st = buildStack(S.stack, { move: ok ? null : function (a, c) { M.swapStack(a, c); paint(); }, spread: !ok });
-          if (ok) st.classList.add("locked"); host.appendChild(st);
-          term.innerHTML = "";
-          if (ok && !term.dataset.done) {
-            var crt = makeCRT({ label: "FINAL", rule: "숫자 또는 영어 · 대소문자 무관 · 띄어쓰기 없음", mode: "alpha", empty: "그의 이름을 입력하세요", submitText: "제출",
-              onSubmit: function (raw) {
-                var r = M.submitFinal(raw);
-                if (r.ok) { term.dataset.done = "1"; UI.closeSheet(true); hooks.onFinalOk && hooks.onFinalOk(); return true; }
-                UI.toast(r.reason === "empty" ? "이름을 입력하세요." : "다시 읽어 보세요.", "bad");
-                if (r.reason === "wrong") hooks.onWrong && hooks.onWrong(10);
-                return false;
-              } });
-            term.appendChild(crt.el); crt.attach(api);
-            UI.toast("조각이 맞춰졌습니다. 이제 이름을 적으세요.", "good");
-            hooks.onStackSolved && hooks.onStackSolved();
-          }
-          api.refresh();
-        }
-        paint();
+    /* ───────── 이름 말하기 ─────────
+       탑이 완성되면 블록에 이름의 뼈대(모음이 지워진 글자)가 새겨진다. 그 글자를 읽고, 그 사람의 이름을 스스로 입력한다.
+       성+이름, 성만 쳐도 받는다(model.submitFinal → finalAccepts). */
+    SC.showName = function () {
+      UI.openSheet({ title: "그의 이름", sub: "탑에 새겨진 글자를 읽고 이름을 입력하세요", mode: "center", cls: "name-sheet", build: function (b, foot, api) {
+        var layout = el("div", "name-layout"), plate = el("div", "name-plate"), term = el("div", "a-final");
+        var cv = root.N1Icons.engrave(root.finalSkeleton().split(" "), 720, 300); cv.className = "name-engrave";
+        cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "탑에 새겨진 글자: " + root.finalSkeleton());
+        plate.appendChild(cv);
+        plate.appendChild(el("p", "mini", "탑의 블록에 새겨진 글자다. 이름에서 모음이 지워져 있다. 여덟 조각이 가리키는 사람의 이름을 영어로 대 보자. 성만 쳐도, 이름 전체를 쳐도 된다."));
+        var crt = makeCRT({ label: "FINAL", rule: "영어 · 대소문자 무관 · 띄어쓰기 없음", mode: "alpha", empty: "그의 이름을 입력하세요", submitText: "제출",
+          onSubmit: function (raw) {
+            var r = M.submitFinal(raw);
+            if (r.ok) { UI.closeSheet(true); hooks.onFinalOk && hooks.onFinalOk(); return true; }
+            UI.toast(r.reason === "empty" ? "이름을 입력하세요." : "다시 읽어 보세요.", "bad");
+            if (r.reason === "wrong") hooks.onWrong && hooks.onWrong(10);
+            return false;
+          } });
+        term.appendChild(crt.el); layout.appendChild(plate); layout.appendChild(term); b.appendChild(layout); crt.attach(api);
+        api.refresh();
       } });
     };
 

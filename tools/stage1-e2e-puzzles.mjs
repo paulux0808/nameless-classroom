@@ -270,8 +270,11 @@ try {
   for (let ch = 1; ch <= 8; ch++) for (const phase of ["read", "search"]) { const r = await powerAt(ch, phase); if (r.pc === "input") pcOn.push(`${ch}${phase}`); if (r.tv) tvOnList.push(`${ch}${phase}`); }
   check(pcOn.join(",") === "5read,6read,7read,8read", "N. 컴퓨터는 5~8장의 답을 넣는 동안에만 켜진다 (" + pcOn.join(",") + ")");
   check(tvOnList.join(",") === "4read,6read", "N. TV 는 4장(테이프)·6장(영상)을 푸는 동안에만 켜진다 (" + tvOnList.join(",") + ")");
+  await ev(() => { __n1.M.S.tower = []; __n1.M.S.stack = null; });
   await setState(9, "read", range(8));
-  check((await ev(() => __n1.W.computerMode())) === "input", "N. 조각 8개를 모으면 컴퓨터가 다시 켜진다(조립·이름)");
+  check((await ev(() => __n1.W.computerMode())) === "off", "N. 조각 8개를 모아도 탑을 완성하기 전에는 컴퓨터가 꺼져 있다");
+  await ev(() => { __n1.M.S.tower = stackOrder().slice(); __n1.M.towerSubmit(); __n1.W.refreshTower(__n1.M.S, false); __n1.W.syncDevices(__n1.M.S, false); });
+  check((await ev(() => __n1.W.computerMode())) === "input", "N. 탑을 완성하면 컴퓨터가 켜진다(이름 입력)");
   await ev(() => { __n1.M.S.exitReady = true; __n1.W.syncDevices(__n1.M.S, false); });
   check((await ev(() => __n1.W.computerMode())) === "done", "N. 이름을 맞힌 뒤에는 ‘마침’ 화면이 된다");
   await ev(() => { __n1.M.S.exitReady = false; });

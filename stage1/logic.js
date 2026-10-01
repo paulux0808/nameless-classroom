@@ -45,7 +45,6 @@
   function stackOrder() {
     return _SO.map(function (v, i) { return v ^ ((91 + i * 37) & 255); });
   }
-  function bandOf(n) { return stackOrder().indexOf(n); }
 
   var _FN = [254, 158, 162, 84, 105, 123, 21, 88, 194, 251, 131, 160, 64, 103, 14, 64, 53, 219, 224, 159, 184, 64, 108];
   function finalName() {
@@ -53,6 +52,15 @@
     for (var i = 0; i < _FN.length; i++) o += String.fromCharCode(_FN[i] ^ ((173 + i * 29) & 255));
     return o;
   }
+
+  /* 이름 입력: 전체 이름·이름+성·성만 받는다(정규화한 문자열). 중간 이름까지 외워야 하는 것은 부당하다 */
+  function finalAccepts() {
+    var w = finalName().split(" ").filter(Boolean), out = [norm(w.join(""))];
+    if (w.length >= 2) { out.push(norm(w[0] + w[w.length - 1])); out.push(norm(w[w.length - 1])); }
+    return out.filter(function (x, i) { return x && out.indexOf(x) === i; });
+  }
+  /* 탑에 새겨지는 이름의 뼈대: 모음을 지운다. 완성된 탑에서 읽고, 나머지는 스스로 떠올려야 한다 */
+  function finalSkeleton() { return finalName().replace(/[AEIOUaeiou]/g, ""); }
 
   /* 액자 기호 신호를 시계방향으로 n번 회전 */
   function rotSig(sig, n) {
@@ -141,8 +149,9 @@
     sealCode: sealCode,
     U: U,
     stackOrder: stackOrder,
-    bandOf: bandOf,
     finalName: finalName,
+    finalAccepts: finalAccepts,
+    finalSkeleton: finalSkeleton,
     rotSig: rotSig,
     ROOM: ROOM,
     buildBlocks: buildBlocks,

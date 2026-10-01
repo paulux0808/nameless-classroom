@@ -46,6 +46,7 @@ page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
 page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text().slice(0, 200)); });
 const shot = async (name) => { if (shotsDir) { await page.waitForTimeout(300); await page.screenshot({ path: join(shotsDir, name + ".png") }); } };
 const ev = (f, a) => page.evaluate(f, a);
+const until = (f, a, ms = 20000) => page.waitForFunction(f, a, { timeout: ms }).then(() => true, () => false);
 /* 소프트웨어 렌더링은 프레임이 느려서, 시점을 바꾼 직후에는 카메라 행렬이 아직 옛 값이다.
    두 프레임을 기다려 컨트롤러가 새 시선을 적용하게 한 뒤 행렬을 갱신하고 화면 좌표를 잰다. */
 const screenOf = (id) => ev(async (id) => {
@@ -123,16 +124,58 @@ try {
   }
   check(await ev(() => __n1.M.S.pieces.length) === 8, "조각 8개");
 
-  /* 3) 조립 → 이름 → 엔딩 */
-  check((await ev(() => __n1.W.computerMode())) === "input", "조각 8개를 모으면 컴퓨터가 다시 켜진다(조립·이름 입력)");
-  await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(600);
+  /* 3) 기억의 탑 → 이름 → 엔딩 */
+  check((await ev(() => __n1.W.computerMode())) === "off", "조각 8개를 모아도 탑을 완성하기 전에는 컴퓨터가 꺼져 있다");
+  /* 마지막 블록은 칠판에 붙는 연출이 끝난 뒤 내려앉는다(소프트웨어 렌더링은 프레임이 느려 한참 걸린다) */
+  check(await until(() => __n1.L.obj.tower.userData.count() === 8, null, 90000), "교단 위 기억의 탑에 같은 규격의 블록 8개가 쌓여 있다");
+  await page.waitForTimeout(1500);
+  /* 블록은 모두 같은 두께로 쌓인다(내려앉는 연출이 끝날 때까지 기다린다) */
+  await until(() => { const t = __n1.L.obj.tower, ys = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => { const p = t.userData.blockPos(n); return p ? p.y : null; }); if (ys.some((y) => y == null)) return false; ys.sort((a, b) => a - b); return ys.slice(1).every((y, i) => Math.abs(y - ys[i] - 0.103) < 0.0006); }, null, 120000);
+  const sizes = await ev(() => { const t = __n1.L.obj.tower, ys = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => t.userData.blockPos(n).y).sort((a, b) => a - b); return ys.slice(1).map((y, i) => +(y - ys[i]).toFixed(4)); });
+  check(sizes.every((d) => Math.abs(d - sizes[0]) < 0.001), "탑의 블록은 모두 같은 두께로 쌓여 있다 (" + sizes.join(",") + ")");
+  const TOWER_VIEW = [-1.1, -1.6, Math.atan2(-0.9, -1.7), -0.44];
+  await ev((v) => __n1.C.setView(v[0], v[1], v[2], v[3]), TOWER_VIEW); await page.waitForTimeout(500);
+  p = await screenOf("tower"); await page.mouse.move(p.x - 4, p.y + 2); await page.mouse.move(p.x, p.y); await page.waitForTimeout(250);
+  if (STYLE === "toon") check(await ev(() => __n1.L.obj.tower.userData.hullSets.length >= 9 && __n1.L.obj.tower.userData.hullSets.some((h) => h.halo && h.halo.visible)), "카툰: 탑을 가리키면 받침대와 블록 모두에 노란 후광이 켜진다");
+  await page.mouse.click(p.x, p.y); await page.waitForTimeout(700);
+  check(await ev(() => __n1.UI.sheetOpen() && !!document.querySelector(".tower-sheet .tw-block")), "탑을 클릭하면 쌓기 패널이 열린다(컴퓨터가 필요 없다)");
+  check((await page.$$(".tw-block")).length === 8, "패널에 블록 8개와 마지막 일기가 보인다");
+  check(await page.$eval(".tw-note", (e) => e.textContent.includes("친구들에게 좋은 별명을 얻은 날")), "마지막 일기의 목록을 곁에 두고 쌓는다");
+  check(await page.$eval(".tw-block .tw-title", (e) => e.textContent.length > 2), "블록마다 조각 제목이 적혀 있다");
+  /* 틀린 순서(쌓인 순서 그대로)로 ‘완성’ → 무너진다. 어디가 틀렸는지는 알려 주지 않는다 */
+  await page.click(".tw-go"); await page.waitForTimeout(1300);
+  check(!(await ev(() => __n1.M.stackSolved())) && !(await ev(() => __n1.UI.sheetOpen())), "틀린 순서로 ‘완성’을 누르면 탑이 무너지고 패널이 닫힌다");
+  check(await until(() => __n1.UI.saying(), null, 30000), "무너지면 감독교사가 한마디 한다");
+  await page.waitForTimeout(3300); await shot("09-tower-collapse");
+  check((await ev(() => __n1.L.obj.tower.userData.count())) === 8, "무너진 탑은 지금 순서대로 다시 쌓인다");
+  /* 다시 연다: 키보드로 한 칸, 버튼으로 나머지를 맞춘다. 순서가 맞아도 ‘완성’을 누르기 전에는 아무 말도 없다 */
+  await ev(() => __n1.I.interact("tower")); await page.waitForTimeout(600);
   const order = await ev(() => stackOrder());
+  const drag0 = await ev(() => __n1.M.tower().slice());
+  const r7 = await page.$eval('.tw-block[data-i="7"]', (e) => { const b = e.getBoundingClientRect(); return { x: b.x + b.width * 0.4, y: b.y + b.height / 2, h: b.height }; });
+  await page.mouse.move(r7.x, r7.y); await page.mouse.down(); await page.mouse.move(r7.x, r7.y - r7.h * 0.9, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(300);
+  const drag1 = await ev(() => __n1.M.tower().slice());
+  check(drag1[6] === drag0[7] && drag1[7] === drag0[6], "블록을 끌어서 위로 옮길 수 있다 (" + drag0.join("") + "→" + drag1.join("") + ")");
+  await page.focus('.tw-block[data-i="5"]'); await page.keyboard.press("Enter"); await page.keyboard.press("ArrowUp"); await page.waitForTimeout(250);
+  check((await ev(() => __n1.M.tower()))[4] === drag1[5], "키보드(Enter 로 고르고 ↑)로도 옮길 수 있다");
   for (let i = 0; i < 8; i++) {
-    const cur = await ev(() => __n1.M.S.stack.slice()); const j = cur.indexOf(order[i]);
-    for (let k = j; k > i; k--) { await page.click(`.srow:nth-child(${k + 1}) .mv button:first-child`); await page.waitForTimeout(40); }
+    const cur = await ev(() => __n1.M.tower()); const j = cur.indexOf(order[i]);
+    for (let k = j; k > i; k--) { await page.click(`.tw-block[data-i="${k}"] .tw-mv button:first-child`); await page.waitForTimeout(40); }
   }
-  check(await ev(() => __n1.M.stackSolved()), "▲▼ 버튼으로 기억 조각을 맞췄다");
-  await shot("09-assembly");
+  check(!(await ev(() => __n1.M.stackSolved())) && (await ev(() => __n1.UI.sheetOpen())) && (await ev(() => __n1.W.computerMode())) === "off", "순서를 맞춰도 ‘완성’을 누르기 전에는 확정도 안내도 없다(중간에 맞는지 틀린지 알 수 없다)");
+  check((await ev(() => __n1.M.tower().join(","))) === order.join(","), "▲▼ 버튼으로 일기 목록의 순서대로 쌓았다");
+  await shot("09-tower-panel");
+  await page.click(".tw-go"); await page.waitForTimeout(900);
+  check(await ev(() => __n1.M.stackSolved()), "‘완성’을 누르면 맞는 순서로 확정된다");
+  check((await ev(() => __n1.W.computerMode())) === "input", "탑이 완성되면 컴퓨터가 켜진다(이름 입력)");
+  await ev((v) => __n1.C.setView(v[0], v[1], v[2], v[3]), TOWER_VIEW); await page.waitForTimeout(1500);
+  await shot("09-tower-solved");
+  await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(600);
+  check(await page.$eval(".name-engrave", (e) => e.getAttribute("aria-label").includes("STPHN")), "이름 화면에 모음이 지워진 글자가 새겨져 있다");
+  await shot("09-name");
+  /* 틀린 이름 → 성만 → (이름 전체는 마지막에) */
+  await page.keyboard.type("NEWTON"); await page.keyboard.press("Enter"); await page.waitForTimeout(300);
+  check(!(await ev(() => __n1.M.S.exitReady)), "틀린 이름은 통과하지 못한다");
   const name = await ev(() => finalName());
   for (const ch of name.replace(/[^a-zA-Z]/g, "")) await page.keyboard.press("Key" + ch.toUpperCase());
   await page.keyboard.press("Enter"); await page.waitForTimeout(1500);

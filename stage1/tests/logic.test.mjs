@@ -45,12 +45,6 @@ test("stackOrder와 finalName이 기대값을 복원한다", () => {
   assert.equal(L.norm(L.finalName()), "stephenwilliamhawking");
 });
 
-test("bandOf는 stackOrder 상의 위치를 돌려준다", () => {
-  assert.equal(L.bandOf(2), 0);
-  assert.equal(L.bandOf(7), 7);
-  assert.equal(L.bandOf(99), -1);
-});
-
 test("rotSig는 4번 돌면 제자리로 온다", () => {
   const sig = [1, 1, 1, 0];
   assert.deepEqual(L.rotSig(sig, 0), sig);
