@@ -126,7 +126,9 @@ try {
 
   /* 3) 기억의 탑 → 이름 → 엔딩 */
   check((await ev(() => __n1.W.computerMode())) === "off", "조각 8개를 모아도 탑을 완성하기 전에는 컴퓨터가 꺼져 있다");
-  check((await ev(() => __n1.L.obj.tower.userData.count())) === 8, "교단 위 기억의 탑에 같은 규격의 블록 8개가 쌓여 있다");
+  /* 마지막 블록은 칠판에 붙는 연출이 끝난 뒤 내려앉는다(소프트웨어 렌더링은 프레임이 느려 한참 걸린다) */
+  check(await until(() => __n1.L.obj.tower.userData.count() === 8, null, 90000), "교단 위 기억의 탑에 같은 규격의 블록 8개가 쌓여 있다");
+  await page.waitForTimeout(1500);
   const sizes = await ev(() => { const t = __n1.L.obj.tower, ys = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => t.userData.blockPos(n).y).sort((a, b) => a - b); return ys.slice(1).map((y, i) => +(y - ys[i]).toFixed(4)); });
   check(sizes.every((d) => Math.abs(d - sizes[0]) < 0.002), "탑의 블록은 모두 같은 두께로 쌓여 있다 (" + sizes.join(",") + ")");
   const TOWER_VIEW = [-1.1, -1.6, Math.atan2(-0.9, -1.7), -0.44];
