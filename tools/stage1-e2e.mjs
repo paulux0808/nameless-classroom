@@ -182,6 +182,7 @@ try {
   check(await ev(() => __n1.M.S.exitReady), "이름을 맞히면 뒷문이 열릴 준비가 된다");
   check((await ev(() => __n1.W.computerMode())) === "done", "이름을 맞힌 뒤 컴퓨터는 ‘마침’ 화면(엔딩 다시 보기)이 된다");
   check(await page.$("#ending") !== null, "엔딩 화면");
+  check(await page.$eval(".ending-rec", (e) => /보낸 시간은 .*초입니다/.test(e.textContent)), "엔딩 크레딧에 걸린 시간과 도움 횟수가 조용히 나온다");
   await shot("10-ending");
   await page.click(".ending-close"); await page.waitForTimeout(500);
 
@@ -195,6 +196,7 @@ try {
   /* 탈출 연출(문이 열리고 빛이 밀려든다)이 끝나면 완료 패널이 뜬다. 연출 시간은 프레임에 비례하므로 조건을 기다린다. */
   const cleared = await page.waitForSelector(".stamp", { timeout: 240000 }).then(() => true, () => false);
   check(cleared, "탈출 연출 뒤 스테이지 완료 패널");
+  check(await page.$$eval(".record .rec tbody tr", (r) => r.length) === 9 || (await page.click(".record > summary").then(() => page.$$eval(".record .rec tbody tr", (r) => r.length === 9), () => false)), "스테이지 완료 화면의 ‘내 기록’에 장별 기록 아홉 줄이 있다");
   await shot("11-clear");
 
   /* 5) 저장 이어하기 */
