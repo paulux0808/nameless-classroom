@@ -1,5 +1,5 @@
 /* ============================================================================
-   N1Screens — 화면 내용: 일기, 자료, 단말기, 기억 조립, 뒷문, 엔딩, 메뉴.
+   N1Screens — 화면 내용: 일기, 자료, 단말기, 이름 말하기, 한영사전, 뒷문, 엔딩, 메뉴.
    ui.js 의 종이 패널 위에 올라간다. 규칙은 모델(M)에 묻고, 결과만 보여 준다.
    ========================================================================== */
 (function (root) {
@@ -169,7 +169,7 @@
       return crt;
     }
 
-    /* 정답 입력 단말: 교탁의 컴퓨터와 퍼즐 자리(명단·테이프)가 같은 것을 쓴다.
+    /* 정답 입력 단말: 교탁의 컴퓨터가 쓴다(현장 패널에는 정답 키패드가 없다).
        right: 통과하면 이 칸이 '암호 해제' 패널로 바뀐다. sheetApi: 패널 정리용 */
     function answerCRT(c, right, sheetApi) {
       var crt = makeCRT({ label: "SCHOLARSHIP TERMINAL — CHAPTER " + c.n, rule: "숫자 또는 영어 · 대소문자 무관 · 띄어쓰기 없음", mode: (c.n === 1 || c.n === 8) ? "number" : "alpha",
@@ -191,7 +191,7 @@
         } });
       return crt;
     }
-    /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
+    /* 단말기 옆 탭의 자료. 2장: 설명판·종이 한 장 / 4장: 적어 둔 신호 / 7장: 쪽지 메모. 나머지는 data.js 의 TERMINAL_AID */
     var AID = { 2: [{ kind: "sci", title: "수학자·과학자 자료" }, { kind: "frames", title: "종이 한 장" }], 4: { kind: "morseLog", title: "신호 기록" }, 7: { kind: "words", title: "쪽지 메모" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
