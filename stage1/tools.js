@@ -1,5 +1,6 @@
 /* ============================================================================
    N1Tools — 5~8장 자료에 붙는 "연필 도구". 퍼즐 논리는 그대로이고, 손으로 적어 가며 풀 수 있게 돕는다.
+   · 4장 신호   : 별빛 깜빡임을 점·선·쉼으로 적는 기록장, 그리고 해독표
    · 5장 지도   : 빈 칸에 알파벳을 적고, 안내 문장을 따라가 본다(출발 칸은 내가 적은 글자에서 찾는다)
    · 6장 영상   : 낡은 TV 화면에서 영상을 틀고, 암호 글자를 눌러 지우거나 글자를 적어 한꺼번에 지운다
    · 7장 쪽지   : 붉은 낱말마다 사전에서 찾은 영어 첫 뜻을 적으면 머리글자가 모인다
@@ -16,6 +17,34 @@
 
     function saved(key) { return M.pz(key) || {}; }
     function debounce(fn, ms) { var t = 0; return function () { var a = arguments; clearTimeout(t); t = setTimeout(function () { fn.apply(null, a); }, ms); }; }
+
+    /* ───────── 4장: 신호 기록장과 해독표 ─────────
+       기록장은 본 깜빡임을 점·선·쉼으로 적어 둘 뿐이다(풀이하지 않는다). 해독표는 교실 벽에 붙은 것과 같다. */
+    /* pad: ".-/" 로 이뤄진 문자열 → 점(●)·선(▬)·쉼(｜) 조각들 */
+    T.padView = function (pad) {
+      var out = el("div", "pad-seq");
+      String(pad || "").split("").forEach(function (ch) {
+        if (ch === ".") out.appendChild(el("i", "mz dot")); else if (ch === "-") out.appendChild(el("i", "mz dash")); else if (ch === "/") out.appendChild(el("i", "mz gap"));
+      });
+      return out;
+    };
+    T.morseChart = function (host) {
+      var Pz = root.N1Puz, grid = el("div", "morse-chart");
+      Object.keys(Pz.MORSE).forEach(function (L) {
+        var cell = el("div", "mc-cell"), code = el("span", "mc-code");
+        Pz.MORSE[L].split("").forEach(function (m) { code.appendChild(el("i", "mz " + (m === "-" ? "dash" : "dot"))); });
+        cell.appendChild(el("b", null, L)); cell.appendChild(code); grid.appendChild(cell);
+      });
+      host.appendChild(grid);
+      host.appendChild(el("p", "mini", "점(●)은 짧은 깜빡임, 선(▬)은 그 세 배 긴 깜빡임이다. 한 글자 안에서는 짧게 쉬고, 글자와 글자 사이는 더 길게, 낱말과 낱말 사이는 그보다 더 길게 쉰다."));
+    };
+    T.morseLog = function (host) {
+      var st = saved("c4"), pad = String(st.pad || "");
+      host.appendChild(el("h4", null, "기록장에 적어 둔 신호"));
+      if (!pad) { host.appendChild(el("p", "mini", "아직 적은 것이 없다. 왼쪽 창가 AV 카트의 테이프를 돌려 보자.")); return; }
+      var box = el("div", "pad-out"); box.appendChild(T.padView(pad)); host.appendChild(box);
+      host.appendChild(el("p", "mini", "카트 옆 벽의 해독표로 글자를 읽어, 답을 오른쪽에 입력한다."));
+    };
 
     /* ───────── 5장: 지도 메모 ───────── */
     T.map = function (host) {

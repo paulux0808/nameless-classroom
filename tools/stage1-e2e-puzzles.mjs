@@ -185,20 +185,58 @@ try {
   check(await until(() => __n1.M.S.phase === "search", null, 30000), "F. 아홉 자리 종목의 ‘나’의 자리를 답하면 탐색 단계");
   await page.waitForTimeout(1200); await page.click(".sheet-foot .btn.primary, .term-right .btn.primary"); await page.waitForTimeout(500);
 
-  /* G) 4장 AV 카트 VHS */
+  /* G) 4장 AV 카트 VHS: 별의 깜빡임(모스 부호)을 되감으며 기록장에 적고, 벽의 해독표로 읽어 컴퓨터에 답한다 */
+  await setState(4, "read", [1, 2, 3]);
+  check(await ev(() => __n1.L.obj.morseCard.visible && __n1.W.active.includes(__n1.L.hotMorse)), "G. 4장이 시작되면 카트 옆 벽에 해독표가 붙는다");
+  check((await ev(() => __n1.W.computerMode())) === "input" && (await ev(() => __n1.W.tvOn())), "G. 4장은 TV 가 켜지고 답을 넣을 컴퓨터도 켜져 있다");
+  await setState(3, "read", [1, 2]);
+  check(await ev(() => !__n1.L.obj.morseCard.visible && !__n1.W.active.includes(__n1.L.hotMorse)), "G. 3장까지는 해독표가 없다");
   await setState(4, "read", [1, 2, 3]);
   await clickHot("tv", [-3.0, 0.0, Math.atan2(-4.45 + 3.0, -1.85 - 0.0), -0.1]); await page.waitForTimeout(800);
-  check(await sheetOpen() && (await page.$$(".vb")).length === 3, "G. AV 카트를 클릭하면 VCR 패널(되감기·재생·정지)이 열린다");
+  check(await sheetOpen() && (await page.$$(".vb")).length === 5 && (await page.$$(".pad-keys .key")).length === 5, "G. AV 카트를 클릭하면 VCR 패널(되감기·재생·정지·속도·소리)과 기록장이 열린다");
+  check((await page.$$(".term-right .crt")).length === 0, "G. 테이프 패널에는 정답 키패드가 없다(기록만 한다)");
   const pos0 = await page.$eval(".jog", (e) => +e.value);
   await page.$eval(".jog", (e) => { e.value = 700; e.dispatchEvent(new Event("input", { bubbles: true })); }); await page.waitForTimeout(500);
   check(pos0 === 0 && (await page.$eval(".jog", (e) => +e.value)) === 700, "G. 테이프는 끝(0)에서 시작하고 조그 바로 위치를 옮길 수 있다");
+  await page.$eval(".jog", (e) => { e.value = 0; e.dispatchEvent(new Event("input", { bubbles: true })); });
+  await page.click('.vb:has-text("속도")'); await page.waitForTimeout(150);
+  check((await page.$eval(".vb:nth-child(4)", (e) => e.textContent)).includes("½"), "G. 속도 단추로 느리게(½) 볼 수 있다");
+  await page.click('.vb:has-text("속도")'); await page.click('.vb:has-text("속도")');
+  await page.click('.vb:has-text("되감기")'); await page.waitForTimeout(2500);
+  check((await page.$eval(".jog", (e) => +e.value)) > 0, "G. ‘되감기’를 누르면 테이프가 처음 쪽으로 감기며 화면이 흐른다");
+  /* 별빛: 깜빡임이 켜진 위치에서는 한 점이 환해지고, 꺼진 위치에서는 어둡다 */
+  await page.click('.vb:has-text("정지")'); await page.waitForTimeout(200);
+  const spotOn = await ev(() => { const sg = N1Puz.tapeSignal(), x = sg.segs[0]; return Math.round(((x.a + x.b) / 2 / sg.len) * 1000); });
+  const bright = async (v) => { await page.$eval(".jog", (e, v) => { e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }, v); await page.waitForTimeout(700); return page.evaluate(() => { const c = document.querySelector(".tv canvas"), d = c.getContext("2d").getImageData(318, 142, 4, 4).data; return (d[0] + d[1] + d[2]) / 3; }); };
+  const bOn = await bright(spotOn), bOff = await bright(0);
+  check(bOn > 200 && bOff < 170 && bOn > bOff + 40, `G. 별빛은 깜빡임이 켜진 위치(${spotOn})에서 환하고 꺼진 위치에서 어둡다 (${bOn.toFixed(0)} / ${bOff.toFixed(0)})`);
   await shot("08-tape");
-  await page.click('.vb:has-text("되감기")'); await page.waitForTimeout(1500);
-  check((await page.$eval(".jog", (e) => +e.value)) > 700, "G. ‘되감기’를 누르면 테이프가 처음 쪽으로 감긴다");
-  await page.click('.vb:has-text("정지")');
+  /* 기록장: 이상적인 관찰자가 되감기로 본 부호를 그대로 키보드로 적는다. 맞는지는 알려 주지 않는다 */
+  const seen = await ev(() => N1Puz.observe("rewind")), seenBack = await ev(() => N1Puz.observe("play"));
+  const typed = seen.split(" ").map((t) => (t === "//" ? "//" : t === "/" ? "/" : t)).join("");
+  for (const ch of typed) await page.keyboard.press(ch === "." ? "Period" : ch === "-" ? "Minus" : "Slash");
+  await page.waitForTimeout(500);
+  const padSaved = await ev(() => (__n1.M.pz("c4") || {}).pad || "");
+  check(padSaved === typed, "G. 키보드(. - /)로 적은 부호가 기록장에 저장된다 (" + padSaved.length + "자)");
+  check((await page.$$(".pad-out .mz.dot, .pad-out .mz.dash")).length === typed.replace(/\//g, "").length && (await page.$$(".pad-out .mz.gap")).length === (typed.match(/\//g) || []).length, "G. 기록장에 점·선·쉼이 그려진다");
+  check(await ev(() => __n1.M.S.phase) === "read" && (await page.$$(".crt-cue, .term-right .btn.primary")).length === 0, "G. 기록장은 맞는지 알려 주지 않는다(판정은 컴퓨터에서만)");
+  check(typed.length > 20 && seen !== seenBack, "G. 되감기로 본 부호와 재생으로 본 부호가 다르다");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(500);
+  check((await ev(() => (__n1.M.pz("c4") || {}).pad)) === typed, "G. 패널을 닫아도 기록이 남는다");
+  /* 해독표(벽) → 컴퓨터: 기록한 신호를 보며 답한다 */
+  await clickHot("refP:morseChart", [-3.0, -1.0, Math.atan2(-1.99, -1.95), -0.4]); await page.waitForTimeout(800);
+  check(await sheetOpen() && (await page.$$(".mc-cell")).length === 26, "G. 벽의 해독표를 누르면 모스 부호표(26글자)가 열린다");
+  await shot("08-morse-chart");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  await clickHot("computer", [0.15, -1.15, Math.PI, -0.42]); await page.waitForTimeout(800);
+  check(await sheetOpen() && (await page.$$(".tab")).length === 2, "G. 컴퓨터 패널에 ‘일기’와 ‘신호 기록’ 탭이 있다");
+  await page.click(".tab:nth-child(2)"); await page.waitForTimeout(300);
+  check((await page.$$(".tabpane:not([hidden]) .pad-out .mz")).length > 10, "G. ‘신호 기록’ 탭에서 적어 둔 부호를 보며 답한다");
+  await page.keyboard.type("ZZZZ"); await page.keyboard.press("Enter"); await page.waitForTimeout(300);
+  check(await ev(() => __n1.M.S.phase) === "read", "G. 틀린 낱말은 통과하지 못한다");
   for (const ch of answerOf(4).toUpperCase()) await page.click(`.key:text-is("${ch}")`);
   await page.click(".key.enter");
-  check(await until(() => __n1.M.S.phase === "search", null, 30000), "G. 튀어나온 글자를 읽어 답하면 탐색 단계");
+  check(await until(() => __n1.M.S.phase === "search", null, 30000), "G. 해독한 낱말을 컴퓨터에 답하면 탐색 단계");
   await page.waitForTimeout(1500); await page.click(".sheet-foot .btn.primary, .term-right .btn.primary"); await page.waitForTimeout(500);
 
   /* H) 5장 지도 메모 */
@@ -268,7 +306,7 @@ try {
   const powerAt = async (ch, phase) => { await setState(ch, phase, range(ch - 1)); return ev(() => ({ pc: __n1.W.computerMode(), tv: __n1.W.tvOn(), dormant: !!__n1.L.hotById.computer.userData.dormant, name: __n1.L.hotById.computer.userData.hot.name })); };
   const pcOn = [], tvOnList = [];
   for (let ch = 1; ch <= 8; ch++) for (const phase of ["read", "search"]) { const r = await powerAt(ch, phase); if (r.pc === "input") pcOn.push(`${ch}${phase}`); if (r.tv) tvOnList.push(`${ch}${phase}`); }
-  check(pcOn.join(",") === "5read,6read,7read,8read", "N. 컴퓨터는 5~8장의 답을 넣는 동안에만 켜진다 (" + pcOn.join(",") + ")");
+  check(pcOn.join(",") === "4read,5read,6read,7read,8read", "N. 컴퓨터는 4~8장의 답을 넣는 동안에만 켜진다 (" + pcOn.join(",") + ")");
   check(tvOnList.join(",") === "4read,6read", "N. TV 는 4장(테이프)·6장(영상)을 푸는 동안에만 켜진다 (" + tvOnList.join(",") + ")");
   await ev(() => { __n1.M.S.tower = []; __n1.M.S.stack = null; });
   await setState(9, "read", range(8));

@@ -107,7 +107,7 @@
   var TW = N1Tower.create({ ui: UI, model: M, data: D, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
-  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); if (kind === "change" && World && World.syncDevices(M.S, true) && Ctl) Ctl.hover = null; });   /* 컴퓨터·TV 는 필요할 때 켜지고 꺼진다 */
+  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); if (kind === "change" && World) { var dv = World.syncDevices(M.S, true), pr = World.syncProps(M.S, true); if ((dv || pr) && Ctl) Ctl.hover = null; } });   /* 컴퓨터·TV 는 필요할 때 켜지고 꺼지고, 4장에는 해독표가 붙는다 */
 
   /* ── 해상도·화각 ── */
   function fovFor(aspect) {
@@ -170,7 +170,7 @@
     UI.setLoading(0.8, "마무리");
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
-    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board, ob.tower]
+    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board, ob.tower, ob.morseCard]
       .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }), Object.keys(Lay.mem).map(function (n) { return Lay.mem[n]; }));
     /* 카툰: 잉크 윤곽선. 합치기 전에 ① 히트박스와 물체의 짝을 정하고 ② 붙박이 소품의 껍질을 만든다(합쳐진 뒤엔 메시가 커서 나눌 수 없다) */
     var hullInfo = null;
@@ -188,6 +188,7 @@
       [ob.teacher, ob.clock].forEach(function (d) { if (d) K.outline.attach(d, { mode: "parent" }); });
       [ob.door].concat(Lay.frameOrder.map(function (id) { return Lay.frames[id]; })).forEach(function (d) { if (d) K.outline.attach(d); });
       Object.keys(Lay.mem).forEach(function (n) { K.outline.attach(Lay.mem[n], { mode: "rigid" }); });
+      if (ob.morseCard) K.outline.attach(ob.morseCard, { mode: "rigid" });
       if (ob.tower) K.outline.attach(ob.tower, { mode: "rigid" });                 /* 받침대. 블록은 쌓일 때 각자 붙인다(props/tower.js) */
       mark("outline");
     }

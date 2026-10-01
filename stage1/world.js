@@ -242,6 +242,20 @@
       return changed;
     };
 
+    /* ── 장에 따라 나타나는 소품: 4장이 시작되면 카트 위 벽에 해독표가 붙는다 ── */
+    var cardOn = null;
+    W.syncProps = function (S, animate) {
+      var card = L.obj.morseCard; if (!card) return false;
+      var on = S.ch >= 4 || !!S.done || !!S.exitReady;
+      if (on === cardOn) return false;
+      cardOn = on; card.visible = on; setHot(L.hotMorse, on);
+      if (on && animate) {
+        card.scale.setScalar(0.01); A.tween({ dur: 0.6, ease: A.ease.outBack, update: function (k) { card.scale.setScalar(Math.max(0.01, k)); }, done: function () { card.scale.setScalar(1); } });
+        var wp = new T.Vector3(); card.updateWorldMatrix(true, false); wp.setFromMatrixPosition(card.matrixWorld); burst(wp, 14, 0xfff0c8);
+      }
+      return true;
+    };
+
     /* ── 상태 일괄 반영 ── */
     W.applyState = function (S, instant) {
       for (var i = 1; i <= 8; i++) { restoreAway(i); W.hideLetter(i); clueHot(i, true); }
@@ -259,7 +273,7 @@
       W.setProgress(S.pieces.length / 8, true);
       W.refreshBoard(S);
       W.setExitGlow(S.done ? 0.6 : 0);
-      W.syncDevices(S, !instant);
+      W.syncDevices(S, !instant); cardOn = null; W.syncProps(S, false);
     };
     W.setDiaryOnDesk = function (v) {
       L.obj.diary1.visible = v; setHot(L.hotById.diary1obj, v);

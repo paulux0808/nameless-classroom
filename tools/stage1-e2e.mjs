@@ -86,9 +86,9 @@ try {
   for (let n = 1; n <= 8; n++) {
     const [spot, x, z, yaw, pitch, crouch] = STAND[n - 1];
     await ev(() => { __n1.C.crouch = false; __n1.C.eye = 1.6; __n1.C.setView(0.3, -1.6, Math.PI, -0.2); }); await page.waitForTimeout(250);
-    const numeric = n === 1 || n === 8, ans = answerOf(n), atPC = n >= 5;
+    const numeric = n === 1 || n === 8, ans = answerOf(n), atPC = n >= 4;
     if (atPC) {
-      /* 5~8장: 답을 컴퓨터에 넣는다. 이때만 컴퓨터가 켜져 있다 */
+      /* 4~8장: 답을 컴퓨터에 넣는다. 이때만 컴퓨터가 켜져 있다 */
       check((await ev(() => __n1.W.computerMode())) === "input" && !(await ev(() => __n1.L.hotById.computer.userData.dormant)), `챕터 ${n}: 답을 넣는 장이라 컴퓨터가 켜져 있다`);
       await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(500);
       /* 틀린 답 먼저, 그다음 정답 — 둘 다 물리 키보드로 */
@@ -97,7 +97,7 @@ try {
       for (const ch of ans) await page.keyboard.press((/\d/.test(ch) ? "Digit" : "Key") + ch.toUpperCase());
       await page.keyboard.press("Enter"); await page.waitForTimeout(400);
     } else {
-      /* 1~4장: 현장 퍼즐(도장·표식·명단·테이프)으로 푼다. 컴퓨터는 꺼져 있고 눌러도 열리지 않는다.
+      /* 1~3장: 현장 퍼즐(도장·표식·명단)으로 푼다. 컴퓨터는 꺼져 있고 눌러도 열리지 않는다.
          현장 조작 자체는 tools/stage1-e2e-puzzles.mjs 가 짚으니 여기서는 모델에 정규화된 답을 낸다 */
       check((await ev(() => __n1.W.computerMode())) === "off" && (await ev(() => __n1.L.hotById.computer.userData.dormant)), `챕터 ${n}: 현장 퍼즐 장이라 컴퓨터는 꺼져 있다`);
       await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(400);

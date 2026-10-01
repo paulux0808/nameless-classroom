@@ -108,35 +108,55 @@ test("3장: 아홉 자리가 정확히 맞는 종목은 하나뿐이고, 마지�
   assert.equal(by.soccer.slots.filter((s) => s.name).length, 9);
 });
 
-/* ── 4장 테이프 ── */
-test("4장: 테이프 글자는 정답과 같고 글자 순서대로 하나씩 튀어나온다", () => {
+/* ── 4장 신호 테이프(모스 부호) ── */
+test("4장: 테이프 낱말은 정답과 같고, 모스 표는 글자마다 다른 부호를 가진다", () => {
   assert.equal(Puz.TAPE_WORD.toLowerCase(), answerOf(4));
-  assert.deepEqual(Puz.tapeFrame(0).map((l) => l.phase), Array(7).fill("hidden"), "끝의 한 점: 아무 글자도 안 보인다");
-  assert.deepEqual(Puz.tapeFrame(1).map((l) => l.phase), Array(7).fill("landed"));
-  const firstSeen = Puz.TAPE_WORD.split("").map((_, i) => { for (let e = 0; e <= 1; e += 0.005) if (Puz.tapeFrame(e)[i].phase !== "hidden") return e; return 2; });
-  firstSeen.forEach((e, i) => { if (i) assert.ok(e > firstSeen[i - 1], `글자 ${i} 가 앞 글자보다 늦게 나온다`); });
-  const seenWord = firstSeen.map((e, i) => [e, Puz.TAPE_WORD[i]]).sort((a, b) => a[0] - b[0]).map((x) => x[1]).join("");
-  assert.equal(seenWord, Puz.TAPE_WORD, "나온 차례대로 읽으면 낱말");
+  const codes = Object.values(Puz.MORSE); assert.equal(codes.length, 26); assert.equal(new Set(codes).size, 26, "부호가 겹치지 않는다");
+  for (const ch of Puz.TAPE_WORD) assert.ok(Puz.morseOf(ch), ch + " 의 부호");
+  assert.equal(Puz.morseDecode("... --- ..."), "SOS", "표 자체 확인(공개된 국제 모스 부호)");
+  assert.equal(Puz.morseDecode(".-  /  -...  //  ..."), "AB S", "공백이 달라도 읽는다");
+  assert.equal(Puz.morseDecode("........"), "?", "모르는 부호는 물음표");
 });
 
-test("4장: 칸(왼쪽→오른쪽)으로 읽으면 뒤섞이지만 같은 글자들이다", () => {
-  assert.deepEqual([...Puz.TAPE_SLOT].sort(), [0, 1, 2, 3, 4, 5, 6]);
-  const row = Puz.tapeFrame(1).slice().sort((a, b) => a.slot - b.slot).map((l) => l.ch).join("");
-  assert.notEqual(row, Puz.TAPE_WORD); assert.notEqual(row, Puz.TAPE_WORD.split("").reverse().join(""));
-  assert.equal([...row].sort().join(""), [...Puz.TAPE_WORD].sort().join(""));
-  Puz.tapeFrame(1).forEach((l) => { const s = Puz.tapeSlotXY(l.slot); assert.ok(Math.abs(l.x - s[0]) < 1e-9 && Math.abs(l.y - s[1]) < 1e-9, "내려앉은 자리"); });
+test("4장: 별빛은 점 1칸·선 3칸·글자 안 1칸·글자 사이 3칸·낱말 사이 7칸으로 깜빡이고 앞뒤는 어둡다", () => {
+  const sg = Puz.tapeSignal(), U = Puz.TAPE_UNIT;
+  assert.equal(sg.segs.length, [...Puz.TAPE_WORD].reduce((n, ch) => n + Puz.morseOf(ch).length, 0), "깜빡임 수 = 부호 길이의 합");
+  sg.segs.forEach((x, i) => {
+    assert.ok(Math.abs((x.b - x.a) / U - (x.mark === "-" ? 3 : 1)) < 1e-9, `${i} 번째 길이`);
+    if (i) {
+      const gap = (x.a - sg.segs[i - 1].b) / U, same = x.letter === sg.segs[i - 1].letter;
+      assert.ok(Math.abs(gap - (same ? 1 : x.letter === Puz.TAPE_BREAK ? 7 : 3)) < 1e-9, `${i} 번째 앞 쉼 ${gap}`);
+    }
+  });
+  assert.equal(Puz.tapeLamp(0), false); assert.equal(Puz.tapeLamp(1), false);
+  assert.ok(Puz.tapeLength() > 15 && Puz.tapeLength() < 45, "전체 길이(초) " + Puz.tapeLength());
+  /* e 를 훑으며 켜진 구간을 세면 깜빡임 수와 같다 */
+  let on = 0, prev = false; for (let i = 0; i <= 4000; i++) { const l = Puz.tapeLamp(i / 4000); if (l && !prev) on++; prev = l; }
+  assert.equal(on, sg.segs.length);
 });
 
-test("4장: 시간표는 매끄럽고(점프 없음) 되감기 진행이 늘 때 내려앉은 글자가 줄지 않는다", () => {
-  let prev = Puz.tapeFrame(0), landed = 0;
-  for (let e = 0.005; e <= 1.0001; e += 0.005) {
-    const cur = Puz.tapeFrame(e), n = cur.filter((l) => l.phase === "landed").length;
-    assert.ok(n >= landed, "내려앉은 수가 줄지 않는다"); landed = n;
-    cur.forEach((l, i) => assert.ok(Math.hypot(l.x - prev[i].x, l.y - prev[i].y) < 0.12, `글자 ${i} 이 e=${e.toFixed(3)} 에서 튄다`));
-    prev = cur;
-  }
+test("4장: 화면을 보며 되감으면 낱말이 읽히고, 그냥 재생하면 시간이 거꾸로 흘러 뜻 없는 글자가 된다", () => {
+  const rew = Puz.morseDecode(Puz.observe("rewind")), play = Puz.morseDecode(Puz.observe("play"));
+  assert.equal(rew.replace(/ /g, "").toLowerCase(), answerOf(4));
+  assert.deepEqual(rew.split(" ").map((w) => w.length), [3, 4], "두 낱말(3+4)");
+  assert.ok(!play.includes("?"), "거꾸로 읽어도 부호는 모두 글자가 된다(그래서 더 그럴듯하다)");
+  assert.notEqual(play.replace(/ /g, "").toLowerCase(), answerOf(4));
+  /* 지름길 없음: 재생 결과를 통째로 뒤집거나 낱말 순서만 바꿔도 낱말이 되지 않는다 */
+  const flat = (t) => t.replace(/ /g, "").toLowerCase();
+  assert.notEqual(flat([...play].reverse().join("")), answerOf(4));
+  assert.notEqual(flat(play.split(" ").reverse().join(" ")), answerOf(4));
+  assert.notEqual(flat(play.split(" ").map((w) => [...w].reverse().join("")).join(" ")), answerOf(4));
+});
+
+test("4장: 사람이 적는 부호 표기는 관찰자와 같은 규칙(점·선·글자 사이·낱말 사이)으로 쓴다", () => {
+  const pad = Puz.observe("rewind");
+  assert.ok(/^[-./ ]+$/.test(pad), pad);
+  assert.equal(pad.split(" // ").length, 2);
+  assert.equal(pad.split(/ \/\/ | \/ /).length, 7, "글자 일곱");
+});
+
+test("4장: 점 크기는 끝에서 처음으로 갈수록 작아진다(한 점으로 모인다)", () => {
   assert.ok(Puz.tapePointSize(0) > Puz.tapePointSize(1) && Puz.tapePointSize(1) > 0);
-  assert.equal(Puz.tapeOrderFallen(), Puz.TAPE_WORD.split("").reverse().join(""), "재생하면 거꾸로 떨어진다");
 });
 
 test("기억 복원: 지워진 낱말은 일기의 검은 칸 수와 맞고, 정답과 같은 뜻의 한글이다", () => {
@@ -156,10 +176,10 @@ test("정답 새지 않음: puzzles.js 원문(봉인 제외)에 정답이 평문
   }
 });
 
-test("컴퓨터 전원: 1~4장은 꺼져 있고 5~8장은 답을 넣는 동안만 켜진다", () => {
+test("컴퓨터 전원: 1~3장은 꺼져 있고 4~8장은 답을 넣는 동안만 켜진다", () => {
   const st = (ch, phase, extra = {}) => Object.assign({ ch, phase, exitReady: false, done: false }, extra);
-  for (const ch of [1, 2, 3, 4]) for (const phase of ["read", "search"]) assert.equal(Puz.computerState(st(ch, phase)), "off", `${ch}장 ${phase}`);
-  for (const ch of [5, 6, 7, 8]) {
+  for (const ch of [1, 2, 3]) for (const phase of ["read", "search"]) assert.equal(Puz.computerState(st(ch, phase)), "off", `${ch}장 ${phase}`);
+  for (const ch of [4, 5, 6, 7, 8]) {
     assert.equal(Puz.computerState(st(ch, "read")), "input", `${ch}장 읽기`);
     assert.equal(Puz.computerState(st(ch, "search")), "off", `${ch}장 탐색(답을 낸 뒤에는 다시 꺼진다)`);
   }

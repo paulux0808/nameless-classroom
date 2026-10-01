@@ -68,7 +68,7 @@
     }
     /* kind: sci | sport | map | video | keyb | frames — 터미널 옆 탭과 자료 패널이 같은 함수를 쓴다 */
     function renderResource(kind, host) {
-      if (TL[kind]) { TL[kind](host); return; }                      /* 5~8장 연필 도구(tools.js) */
+      if (TL[kind] && kind !== "padView") { TL[kind](host); return; }   /* 4~8장 도구·자료(tools.js) */
       var list = el("div", "list");
       if (kind === "frames") { host.appendChild(symbolSheet()); return; }
       if (kind === "sci") { D.SCI.forEach(function (s) { detail(list, enLabel(s.name, s.en), sciHTML(s)); }); host.appendChild(list); return; }
@@ -84,9 +84,10 @@
       if (kind === "keyb") { detail(list, "근섬유 전기신호키보드 사용법", D.KEYB_HTML); host.appendChild(list); return; }
       host.appendChild(el("p", "mini", "이 장에는 별도의 인쇄 자료가 없습니다. 일기를 다시 읽어 보세요."));
     }
+    var REF_LOCAL = { morseChart: "모스 부호 해독표" };                    /* data.js 에 없는 새 자료의 이름 */
     SC.showRefs = function (kind) {
       var p = kind || D.PUZZLE_REF[M.chapter().puzzle];
-      UI.openSheet({ title: D.REF_TITLE[p] || "자료", sub: "교실에 비치된 인쇄물", build: function (b) { renderResource(p, b); } });
+      UI.openSheet({ title: REF_LOCAL[p] || D.REF_TITLE[p] || "자료", sub: "교실에 비치된 인쇄물", build: function (b) { renderResource(p, b); } });
     };
     SC.showSheet = function () { UI.openSheet({ title: "종이 한 장", sub: "기호가 그려진 종이", build: function (b) { renderResource("frames", b); } }); };
     SC.showSciNote = function (sc) {
@@ -172,7 +173,7 @@
       return crt;
     }
     /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
-    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" }, 7: { kind: "words", title: "쪽지 메모" } };
+    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" }, 4: { kind: "morseLog", title: "신호 기록" }, 7: { kind: "words", title: "쪽지 메모" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
       if (S.ch > 8) { SC.showName(); return; }
@@ -327,7 +328,7 @@
     SC.showIntro = function () { UI.flags.intro = true; doc.getElementById("intro").classList.remove("hidden"); SC.bindIntro(); UI.showHud(false); };
     SC.hideIntro = function () { UI.flags.intro = false; doc.getElementById("intro").classList.add("hidden"); };
 
-    SC.kit = { makeCRT: makeCRT, answerCRT: answerCRT, acceptedPanel: acceptedPanel, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
+    SC.kit = { padView: TL.padView, makeCRT: makeCRT, answerCRT: answerCRT, acceptedPanel: acceptedPanel, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
     return SC;
   }
   root.N1Screens = { create: create };

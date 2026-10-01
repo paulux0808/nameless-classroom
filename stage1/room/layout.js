@@ -190,6 +190,9 @@
     var spk = P.speaker(); place(spk, D.W / 2 - 0.0, 2.62, -3.3, -PI / 2); hot("decoy:speaker", "방송 스피커", 0.3, 0.25, 0.12, D.W / 2 - 0.06, 2.62, -3.3, -PI / 2);
     var th = P.thermometer(); place(th, D.W / 2 - 0.0, 1.55, 3.2, -PI / 2); hot("decoy:thermo", "온습도계", 0.16, 0.22, 0.06, D.W / 2 - 0.04, 1.55, 3.2, -PI / 2);
     var ns = P.noticeSheet(); place(ns, -D.W / 2 + 0.012, 1.7, -1.825, PI / 2); hot("decoy:notice", "안내문", 0.32, 0.44, 0.06, -D.W / 2 + 0.05, 1.7, -1.825, PI / 2);
+    /* 4장 해독표: 카트 옆 창 아래 벽(커튼에 가리지 않는 곳). 4장이 시작될 때 붙는다(처음엔 숨겨 둔다) */
+    var mcard = P.morseCard(); place(mcard, -D.W / 2 + 0.012, 0.76, -2.95, PI / 2); mcard.visible = false; L.obj.morseCard = mcard;
+    L.hotMorse = hot("refP:morseChart", "해독표", 0.32, 0.44, 0.06, -D.W / 2 + 0.05, 0.76, -2.95, PI / 2);
 
     /* ── 창(4) + 커튼(4) + 라디에이터 ── */
     R.WINDOWS.forEach(function (w, i) {

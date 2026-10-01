@@ -514,3 +514,24 @@ body.sheet-open #say{opacity:0!important}                                       
 @media(max-width:700px){.tw-layout{grid-template-columns:minmax(0,1fr)}.tw-note{max-height:34vh}}
 @media(max-height:520px){.tw-slot.empty,.tw-block{height:34px}.tw-label{height:26px;gap:6px;padding:0 8px 0 5px}.tw-label canvas{width:20px!important;height:20px!important}.tw-title{font-size:12.5px}.tw-year{font-size:13px}.tw-mv button{width:26px;height:26px}.tw-stack{gap:3px;padding:6px}.tw-layout{gap:12px}}
 @media(hover:none){.tw-block:not(.sel) .tw-mv{opacity:.5}}
+
+/* ───────────── 4장: 신호 기록장·해독표 ───────────── */
+.morse-right{display:flex;flex-direction:column;gap:12px;min-width:0}
+.morse-pad{padding:12px;border-radius:12px;background:linear-gradient(160deg,#d3cbb4,var(--beige) 40%,var(--beige-2));box-shadow:0 10px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(70,60,40,.3)}
+.morse-pad h4{margin:0 0 8px;font:800 12px var(--font-mono);letter-spacing:.18em;color:#5b4b2a}
+.pad-out{min-height:76px;max-height:36vh;overflow:auto;padding:10px 12px;border-radius:8px;background:#f8f4e6;box-shadow:inset 0 0 0 1px rgba(27,38,64,.22),inset 0 2px 6px rgba(60,40,10,.18);overscroll-behavior:contain}
+.pad-out.empty{display:flex;align-items:center;color:var(--ink-2);font-size:14px}
+.pad-seq{display:flex;flex-wrap:wrap;align-items:center;gap:9px 6px}
+.mz{display:inline-block;flex:none;height:10px;border-radius:5px;background:var(--ink)}
+.mz.dot{width:10px}.mz.dash{width:30px}
+.mz.gap{width:0;height:24px;margin:0 5px;border-radius:0;background:none;border-left:2px solid var(--red-2);opacity:.7}
+.pad-keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.pad-keys .key{min-height:46px;font:800 15px var(--font-ui)}
+.pad-keys .key.tool{font:700 13px var(--font-ui)}
+.morse-chart{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px 12px}
+.mc-cell{display:flex;align-items:center;gap:10px;padding:7px 11px;border-radius:7px;background:#f4efdf;box-shadow:inset 0 0 0 1px rgba(27,38,64,.15)}
+.mc-cell b{width:1.15em;font:800 20px var(--font-mono);color:var(--ink)}
+.mc-code{display:flex;align-items:center;gap:4px}
+.vb.ghost{background:linear-gradient(180deg,#6a7075,#4a4f54);color:#e8e8e2;box-shadow:0 3px 0 #1d1f21}
+.vb.ghost.on{background:linear-gradient(180deg,#f4d36a,#d9a92e);color:#1b1c1e;box-shadow:0 1px 0 #7a5716;transform:translateY(2px)}
+@media(max-height:460px){.pad-out{min-height:56px;max-height:30vh}.pad-keys .key{min-height:38px}.morse-pad{padding:9px}}
