@@ -262,9 +262,19 @@ try {
   check(blanks.length > 0 && (await page.$$(".mc")).length === D.rows * D.cols, `H. 지도에 적을 수 있는 빈 칸이 ${blanks.length}개 있다`);
   await blanks[0].fill("Q"); await page.waitForTimeout(700);
   check((await ev(() => ((__n1.M.pz("c5") || {}).cells || {}))) && Object.values(await ev(() => (__n1.M.pz("c5") || {}).cells || {})).includes("Q"), "H. 적은 글자가 저장된다");
-  await (await page.$$(".trace"))[0].click(); await page.waitForTimeout(900);
-  check(((await page.$$(".mc.hi")).length >= 1) || ((await page.$eval(".mapmsg", (e) => e.textContent.trim().length)) > 0), "H. ‘따라가기’를 누르면 칸이 차례로 강조되거나 안내가 나온다");
-  check((await page.$$(".trace")).length === D.routes, `H. 안내 문장마다 따라가기 단추가 있다 (${D.routes}개)`);
+  /* 경로를 대신 걸어 주는 ‘따라가기’는 없다. 안내 문장은 그대로 읽고, 칸에는 연필로 표시만 한다 */
+  check((await page.$$(".trace, .mapmsg")).length === 0, "H. 경로를 대신 걸어 주는 ‘따라가기’가 없다");
+  check((await page.$$(".maproutes li")).length === D.routes, `H. 안내 문장 ${D.routes}개는 그대로 읽는다`);
+  await page.click('.mapbar .btn:has-text("칸에 표시")'); await page.waitForTimeout(150);
+  const gridCells = await page.$$(".mapgrid .mc:not(.void)");
+  await gridCells[3].click(); await gridCells[8].click(); await page.waitForTimeout(700);
+  check((await page.$$(".mapgrid .mc.pen")).length === 2, "H. ‘칸에 표시’로 바꾸면 칸을 눌러 연필로 표시할 수 있다");
+  check((await ev(() => Object.keys((__n1.M.pz("c5") || {}).marks || {}).length)) === 2, "H. 표시가 저장된다");
+  await gridCells[3].click(); await page.waitForTimeout(300);
+  check((await page.$$(".mapgrid .mc.pen")).length === 1, "H. 표시한 칸을 다시 누르면 지워진다");
+  await page.click('.mapbar .btn:has-text("표시 지우기")'); await page.waitForTimeout(700);
+  check((await page.$$(".mapgrid .mc.pen")).length === 0 && (await ev(() => Object.keys((__n1.M.pz("c5") || {}).marks || {}).length)) === 0, "H. ‘표시 지우기’로 모두 지운다");
+  check((await ev(() => Object.values((__n1.M.pz("c5") || {}).cells || {}).includes("Q"))), "H. 표시를 지워도 적은 글자는 남는다");
   await shot("09-map");
   await page.keyboard.press("Escape"); await page.waitForTimeout(400);
 
@@ -289,10 +299,23 @@ try {
   const wn = await page.$$(".wnote");
   check(wn.length >= 5, `J. 붉은 낱말마다 적을 칸이 있다 (${wn.length}개)`);
   await wn[0].fill("apple"); await wn[1].fill("Zebra"); await page.waitForTimeout(700);
-  const strip = await page.$eval(".wstrip", (e) => e.textContent);
-  check(strip.includes("A") && strip.includes("Z"), "J. 적은 영어 뜻의 머리글자가 위쪽 줄에 모인다 (" + strip.trim() + ")");
+  check((await page.$$(".wstrip, .ini, .dict-link")).length === 0, "J. 머리글자를 대신 모아 주지도, 밖의 사전으로 보내지도 않는다");
   check((await ev(() => ((__n1.M.pz("c7") || {}).w || []).slice(0, 2).join("|"))) === "apple|Zebra", "J. 적은 낱말이 저장된다");
   await shot("11-words");
+  await page.keyboard.press("Escape"); await page.waitForTimeout(400);
+  /* 교탁 위 한영사전: 쪽지의 낱말을 하나씩 찾아 첫 뜻의 머리글자를 이으면 정답이다 */
+  await clickHot("dict", [0.15, -1.15, Math.PI, -0.42]); await page.waitForTimeout(800);
+  const nDict = await ev(() => N1Dict.count);
+  check(await sheetOpen() && (await page.$$(".dlist li")).length === nDict, `J. 교탁 위 한영사전을 누르면 낱말 ${nDict}개가 가나다순으로 열린다`);
+  await page.fill(".dsearch", "평화"); await page.waitForTimeout(200);
+  check((await page.$$(".dlist li:not([hidden])")).length === 1, "J. 낱말을 치면 그 낱말만 남는다");
+  await page.fill(".dsearch", "없는낱말"); await page.waitForTimeout(200);
+  check(await page.$eval(".dnone", (e) => !e.hidden), "J. 없는 낱말이면 ‘이 사전에 없는 낱말’이 나온다");
+  const reds = await ev(() => [...N1Data.DIARY_HTML.diary7.matchAll(/<span class="red">(.*?)<\/span>/g)].map((m) => m[1]));
+  let ini = "";
+  for (const w of reds) { await page.fill(".dsearch", w); await page.waitForTimeout(60); const first = await page.$eval(".dlist li:not([hidden]) .dmean span:first-child", (e) => e.textContent.replace(/^\d+/, "")); ini += first[0]; }
+  check(reds.length === 15 && ini.toLowerCase() === answerOf(7), "J. 사전에서 쪽지의 열다섯 낱말을 하나씩 찾아 첫 뜻의 머리글자를 이으면 정답이 된다");
+  await shot("11-dictionary");
   await page.keyboard.press("Escape"); await page.waitForTimeout(400);
 
   /* K) 8장 설명서: 글자별 움직임 횟수표 */
