@@ -41,8 +41,7 @@
     onVoice: function (text, mood) { var t = Lay && Lay.obj && Lay.obj.teacher; if (!t) return; if (text == null) t.userData.hush(); else t.userData.say(text, mood); },
     onAnswered: function (n) { Dir.solved(n, D.CH[n - 1].cue); },
     onWrong: function (n) { Dir.wrong(n); },
-    onMiss: function (n) { Dir.miss(n); },                                      /* 표식이 안 붙는 정도의 작은 실수: 세 번째마다만 말한다 */
-    onSticker: function (id, sym) { if (World) World.setFrameSticker(id, D.SYMBOL_SVG[sym], true); },
+    onFrameLift: function (id, on) { if (World) World.frameLift(id, on); },        /* 액자를 눌러 뒷면을 볼 때 벽에서 살짝 들린다 */
     /* 기억의 탑: 열 때·옮길 때·완성할 때·틀릴 때. 3D 탑은 모델의 배열을 따라 다시 쌓인다 */
     onTowerOpen: function (n) { Dir.towerOpen(n); },
     onTowerChange: function () { Dir.progress(); if (World) World.refreshTower(M.S, true); },

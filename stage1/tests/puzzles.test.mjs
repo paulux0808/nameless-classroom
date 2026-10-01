@@ -57,36 +57,57 @@ test("1장: dateParts 는 복원된 날짜를 글자 그대로 잇는다", () =>
   assert.equal(Puz.dateParts("").map((p) => p.text).join(""), "1년 월 일", "빈 답이면 빈칸이 비어 있다");
 });
 
-/* ── 2장 표식 카드 ── */
-test("2장: 표식 다섯 개는 정확히 다섯 액자에 맞고, 한 액자(표식 없음)가 남는다", () => {
-  assert.equal(Puz.SYMBOLS.length, 5);
-  const fits = Puz.SYMBOLS.map((sym) => D.SCI.filter((s) => Puz.stickerFits(D, s.id, sym)).map((s) => s.id));
-  fits.forEach((f, i) => assert.equal(f.length, 1, `${Puz.SYMBOLS[i]} 는 한 사람에게만 맞는다: ${f}`));
-  assert.equal(new Set(fits.flat()).size, 5, "서로 다른 다섯 사람");
-  const st = Puz.stickerState(D, {}); assert.equal(st.spare, "einstein"); assert.equal(st.done, false);
+/* ── 2장 액자 뒷면 ── */
+const owners = () => Object.fromEntries(Object.entries(D.SYM_OF).map(([id, sym]) => [sym, id]));
+test("2장: 종이의 기호 순서는 위에서 아래로 처음 나오는 순서이고 다섯 기호가 모두 나온다", () => {
+  const order = Puz.sheetOrder(D);
+  assert.deepEqual(order, ["apple", "compass", "sun", "pi", "sqrt"]);
+  assert.equal(new Set(order).size, 5);
+  assert.deepEqual(Object.keys(owners()).sort(), [...order].sort(), "기호마다 주인 액자가 하나씩 있다");
+  assert.equal(Puz.BACK_SPLIT.length, order.length);
 });
 
-test("2장: 붙이기 규칙 — 맞으면 붙고, 틀림·중복·이미 있음·없는 카드는 거절", () => {
-  let placed = {};
-  const tryPlace = (sym, id) => Puz.stickerPlace(D, placed, sym, id);
-  assert.deepEqual([tryPlace("apple", "gauss").ok, tryPlace("apple", "gauss").reason], [false, "wrong"]);
-  assert.deepEqual([tryPlace("nope", "gauss").ok, tryPlace("nope", "gauss").reason], [false, "no-such-card"]);
-  const r = tryPlace("apple", "newton"); assert.equal(r.ok, true); placed = r.placed;
-  assert.deepEqual(placed, { apple: "newton" });
-  assert.equal(tryPlace("apple", "newton").reason, "already");
-  assert.equal(tryPlace("sun", "newton").reason, "occupied");
-  assert.equal(Puz.stickerState(D, placed).correct, 1);
+test("2장: 설명판 본문만으로 기호의 주인이 하나로 정해진다(여섯째는 남는다) — 머리말(핵심 줄)을 지워도", () => {
+  const bodies = Object.fromEntries(D.SCI.map((s) => [s.id, s.body]));
+  /* 열쇠말이 본문에 나오는 사람들 */
+  const cands = Object.fromEntries(Object.entries(Puz.SYM_WORDS).map(([sym, words]) => [sym, D.SCI.filter((s) => words.some((w) => bodies[s.id].includes(w))).map((s) => s.id)]));
+  Object.entries(cands).forEach(([sym, ids]) => assert.ok(ids.length >= 1, `${sym} 의 후보가 본문에 있다`));
+  /* 기호 → 사람으로 가는 완전 짝짓기를 모두 센다: 정확히 하나이고, 그것이 SYM_OF 와 같다 */
+  const syms = Object.keys(cands), found = [];
+  (function walk(i, used, pick) {
+    if (i === syms.length) { found.push({ ...pick }); return; }
+    for (const id of cands[syms[i]]) if (!used.has(id)) { used.add(id); pick[syms[i]] = id; walk(i + 1, used, pick); used.delete(id); delete pick[syms[i]]; }
+  })(0, new Set(), {});
+  assert.equal(found.length, 1, "짝짓기 경우의 수: " + found.length + " " + JSON.stringify(cands));
+  assert.deepEqual(found[0], owners());
+  const spare = [...D.SCI.map((s) => s.id)].filter((id) => !Object.values(found[0]).includes(id));
+  assert.deepEqual([...spare], ["einstein"]);
+  /* 화면은 머리말 줄(핵심)을 보여 주지 않는다 */
+  assert.ok(!/s\.key\b/.test(readFileSync(new URL("../screens.js", import.meta.url), "utf8")), "설명판에 ‘핵심’ 줄을 싣지 않는다");
 });
 
-test("2장: 다섯 장을 모두 맞게 붙이면 끝나고, 남는 액자의 이름이 곧 정답이다", () => {
-  let placed = {};
-  for (const [sym, id] of [["apple", "newton"], ["pi", "archimedes"], ["sqrt", "abel"], ["sun", "galilei"], ["compass", "gauss"]]) {
-    const r = Puz.stickerPlace(D, placed, sym, id); assert.equal(r.ok, true, `${sym}→${id}`); placed = r.placed;
-  }
-  const st = Puz.stickerState(D, placed);
-  assert.equal(st.done, true); assert.equal(st.correct, 5); assert.equal(st.spare, answerOf(2));
-  const M = game(); M.S.ch = 2; assert.equal(M.answer(st.spare).ok, true, "남는 액자 이름이 2장 정답");
-  assert.ok(!st.usedFrames.includes(st.spare), "남는 액자에는 카드가 붙지 않는다");
+test("2장: 종이의 순서대로 주인 액자의 뒷면 글자를 이어 읽으면 정답이다", () => {
+  assert.equal(Puz.backReading(D).toLowerCase(), answerOf(2));
+  const chunks = Puz.sheetOrder(D).map((sym) => Puz.frameBack(D, owners()[sym]));
+  assert.deepEqual(chunks.map((c) => c.length), Puz.BACK_SPLIT);
+  /* 한 액자의 쪽지만 보아서는 정답이 아니다 */
+  D.SCI.forEach((s) => assert.notEqual(Puz.frameBack(D, s.id).toLowerCase(), answerOf(2)));
+});
+
+test("2장: 풀이에 지름길이 없다 — 뒷면을 다른 차례로 읽거나 기호 없는 액자를 끼우면 정답이 되지 않는다", () => {
+  const order = Puz.sheetOrder(D), own = owners(), ok = answerOf(2);
+  const read = (ids) => ids.map((id) => Puz.frameBack(D, id)).join("").toLowerCase();
+  const right = order.map((sym) => own[sym]);
+  assert.equal(read(right), ok);
+  /* 모든 차례(5! = 120)에서 정답이 되는 것은 종이의 순서 하나뿐(글자 조각 둘이 같아서 겹치는 차례는 같은 글이다) */
+  const perms = []; (function p(a, rest) { if (!rest.length) perms.push(a); rest.forEach((x, i) => p([...a, x], rest.filter((_, k) => k !== i))); })([], right);
+  const same = perms.filter((ids) => read(ids) === ok);
+  assert.ok(same.length >= 1 && same.length <= 4, "정답이 되는 차례: " + same.length);
+  const spareId = D.SCI.map((s) => s.id).find((id) => !D.SYM_OF[id]);
+  assert.notEqual(read([...right.slice(0, 4), spareId]), ok, "기호 없는 액자 쪽지를 끼우면 낱말이 되지 않는다");
+  assert.notEqual(Puz.frameBack(D, spareId), "", "기호 없는 액자에도 쪽지가 있다(비어 있어서 들통나지 않게)");
+  /* 뒷면 글자는 저장소에 평문 낱말로 없다 */
+  assert.ok(!readFileSync(new URL("../puzzles.js", import.meta.url), "utf8").toLowerCase().includes(ok), "정답 낱말이 평문으로 없다");
 });
 
 /* ── 3장 명단 ── */
@@ -96,16 +117,19 @@ test("3장: 명단은 일기 3편에 적힌 순서 그대로다", () => {
   assert.ok(text.indexOf("그리고 나", at[at.length - 1]) > 0); assert.equal(Puz.ROSTER.at(-1), "나"); assert.equal(Puz.ROSTER.length, 9);
 });
 
-test("3장: 아홉 자리가 정확히 맞는 종목은 하나뿐이고, 마지막 자리가 정답이다", () => {
-  const fits = D.SPORTS.map((s) => [s.id, Puz.rosterFit(s.roles)]);
-  const exact = fits.filter(([, f]) => f.exact);
-  assert.equal(exact.length, 1); assert.equal(exact[0][0], "rowing");
-  assert.ok(exact[0][1].me.role.toLowerCase().includes(answerOf(3)), exact[0][1].me.role);
-  assert.equal(exact[0][1].me.name, "나");
-  const by = Object.fromEntries(fits);
-  assert.equal(by.soccer.empty, 2); assert.equal(by.baseball.empty, 1, "야구는 지명타자까지 열 자리라 하나 남는다");
-  assert.equal(by.basketball.extra.length, 4); assert.equal(by.basketball.me, null);
-  assert.equal(by.soccer.slots.filter((s) => s.name).length, 9);
+test("3장: 포지션을 세어 아홉 개인 종목은 하나뿐이고, 아홉 번째 포지션이 정답이다 — ‘한 팀 인원’만 믿으면 틀린다", () => {
+  const nine = D.SPORTS.filter((s) => s.roles.length === Puz.ROSTER.length);
+  assert.equal(nine.length, 1); assert.equal(nine[0].id, "rowing");
+  assert.ok(nine[0].roles[Puz.ROSTER.length - 1].toLowerCase().includes(answerOf(3)), nine[0].roles.at(-1));
+  /* 함정: 인원 표기가 아홉인 종목이 둘이다(야구는 지명타자 때문에 포지션이 열 개) */
+  const byPlayers = [...D.SPORTS.filter((s) => s.players === Puz.ROSTER.length).map((s) => s.id)].sort();
+  assert.deepEqual(byPlayers, ["baseball", "rowing"]);
+  const wrongPick = D.SPORTS.find((s) => s.id === "baseball");
+  assert.ok(!wrongPick.roles[Puz.ROSTER.length - 1].toLowerCase().includes(answerOf(3)), "야구의 아홉 번째 포지션은 정답이 아니다");
+  /* 몸무게 단서: 조정 설명에 타수의 체중 규정이 있다 */
+  assert.ok(/체중/.test(nine[0].rule));
+  /* 화면은 이름을 자리에 앉혀 주지 않는다 */
+  assert.ok(!/rosterFit|\bseats?\b|verdict/.test(readFileSync(new URL("../stations.js", import.meta.url), "utf8")), "자동 앉히기·판정이 없다");
 });
 
 /* ── 4장 신호 테이프(모스 부호) ── */
@@ -176,10 +200,10 @@ test("정답 새지 않음: puzzles.js 원문(봉인 제외)에 정답이 평문
   }
 });
 
-test("컴퓨터 전원: 1~3장은 꺼져 있고 4~8장은 답을 넣는 동안만 켜진다", () => {
+test("컴퓨터 전원: 1장은 꺼져 있고(날짜 도장이 제출) 2~8장은 답을 넣는 동안만 켜진다", () => {
   const st = (ch, phase, extra = {}) => Object.assign({ ch, phase, exitReady: false, done: false }, extra);
-  for (const ch of [1, 2, 3]) for (const phase of ["read", "search"]) assert.equal(Puz.computerState(st(ch, phase)), "off", `${ch}장 ${phase}`);
-  for (const ch of [4, 5, 6, 7, 8]) {
+  for (const phase of ["read", "search"]) assert.equal(Puz.computerState(st(1, phase)), "off", `1장 ${phase}`);
+  for (const ch of [2, 3, 4, 5, 6, 7, 8]) {
     assert.equal(Puz.computerState(st(ch, "read")), "input", `${ch}장 읽기`);
     assert.equal(Puz.computerState(st(ch, "search")), "off", `${ch}장 탐색(답을 낸 뒤에는 다시 꺼진다)`);
   }

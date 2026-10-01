@@ -107,6 +107,16 @@
       fr.userData.setSignature(o.model.frameSignature(id));
     });
     function frameTarget(fr) { return -fr.userData.turns * PI / 2; }
+    /* 액자를 눌러 뒷면을 볼 때: 벽에서 살짝 들렸다가(on) 창을 닫으면 제자리로(off) */
+    W.frameLift = function (id, on) {
+      var fr = L.frames[id]; if (!fr) return;
+      var z0 = fr.userData.lift || 0, z1 = on ? 1 : 0; if (fr.userData.liftTw) fr.userData.liftTw.cancel();
+      if (!fr.userData.base) fr.userData.base = fr.position.clone();
+      var base = fr.userData.base;
+      fr.userData.liftTw = A.tween({ dur: on ? 0.35 : 0.3, ease: on ? A.ease.outBack : A.ease.inOutCubic, update: function (k) {
+        var v = K.lerp(z0, z1, k); fr.userData.lift = v; fr.position.set(base.x - 0.075 * v, base.y + 0.02 * v, base.z); fr.rotation.z = -0.045 * v;
+      }, done: function () { fr.userData.liftTw = null; } });
+    };
     W.setFrameRot = function (id, rot, instant) {
       var fr = L.frames[id]; if (!fr) return;
       var spin = fr.userData.spin;
@@ -262,13 +272,10 @@
       L.curtains[3].userData.setClosed(0); W.curtain = 0; setDarkRaw(0);
       S.pieces.forEach(function (n) { clueHot(n, false); applyAway(n, true); });
       if (S.revealed) { clueHot(S.revealed, false); applyAway(S.revealed, true); W.showLetter(S.revealed, false); }
-      frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); });
+      frameIds.forEach(function (id) { W.setFrameRot(id, o.model.frameRot(id), true); if (L.frames[id].userData.base) { L.frames[id].userData.lift = 0; L.frames[id].position.copy(L.frames[id].userData.base); L.frames[id].rotation.z = 0; } });
       W.setDiaryOnDesk(!(S.tookD1 || S.ch > 1));
       for (var mi = 1; mi <= 8; mi++) { if (S.pieces.indexOf(mi) >= 0) W.showMemory(mi, false); else W.hideMemory(mi); }
       W.refreshTower(S, false);
-      var pl = (o.model.pz && o.model.pz("c2") && o.model.pz("c2").placed) || {};
-      frameIds.forEach(function (id) { W.setFrameSticker(id, null); });
-      Object.keys(pl).forEach(function (sym) { W.setFrameSticker(pl[sym], D.SYMBOL_SVG[sym], false); });
       W.openDoor(S.done ? 1 : 0);
       W.setProgress(S.pieces.length / 8, true);
       W.refreshBoard(S);
@@ -328,13 +335,6 @@
       }
     };
     W.hideMemory = function (n) { var m = L.mem && L.mem[n]; if (!m) return; m.visible = false; setHot(L.hotById["decoy:mem" + n], false); if (n === 8) L.lampLight.intensity = 0; };
-    /* 2장 표식 카드: 액자에 스티커가 붙는다(튀어 오르며) */
-    W.setFrameSticker = function (id, svg, pop) {
-      var fr = L.frames[id]; if (!fr || !fr.userData.setSticker) return;
-      var st = fr.userData.setSticker(svg);
-      if (st && pop) { st.scale.setScalar(0.01); A.tween({ dur: 0.45, ease: A.ease.outBack, update: function (k) { st.scale.setScalar(Math.max(0.01, k)); } }); }
-    };
-
     /* ── 리빌 연출: 물건이 치워지고 편지가 나타난다 ── */
     W.reveal = function (n, done) {
       clueHot(n, false);

@@ -1,8 +1,8 @@
 /* ============================================================================
    N1Stations — 교실 곳곳의 "퍼즐 자리" 화면. 물건을 눌러 가까이 들여다보는 패널이다.
    · 1장 교탁의 날짜 도장 : 일기 빈칸과 같은 모양의 바퀴 다섯 개를 맞춰 찍는다
-   · 2장 액자 표식 붙이기 : 표식 카드를 알맞은 액자에 붙이고, 남는 액자를 고른다
-   · 3장 명단 클립보드   : 종목별 자리에 아홉 이름을 앉혀 보고, 정답은 그 자리에서 입력한다
+   · 2장 액자 뒷면       : 액자를 들어 뒷판의 글자 쪽지를 읽는다(어느 액자를 어떤 순서로 읽는지는 스스로 가린다)
+   · 3장 명단 클립보드   : 팀 명단을 읽는다(종목은 포지션을 세어 스스로 가린다)
    · 4장 AV 카트(VCR)     : 별의 깜빡임(모스 부호)을 보며 되감고 기록장에 적는다. 답은 교탁의 컴퓨터에 입력한다
    규칙(무엇이 정답인지)은 puzzles.js 와 모델(M.answer)이 정한다. 여기는 다루는 방식과 피드백만 있다.
    ========================================================================== */
@@ -94,107 +94,42 @@
       } });
     };
 
-    /* ───────── 2장: 액자 표식 붙이기 ───────── */
-    var FRAME_ORDER = ["newton", "archimedes", "abel", "einstein", "galilei", "gauss"];
-    ST.showStickers = function () {
-      var solved = M.isSolved(2), saved = M.pz("c2"), placed = (saved && saved.placed) || {}, sel = null;
-      function frameSci(id) { return D.SCI.filter(function (s) { return s.id === id; })[0]; }
-      UI.openSheet({ title: "액자에 표식 붙이기", sub: "CHAPTER 2 · 친구들이 붙인 별명", mode: "wide", cls: "sticker-sheet", build: function (b, foot, api) {
-        var root_ = el("div", "stk"), tray = el("div", "stk-tray"), grid = el("div", "stk-frames"), msg = el("p", "stk-msg");
-        var cards = {}, slots = {};
-        var side = el("div", "stk-side"); side.appendChild(el("p", "mini", "표식 카드를 고른 뒤, 그 표식이 어울리는 액자를 누르세요.")); side.appendChild(tray);
-        Puz.SYMBOLS.forEach(function (sym) {
-          var c = el("button", "card", D.SYMBOL_SVG[sym]); c.type = "button"; c.setAttribute("aria-label", "표식 카드");
-          c.onclick = function () { if (solved) return; sel = sel === sym ? null : sym; paint(); }; tray.appendChild(c); cards[sym] = c;
-        });
-        FRAME_ORDER.forEach(function (id) {
-          var sci = frameSci(id), f = el("button", "fr"); f.type = "button"; f.setAttribute("aria-label", sci.name + " 액자");
-          f.innerHTML = '<span class="pic"><img alt="" src="' + (A["portrait_" + id] || "") + '"></span><span class="nm">' + sci.name + '</span><span class="badge"></span>';
-          f.onclick = function () { pick(id); }; grid.appendChild(f); slots[id] = f;
-        });
-        root_.appendChild(side); root_.appendChild(grid); b.appendChild(root_); b.appendChild(msg);
-        var det = el("details", "item fold"); det.innerHTML = "<summary>액자 설명판 보기</summary>";
-        var list = el("div", "in"); D.SCI.forEach(function (s) { var d = el("details", "item"); d.innerHTML = "<summary>" + s.name + ' <span class="en">' + s.en + "</span></summary>"; d.appendChild(el("div", "in", SC.kit.sciHTML(s))); list.appendChild(d); });
-        det.appendChild(list); b.appendChild(det); b.appendChild(diaryFold(2));
-
-        function stateNow() { return Puz.stickerState(D, placed); }
-        function paint() {
-          var st = stateNow();
-          Puz.SYMBOLS.forEach(function (sym) { var c = cards[sym]; c.classList.toggle("sel", sel === sym); c.classList.toggle("used", !!placed[sym]); c.disabled = !!placed[sym] || solved; });
-          FRAME_ORDER.forEach(function (id) {
-            var f = slots[id], sym = Object.keys(placed).filter(function (k) { return placed[k] === id; })[0];
-            f.classList.toggle("ok", !!sym); f.classList.toggle("spare", st.done && id === st.spare && !solved); f.classList.toggle("won", solved && id === st.spare);
-            f.querySelector(".badge").innerHTML = sym ? D.SYMBOL_SVG[sym] : (solved && id === st.spare ? "★" : "");
-            f.disabled = solved || (!!sym) || (st.done ? id !== st.spare : false);
-          });
-          if (solved) msg.textContent = "남은 한 사람이 아이의 별명이었다. 지워졌던 이름이 일기에 돌아왔다.";
-          else if (st.done) msg.textContent = "표식이 없는 액자가 하나 남았다. 이 아이가 부끄러워하던 이름은 누구의 것일까?";
-          else msg.textContent = sel ? "이 표식은 누구에게 어울릴까?" : st.correct + " / " + st.total + " 장 붙였다.";
-          api.refresh();
-        }
-        function pick(id) {
-          var st = stateNow();
-          if (solved) return;
-          if (st.done) {                                                   /* 마지막 선택: 남은 액자가 별명의 주인 */
-            if (id !== st.spare) return;
-            var r = M.answer(id);
-            if (r.ok) {
-              solved = true; paint(); UI.toast("암호 해제 — 단서: “" + r.cue + "”", "good");
-              hooks.onAnswered && hooks.onAnswered(2); goButton(foot);
-            } else { hooks.onWrong && hooks.onWrong(2); shake(slots[id]); }
-            return;
-          }
-          if (!sel) { msg.textContent = "먼저 붙일 표식 카드를 고르세요."; shake(msg); return; }
-          var res = Puz.stickerPlace(D, placed, sel, id);
-          if (res.ok) {
-            placed = res.placed; M.pzSet("c2", { placed: placed }); hooks.onSticker && hooks.onSticker(id, sel); sel = null;
-            slots[id].classList.add("stuck"); setTimeout(function () { slots[id].classList.remove("stuck"); }, 500);
-          } else {
-            shake(slots[id]); UI.toast(res.reason === "occupied" ? "이 액자에는 이미 붙어 있습니다." : "붙지 않는다. 이 표식은 다른 사람의 것 같다.", "bad");
-            hooks.onMiss && hooks.onMiss(2);
-          }
-          paint();
-        }
-        function shake(node) { node.classList.remove("shake"); void node.offsetWidth; node.classList.add("shake"); }
-        paint(); if (solved) goButton(foot);
+    /* ───────── 2장: 액자 뒷면 ─────────
+       "액자를 더 자세히 보세요" — 액자를 눌러 벽에서 살짝 들면 뒷판에 글자 쪽지가 붙어 있다.
+       쪽지는 읽을 뿐이다. 어느 액자의 글자를 어떤 순서로 이어 읽는지는 종이 한 장과 설명판에서 스스로 가린다. */
+    ST.showFrameBack = function (id) {
+      var sci = D.SCI.filter(function (x) { return x.id === id; })[0]; if (!sci) return;
+      var chunk = Puz.frameBack(D, id);
+      hooks.onFrameLift && hooks.onFrameLift(id, true);
+      UI.openSheet({ title: "액자 뒷면", sub: sci.name + " · " + sci.en, mode: "center", cls: "frameback-sheet", build: function (b, foot, api) {
+        var back = el("div", "fb-back"), note = el("div", "fb-note"), tape = el("i", "fb-tape");
+        back.appendChild(el("i", "fb-wire")); back.appendChild(el("i", "fb-nail l")); back.appendChild(el("i", "fb-nail r"));
+        note.appendChild(tape); note.appendChild(el("b", "fb-chunk", chunk));
+        note.setAttribute("role", "img"); note.setAttribute("aria-label", "뒷판에 붙은 쪽지에 적힌 글자: " + chunk.split("").join(" "));
+        back.appendChild(note); b.appendChild(back);
+        b.appendChild(el("p", "mini", "액자를 벽에서 살짝 들어 뒷판을 보았다. 마스킹테이프로 쪽지가 붙어 있고, 굵은 글씨로 글자가 적혀 있다. 글씨는 아이의 것 같다."));
+        var det = el("details", "item fold"); det.innerHTML = "<summary>이 액자의 설명판 보기</summary>";
+        det.appendChild(el("div", "in", SC.kit.sciHTML(sci))); b.appendChild(det);
+        var sheetBtn = el("button", "btn", "종이 한 장 보기"); sheetBtn.type = "button"; sheetBtn.style.marginTop = "10px";
+        sheetBtn.onclick = function () { UI.closeSheet(true); setTimeout(SC.showSheet, 60); };
+        b.appendChild(sheetBtn); b.appendChild(diaryFold(2));
+        api.cleanup(function () { hooks.onFrameLift && hooks.onFrameLift(id, false); });
+        api.refresh();
       } });
     };
 
-    /* 작은 탭 묶음 */
-    function tabs(items, onPick) {
-      var bar = el("div", "tabs"), btns = [];
-      items.forEach(function (it, i) {
-        var t = el("button", "tab", it.label); t.type = "button"; t.setAttribute("role", "tab");
-        t.onclick = function () { pick(i); }; bar.appendChild(t); btns.push(t);
-      });
-      function pick(i) { btns.forEach(function (t, k) { t.setAttribute("aria-selected", k === i ? "true" : "false"); }); onPick(items[i], i); }
-      return { el: bar, pick: pick };
-    }
-
-    /* ───────── 3장: 명단 클립보드 ───────── */
+    /* ───────── 3장: 명단 클립보드 ─────────
+       일기 속 팀의 명단을 보여 줄 뿐이다. 이름을 자리에 앉혀 주지 않는다 — 어느 종목의 팀인지는 종목 자료의 포지션을 세어 스스로 가린다. */
     ST.showRoster = function () {
-      var c = D.CH[2], solved = M.isSolved(3);
-      UI.openSheet({ title: "명단 클립보드", sub: "CHAPTER 3 · 대학의 스포츠팀", mode: "wide", cls: "terminal roster-sheet", build: function (b, foot, api) {
-        var layout = el("div", "term-layout"), left = el("div", "term-left"), right = el("div", "term-right");
-        var paper = el("div", "roster-paper"); paper.innerHTML = "<h4>우리 팀</h4><ol>" + Puz.ROSTER.map(function (n, i) { return "<li" + (i === Puz.ROSTER.length - 1 ? ' class="me"' : "") + ">" + n + "</li>"; }).join("") + "</ol>";
-        var intro = el("p", "mini", "일기 속 팀의 이름을 적은 명단이다. 종목을 골라 이름을 차례로 자리에 앉혀 보세요."), pane = el("div", "seatpane");
-        function paint(sp) {
-          var fit = Puz.rosterFit(sp.roles), html = '<p class="rule"><b>' + sp.name + '</b> <span class="en">' + sp.en + "</span> · 한 팀 " + sp.players + "명<br>" + sp.rule + "</p>";
-          if (fit.extra.length) html += '<p class="verdict bad">자리가 없어 앉지 못한 사람: ' + fit.extra.join(", ") + " (" + fit.extra.length + "명)</p>";
-          else if (fit.empty) html += '<p class="verdict bad">자리가 ' + fit.empty + "개 남는다 — 아홉 명으로는 이 종목의 팀이 되지 않는다.</p>";
-          else html += '<p class="verdict good">자리가 딱 맞는다. 마지막 이름 ‘나’가 앉은 자리는 「' + fit.me.role + "」이다.</p>";
-          html += '<ol class="seats">';
-          fit.slots.forEach(function (st, i) { html += '<li class="' + (st.name ? "fill" : "empty") + (fit.exact && i === fit.slots.length - 1 ? " me" : "") + '"><span class="rl">' + st.role + '</span><span class="nm">' + (st.name || "빈 자리") + "</span></li>"; });
-          html += "</ol>";
-          pane.innerHTML = html; api.refresh();
-        }
-        var tb = tabs(D.SPORTS.map(function (sp) { return { label: sp.name, sp: sp }; }), function (it) { paint(it.sp); });
-        left.appendChild(paper); left.appendChild(intro); left.appendChild(tb.el); left.appendChild(pane);
-        var fold = diaryFold(3); left.appendChild(fold);
-        var crt = solved ? null : SC.kit.answerCRT(c, right, api);
-        if (solved) { right.appendChild(SC.kit.acceptedPanel(c)); goButton(foot); } else right.appendChild(crt.el);
-        layout.appendChild(left); layout.appendChild(right); b.appendChild(layout);
-        tb.pick(0); if (crt) crt.attach(api);
+      UI.openSheet({ title: "명단 클립보드", sub: "CHAPTER 3 · 대학의 스포츠팀", mode: "center", cls: "roster-sheet", build: function (b, foot, api) {
+        var paper = el("div", "roster-paper");
+        paper.innerHTML = "<h4>우리 팀</h4><ol>" + Puz.ROSTER.map(function (n, i) { return "<li" + (i === Puz.ROSTER.length - 1 ? ' class="me"' : "") + ">" + n + "</li>"; }).join("") + "</ol>";
+        b.appendChild(paper);
+        b.appendChild(el("p", "mini", "일기 속 팀의 이름을 적은 명단이다. 한 팀이 몇 명인지, 마지막 이름이 누구인지 살펴보자. 어느 종목의 팀인지는 운동경기 자료에서 찾는다. 답은 교탁의 컴퓨터에 입력한다."));
+        var det = el("details", "item fold"); det.innerHTML = "<summary>운동경기 자료 보기</summary>";
+        var list = el("div", "in"); D.SPORTS.forEach(function (sp) { var d = el("details", "item"); d.innerHTML = "<summary>" + sp.name + ' <span class="en">' + sp.en + "</span></summary>"; d.appendChild(el("div", "in", SC.kit.sportHTML(sp))); list.appendChild(d); });
+        det.appendChild(list); b.appendChild(det); b.appendChild(diaryFold(3));
+        api.refresh();
       } });
     };
 

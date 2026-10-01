@@ -43,7 +43,7 @@
       var d = el("details", "item"); d.innerHTML = "<summary>" + title + "</summary>"; d.appendChild(el("div", "in", html)); list.appendChild(d);
     }
     function sciHTML(s) {
-      return "<dl><dt>생몰</dt><dd>" + s.born + " ~ " + s.died + "</dd><dt>핵심</dt><dd>" + s.key + "</dd></dl><p>" + s.body + "</p>" +
+      return "<dl><dt>생몰</dt><dd>" + s.born + " ~ " + s.died + "</dd></dl><p>" + s.body + "</p>" +
         (s.fix ? '<p class="fixnote">※ ' + s.fix + "</p>" : "");
     }
     function sportHTML(s) {
@@ -58,13 +58,16 @@
       }
       mw.appendChild(mg); return mw;
     }
+    /* 종이 한 장: 기호 다섯 개가 순서대로 적혀 있다(위에서 아래로). 각 기호의 주인을 찾아 그 액자의 뒷면을 이 순서로 읽는다 */
     function symbolSheet() {
-      var g = el("div", "sgrid");
-      g.innerHTML = D.SHEET.map(function (t) {
-        function cell(x) { return '<div class="scell"><span style="transform:rotate(' + x[1] + 'deg)"><i class="mk"></i>' + D.SYMBOL_SVG[x[0]] + "</span></div>"; }
-        return '<div class="stile ' + t.dir + '">' + cell(t.a) + cell(t.b) + "</div>";
-      }).join("");
-      return g;
+      var wrap = el("div", "sheetnote"), list = el("ol", "symlist");
+      root.N1Puz.sheetOrder(D).forEach(function (sym) {
+        var li = el("li"); li.setAttribute("aria-label", D.SYM_KO[sym]);
+        li.appendChild(el("span", "sym", D.SYMBOL_SVG[sym])); li.appendChild(el("span", "blank")); list.appendChild(li);
+      });
+      wrap.appendChild(el("p", "hand", "기호 다섯 개. 주인을 찾아서, 그 뒤를 보세요. 순서대로요 ;)"));
+      wrap.appendChild(list);
+      return wrap;
     }
     /* kind: sci | sport | map | video | keyb | frames — 터미널 옆 탭과 자료 패널이 같은 함수를 쓴다 */
     function renderResource(kind, host) {
@@ -173,11 +176,11 @@
       return crt;
     }
     /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
-    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" }, 4: { kind: "morseLog", title: "신호 기록" }, 7: { kind: "words", title: "쪽지 메모" } };
+    var AID = { 2: [{ kind: "sci", title: "수학자·과학자 자료" }, { kind: "frames", title: "종이 한 장" }], 4: { kind: "morseLog", title: "신호 기록" }, 7: { kind: "words", title: "쪽지 메모" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
       if (S.ch > 8) { SC.showName(); return; }
-      var c = M.chapter(), spec = AID[c.n] || D.TERMINAL_AID[c.n] || { kind: null };
+      var c = M.chapter(), specs = [].concat(AID[c.n] || D.TERMINAL_AID[c.n] || []).filter(function (x) { return x && x.kind; });
       var head = { title: "장학금 단말기", sub: "CHAPTER " + c.n + " · " + c.title };
       if (S.phase === "search") {
         UI.openSheet({ title: head.title, sub: head.sub, build: function (b) { b.appendChild(acceptedPanel(c)); } });
@@ -193,7 +196,7 @@
           tabs.appendChild(t); return t;
         }
         addTab("일기", function (p) { p.appendChild(diaryArticle("diary" + c.n, c.n)); });
-        if (spec.kind) addTab(spec.title || "자료", function (p) { renderResource(spec.kind, p); });
+        specs.forEach(function (spec) { addTab(spec.title || "자료", function (p) { renderResource(spec.kind, p); }); });
         panes.forEach(function (p, i) { p.hidden = i !== 0; tabs.children[i].setAttribute("aria-selected", i === 0 ? "true" : "false"); });
         if (panes.length > 1) left.appendChild(tabs); else panes[0].style.borderTop = "0";
         panes.forEach(function (p) { left.appendChild(p); });

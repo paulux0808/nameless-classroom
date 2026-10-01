@@ -32,8 +32,8 @@ function newGame(store = memStore()) {
 
 test("퍼즐 내용(data.js)은 잠겨 있다 — 실수로 고치면 여기서 실패한다", () => {
   const sha = crypto.createHash("sha256").update(JSON.stringify(D)).digest("hex");
-  assert.equal(sha, "1223c07d50ecc6d3aa90e2c59f34194e15b08d0cef14bdd3ab908e8572c67052",
-    "일부러 내용을 고쳤다면 이 해시를 새 값으로 바꾼다");
+  assert.equal(sha, "295544cf663c5d2d4e3513a48177588fde8dd96105e4a912b0ce925784d9100f",
+    "일부러 내용을 고쳤다면 이 해시를 새 값으로 바꾼다(2장: 뉴턴 설명판에 사과 일화 한 문장을 더했다)");
   assert.equal(D.CH.length, 8);
   assert.equal(Object.keys(D.DIARY_HTML).length, 9);
 });

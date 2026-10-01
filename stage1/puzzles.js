@@ -2,8 +2,8 @@
    N1Puz — 현장 퍼즐의 순수 논리 (화면·three.js 무관, 테스트 대상)
    각 퍼즐은 "무엇을 정규화된 답 문자열로 바꿔 M.answer() 에 넘기는가"만 정한다.
    · 1장 날짜 도장 : 다섯 바퀴의 숫자 → 일기 빈칸과 같은 자리 수의 답
-   · 2장 표식 붙이기: 표식 카드를 액자에 붙이는 규칙, 남는 액자
-   · 3장 명단      : 종목별 자리에 아홉 이름을 순서대로 앉혀 보는 규칙
+   · 2장 액자 뒷면 : 종이의 기호 순서대로 주인 액자의 뒷면 글자를 이어 읽는다
+   · 3장 명단      : 팀 명단(아홉 이름). 종목은 포지션을 세어 스스로 가린다
    · 4장 테이프    : 별의 깜빡임(모스 부호). 되감으면 바른 차례로, 재생하면 거꾸로 흐른다
    정답 낱말은 평문으로 두지 않는다(U 봉인). data.js 의 내용은 여기서 바꾸지 않는다.
    ========================================================================== */
@@ -35,40 +35,39 @@
     return out;
   }
 
-  /* ── 2장: 표식 카드 ↔ 액자 ────────────────────────────────────────── */
-  var SYMBOLS = ["apple", "sun", "sqrt", "compass", "pi"];
-  /* 이 액자에 이 표식이 맞는가. data: N1Data */
-  function stickerFits(data, frameId, sym) { return !!(data && data.SYM_OF && data.SYM_OF[frameId] === sym); }
-  /* placed: { 표식: 액자 id } (맞게 붙은 것만 저장한다) → 진행 요약 */
-  function stickerState(data, placed) {
-    placed = placed || {};
-    var correct = 0;
-    SYMBOLS.forEach(function (sym) { if (placed[sym] && stickerFits(data, placed[sym], sym)) correct++; });
-    var spare = null;
-    (data.SCI || []).forEach(function (s) { if (!s.sym) spare = s.id; });
-    var used = {}; Object.keys(placed).forEach(function (sym) { used[placed[sym]] = 1; });
-    return { correct: correct, total: SYMBOLS.length, done: correct === SYMBOLS.length, spare: spare, usedFrames: Object.keys(used) };
+  /* ── 2장: 액자 뒷면 ───────────────────────────────────────────────────
+     아이는 "액자를 더 자세히 보세요" 라고 했다. 액자를 들여다보면 뒷판에 글자 쪽지가 붙어 있다.
+     종이 한 장에는 기호 다섯 개가 순서대로 적혀 있다. 각 기호의 주인(설명판 본문에서 찾는다) 액자의 뒷면 글자를
+     종이의 순서대로 이어 읽으면 낱말이 된다. 기호가 없는 여섯째 액자의 쪽지는 이어 읽는 글에 들어가지 않는다.
+     낱말은 봉인한다. 테스트가 설명판 본문에서 주인이 하나로 정해지는지, 이어 읽기가 정답과 같은지 지킨다. */
+  var BACK_WORD = U([2, 29, 47, 61, 47, 205, 220, 236], 71);
+  var BACK_SPLIT = [2, 1, 2, 2, 1];                  /* 종이의 기호 순서대로 뒷면 쪽지의 글자 수 */
+  var BACK_DECOY = U([80, 105], 29);                 /* 기호 없는 액자의 쪽지(이어 읽지 않는다) */
+  /* 종이에서 기호가 처음 나오는 순서(위에서 아래로, 타일 안에서는 왼쪽·위부터) */
+  function sheetOrder(data) {
+    var seen = {}, out = [];
+    ((data && data.SHEET) || []).forEach(function (t) { [t.a, t.b].forEach(function (c) { if (c && !seen[c[0]]) { seen[c[0]] = 1; out.push(c[0]); } }); });
+    return out;
   }
-  /* 카드를 액자에 붙여 본다. 맞으면 placed 를 새로 만들어 돌려준다 */
-  function stickerPlace(data, placed, sym, frameId) {
-    if (SYMBOLS.indexOf(sym) < 0) return { ok: false, reason: "no-such-card", placed: placed };
-    if (placed && placed[sym]) return { ok: false, reason: "already", placed: placed };
-    if (placed) for (var k in placed) if (placed[k] === frameId) return { ok: false, reason: "occupied", placed: placed };
-    if (!stickerFits(data, frameId, sym)) return { ok: false, reason: "wrong", placed: placed };
-    var next = {}; Object.keys(placed || {}).forEach(function (k) { next[k] = placed[k]; }); next[sym] = frameId;
-    return { ok: true, placed: next };
+  /* 액자 뒷면의 쪽지 글자 */
+  function frameBack(data, frameId) {
+    var sym = data && data.SYM_OF && data.SYM_OF[frameId], order = sheetOrder(data), i = order.indexOf(sym);
+    if (!sym || i < 0) return BACK_DECOY;
+    var from = 0; for (var k = 0; k < i; k++) from += BACK_SPLIT[k];
+    return BACK_WORD.substr(from, BACK_SPLIT[i]);
   }
+  /* 종이의 순서대로 주인 액자의 뒷면을 이어 읽은 글(풀이 검증용). 주인은 SYM_OF 로 정해져 있다 */
+  function backReading(data) {
+    var owner = {}; Object.keys(data.SYM_OF).forEach(function (id) { owner[data.SYM_OF[id]] = id; });
+    return sheetOrder(data).map(function (sym) { return frameBack(data, owner[sym]); }).join("");
+  }
+  /* 설명판 본문에서 기호의 주인을 찾는 열쇠말(풀이 검증용 — 화면은 쓰지 않는다) */
+  var SYM_WORDS = { apple: ["사과"], sun: ["태양"], sqrt: ["제곱근"], compass: ["컴퍼스"], pi: ["원주율", "π"] };
 
   /* ── 3장: 명단 ────────────────────────────────────────────────────── */
-  /* 일기 3편에 적힌 팀 명단(순서 그대로). tests/puzzles.test.mjs 가 일기 본문과 같은지 지킨다 */
+  /* 일기 3편에 적힌 팀 명단(순서 그대로). tests/puzzles.test.mjs 가 일기 본문과 같은지 지킨다.
+     클립보드는 명단을 보여 줄 뿐이다. 어느 종목인지는 종목 자료의 포지션을 세어 스스로 가린다(자리에 앉혀 주지 않는다). */
   var ROSTER = ["대니얼", "존", "드레이먼트", "케빈", "제임스", "크리스", "하워드", "앤써니", "나"];
-  /* roles: 종목의 자리 이름들, roster: 앉힐 이름들. 이름을 자리 순서대로 앉힌다 */
-  function rosterFit(roles, roster) {
-    roster = roster || ROSTER;
-    var slots = roles.map(function (role, i) { return { role: role, name: i < roster.length ? roster[i] : null }; });
-    var empty = Math.max(0, roles.length - roster.length), extra = roster.slice(roles.length), exact = empty === 0 && extra.length === 0;
-    return { slots: slots, empty: empty, extra: extra, exact: exact, me: exact ? slots[slots.length - 1] : null };
-  }
 
   /* ── 4장: 신호 테이프 ─────────────────────────────────────────────────
      4번 테이프에는 한 점으로 무너지는 별의 깜빡임이 녹화돼 있다. 깜빡임은 모스 부호다.
@@ -133,10 +132,10 @@
   }
 
   /* ── 장치 전원: 교탁 컴퓨터와 AV 카트 TV 는 쓸 때에만 켜진다 ─────────────────
-     1~3장은 현장(도장·표식·명단)에서 푼다. 4~8장은 답을 컴퓨터에 넣는다(4장의 테이프는 신호를 적을 뿐이다). 탐색·편지 단계에는 필요 없다.
+     1장은 날짜 도장(찍는 것이 곧 제출)이다. 2~8장은 현장에서 단서를 모아 답을 컴퓨터에 넣는다(액자·명단·테이프는 읽고 적을 뿐이다). 탐색·편지 단계에는 필요 없다.
      여덟 조각을 모으면 탑을 쌓는다(컴퓨터는 꺼져 있다). 탑이 맞게 완성되면 이름 입력에 켜지고,
      이름을 맞힌 뒤에는 엔딩을 다시 보는 화면("done")이 된다. ctx.stackSolved: 탑이 완성되었는가 */
-  var AT_COMPUTER = { 4: 1, 5: 1, 6: 1, 7: 1, 8: 1 };
+  var AT_COMPUTER = { 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1 };
   /* "off" 꺼짐(조사해도 반응이 없다) · "input" 답을 넣는 화면 · "done" 마친 뒤(엔딩 다시 보기) */
   function computerState(S, ctx) {
     if (!S) return "off";
@@ -155,8 +154,8 @@
   return {
     RESTORE: RESTORE,
     STAMP: STAMP, stampAnswer: stampAnswer, dateParts: dateParts,
-    SYMBOLS: SYMBOLS, stickerFits: stickerFits, stickerState: stickerState, stickerPlace: stickerPlace,
-    ROSTER: ROSTER, rosterFit: rosterFit,
+    BACK_SPLIT: BACK_SPLIT, sheetOrder: sheetOrder, frameBack: frameBack, backReading: backReading, SYM_WORDS: SYM_WORDS,
+    ROSTER: ROSTER,
     computerState: computerState, tvOn: tvOn,
     TAPE_WORD: TAPE_WORD, TAPE_BREAK: TAPE_BREAK, TAPE_POINT: TAPE_POINT, TAPE_UNIT: TAPE_UNIT, MORSE: MORSE, morseOf: morseOf, morseDecode: morseDecode,
     tapeSignal: signal, tapeLength: tapeLength, tapeLamp: tapeLamp, tapePointSize: tapePointSize, observe: observe

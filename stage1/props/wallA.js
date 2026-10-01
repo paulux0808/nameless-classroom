@@ -136,24 +136,6 @@
       bars.add(bb.build({ name: "frameBars" }));
     };
     g.userData.setSignature([1, 1, 1, 1]);
-    /* 2장 표식 카드: 붙이면 액자 왼쪽 아래에 스티커가 생긴다(액자와 함께 돈다). svg 는 표식 그림 문자열, null 이면 뗀다 */
-    var sticker = null;
-    g.userData.setSticker = function (svg) {
-      if (sticker) { spin.remove(sticker); if (sticker.material.map) sticker.material.map.dispose(); sticker.material.dispose(); sticker.geometry.dispose(); sticker = null; }
-      if (!svg) return null;
-      var cv = document.createElement("canvas"); cv.width = cv.height = 128; var cx = cv.getContext("2d");
-      var tex = new T.CanvasTexture(cv); tex.encoding = T.sRGBEncoding; tex.anisotropy = 4;
-      function paint(img) {
-        cx.clearRect(0, 0, 128, 128); cx.fillStyle = "#fbfaf3"; cx.fillRect(0, 0, 128, 128); cx.strokeStyle = "#1b2640"; cx.lineWidth = 7; cx.strokeRect(4, 4, 120, 120);
-        if (img) cx.drawImage(img, 24, 24, 80, 80); tex.needsUpdate = true;
-      }
-      paint(null);
-      var img = new Image(); img.onload = function () { paint(img); };
-      img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" '));
-      sticker = new T.Mesh(new T.PlaneGeometry(0.11, 0.11), K.std(0xffffff, 0.8, 0, { map: tex }));
-      sticker.position.set(-0.17, -0.245, 0.034); sticker.rotation.z = -0.14; sticker.renderOrder = 8; spin.add(sticker);
-      return sticker;
-    };
     return g;
   };
 
