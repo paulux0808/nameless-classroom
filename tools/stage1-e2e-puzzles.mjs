@@ -328,7 +328,8 @@ try {
 
   /* L) 저장: 도구에 적은 것과 힌트, 기억 소품은 새로고침 뒤에도 남는다 */
   const saved = JSON.parse(JSON.parse(await ev(() => { __n1.M.save(); return localStorage.getItem("nameless-classroom-v2") || "{}"; })).payload || "{}");   /* 저장은 { payload: "<상태 JSON>", checksum } 모양 */
-  check(["c2", "c5", "c6", "c7"].every((k) => saved.pz && saved.pz[k]) && saved.hints && saved.hints.c2 === 3, "L. 진행 저장(localStorage)에 퍼즐 메모(pz)와 힌트 기록이 함께 들어 있다");
+  /* 2장은 액자를 보기만 해서 남기는 메모가 없다. 기록장·메모가 있는 4·5·6·7장만 저장된다 */
+  check(["c4", "c5", "c6", "c7"].every((k) => saved.pz && saved.pz[k]) && !(saved.pz && saved.pz.c2) && saved.hints && saved.hints.c2 === 3, "L. 진행 저장(localStorage)에 퍼즐 메모(pz: 4~7장)와 힌트 기록이 함께 들어 있다");
 
   /* M) 기억 소품: 조각 수만큼 소품이 생긴다 */
   await setState(9, "read", [1, 2, 3, 4, 5, 6, 7, 8]);
