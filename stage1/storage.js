@@ -25,10 +25,19 @@
       stack: null, tower: [], revealed: 0, tookD1: false, exitReady: false, done: false,
       hints: {},   /* 감독교사에게 받은 힌트 단계 (범위 c1~c8·s1~s8·asm·name → 0~3) */
       pz: {},      /* 퍼즐별 진행(현장 상호작용의 중간 상태) */
-      said: {}     /* 한 번만 하는 대사를 이미 했는지 */
+      said: {},    /* 한 번만 하는 대사를 이미 했는지 */
+      log: { t: {} }   /* 장별 걸린 시간(초). 키 1~8 과 f(탑·이름). 엔딩에서 조용히 보여 준다 */
     };
   }
-  var HINT_KEY = /^(c[1-8]|s[1-8]|asm|name)$/;
+  var HINT_KEY = /^(c[1-8]|s[1-8]|asm|name)$/, LOG_KEY = /^([1-8]|f)$/;
+  /* 기록: 장별 걸린 시간. 모양이 틀린 값은 버린다 */
+  function cleanLog(l) {
+    var t = {};
+    if (l && typeof l === "object" && l.t && typeof l.t === "object") Object.keys(l.t).forEach(function (k) {
+      var v = l.t[k]; if (LOG_KEY.test(k) && typeof v === "number" && isFinite(v) && v >= 0) t[k] = Math.min(Math.floor(v), 7 * 86400);
+    });
+    return { t: t };
+  }
   function clone(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
   function checksum(text) {
     var h = 2166136261;
@@ -79,6 +88,7 @@
     state.hints = hints;
     if (!state.pz || typeof state.pz !== "object" || Array.isArray(state.pz)) state.pz = {};
     if (!state.said || typeof state.said !== "object" || Array.isArray(state.said)) state.said = {};
+    state.log = cleanLog(state.log);
     if (Array.isArray(state.pieces)) {
       var seen = {};
       state.pieces = state.pieces.filter(function (n) {

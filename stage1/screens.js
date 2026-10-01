@@ -24,10 +24,6 @@
     }
     function diaryArticle(key, n) {
       var a = el("article", "diary", D.DIARY_HTML[key]); restore(a, n);
-      if (n === 7) {
-        var link = el("a", "dict-link", "네이버 영어사전에서 단어 찾기 ↗");
-        link.href = "https://en.dict.naver.com/#/main"; link.target = "_blank"; link.rel = "noopener noreferrer"; a.appendChild(link);
-      }
       return a;
     }
     SC.showDiary = function (n, opt) {
@@ -91,6 +87,26 @@
     SC.showRefs = function (kind) {
       var p = kind || D.PUZZLE_REF[M.chapter().puzzle];
       UI.openSheet({ title: REF_LOCAL[p] || D.REF_TITLE[p] || "자료", sub: "교실에 비치된 인쇄물", build: function (b) { renderResource(p, b); } });
+    };
+    /* 교탁 위의 한영사전: 낱말을 찾아 영어 뜻을 읽는다(맨 앞의 뜻이 대표 뜻). 찾는 것도 고르는 것도 스스로 한다 */
+    SC.showDict = function () {
+      UI.openSheet({ title: "한영사전", sub: "교탁 위에 놓인 낡은 사전 · 가나다순", mode: "center", cls: "dict-sheet", build: function (b, foot, api) {
+        var q = el("input", "dsearch"); q.type = "search"; q.placeholder = "낱말 찾기 (예: 평화)"; q.autocomplete = "off"; q.spellcheck = false; q.setAttribute("aria-label", "사전에서 낱말 찾기");
+        var list = el("ol", "dlist"), none = el("p", "mini dnone", "이 사전에 없는 낱말이다."); none.hidden = true;
+        root.N1Dict.entries().forEach(function (e) {
+          var li = el("li"); li.dataset.k = e.ko.replace(/\s+/g, "");
+          li.appendChild(el("b", "dko", e.ko)); li.appendChild(el("i", "dpos", e.pos));
+          var m = el("span", "dmean"); e.en.forEach(function (t, i) { m.appendChild(el("span", null, "<em>" + (i + 1) + "</em>" + t)); }); li.appendChild(m); list.appendChild(li);
+        });
+        q.oninput = function () {
+          var k = q.value.replace(/\s+/g, ""), n = 0;
+          [].forEach.call(list.children, function (li) { var show = !k || li.dataset.k.indexOf(k) >= 0; li.hidden = !show; if (show) n++; });
+          none.hidden = n > 0; api.refresh();
+        };
+        b.appendChild(q); b.appendChild(el("p", "mini", "뜻은 많이 쓰이는 순서대로 적혀 있다. 맨 앞의 뜻이 그 낱말의 대표 뜻이다. 쪽지에 적힌 모양 그대로 실려 있다.")); b.appendChild(list); b.appendChild(none);
+        setTimeout(function () { try { q.focus({ preventScroll: true }); } catch (x) {} }, 80);
+        api.refresh();
+      } });
     };
     SC.showSheet = function () { UI.openSheet({ title: "종이 한 장", sub: "기호가 그려진 종이", build: function (b) { renderResource("frames", b); } }); };
     SC.showSciNote = function (sc) {
@@ -243,10 +259,22 @@
         crt.el.style.marginTop = "12px"; b.appendChild(crt.el); crt.attach(api);
       } });
     };
+    /* 내 기록: 장별 걸린 시간과 받은 힌트(조용히 보여 주는 자료) */
+    function fmtSec(s) { var m = Math.floor(s / 60); return m ? m + "분 " + (s % 60) + "초" : s + "초"; }
+    function recordTable() {
+      var rec = M.record(), d = el("details", "item fold record"), rows = rec.rows.map(function (r) {
+        return "<tr><th>" + (r.n > 8 ? "마지막" : r.n + "장") + "</th><td>" + r.title + "</td><td>" + fmtSec(r.sec) + "</td><td>" + (r.hints ? r.hints + "번" : "—") + "</td></tr>";
+      }).join("");
+      d.innerHTML = "<summary>내 기록 보기</summary><div class=\"in\"><table class=\"rec\"><thead><tr><th></th><th>이야기</th><th>걸린 시간</th><th>도움</th></tr></thead><tbody>" + rows +
+        "</tbody><tfoot><tr><th colspan=\"2\">모두</th><td>" + fmtSec(rec.total.sec) + "</td><td>" + (rec.total.hints ? rec.total.hints + "번" : "—") + "</td></tr></tfoot></table>" +
+        "<p class=\"mini\">‘도움’은 감독교사에게 힌트를 청한 횟수다. 정답 입력이 틀린 횟수는 세지 않는다.</p></div>";
+      return d;
+    }
     SC.showClear = function () {
       UI.openSheet({ title: "스테이지 완료", sub: "STEPHEN HAWKING · CLEAR", build: function (b, foot) {
         b.innerHTML = '<div class="clear-copy"><div class="stamp">STAGE CLEAR</div><h3>스티븐 호킹</h3><p>이 교실의 모든 기록을 확인하고 마지막 문까지 열었습니다.<br>영상을 다시 보거나 다음 스테이지로 이동할 수 있습니다.</p></div>' +
           '<p class="mini" style="text-align:center">스테이지 2 · 챕터 1로 이동합니다.</p>';
+        b.appendChild(recordTable());
         var stay = el("button", "btn", "교실에 남기"), rep = el("button", "btn", "영상 다시보기"), next = el("button", "btn primary", "다음 스테이지");
         [stay, rep, next].forEach(function (x) { x.type = "button"; foot.appendChild(x); });
         stay.onclick = function () { UI.closeSheet(); };

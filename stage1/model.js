@@ -149,6 +149,26 @@
       S.hints[scope] = tier; save(); emit("hint", { scope: scope, tier: tier });
       return { ok: true, scope: scope, tier: tier, text: text, first: first };
     };
+    /* ── 기록: 장별 걸린 시간과 받은 힌트. 엔딩에서 조용히 보여 준다(난이도를 가늠하는 자료) ──
+       tick(dt): 게임 화면이 돌아가는 동안 매 프레임 부른다. 쉬는 동안(시작 전·이름을 맞힌 뒤)에는 세지 않는다. */
+    var tickAcc = 0, tickN = 0;
+    M.tick = function (dt) {
+      if (!S.started || S.done || S.exitReady || !(dt > 0)) return;
+      tickAcc += dt; if (tickAcc < 1) return;
+      var sec = Math.floor(tickAcc); tickAcc -= sec;
+      if (!S.log || !S.log.t) S.log = { t: {} };
+      var key = S.ch > 8 ? "f" : String(S.ch);
+      S.log.t[key] = (S.log.t[key] || 0) + sec;
+      if (++tickN % 20 === 0) save();
+    };
+    M.record = function () {
+      var rows = [], total = { sec: 0, hints: 0 }, t = (S.log && S.log.t) || {};
+      for (var n = 1; n <= 9; n++) {
+        var key = n > 8 ? "f" : String(n), hints = n > 8 ? M.hintTier("asm") + M.hintTier("name") : M.hintTier("c" + n) + M.hintTier("s" + n), sec = t[key] || 0;
+        rows.push({ n: n, title: n > 8 ? "기억의 탑과 이름" : D.CH[n - 1].title, sec: sec, hints: hints }); total.sec += sec; total.hints += hints;
+      }
+      return { rows: rows, total: total };
+    };
     M.hintsUsed = function () { var n = 0; Object.keys(S.hints || {}).forEach(function (k) { n += S.hints[k]; }); return n; };
     /* 한 번만 하는 말: 이미 했으면 false, 처음이면 기록하고 true */
     M.sayOnce = function (key) { if (!S.said) S.said = {}; if (S.said[key]) return false; S.said[key] = 1; save(); return true; };

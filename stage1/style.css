@@ -153,8 +153,6 @@ body.touch #joy,body.touch #act,body.touch #crouch{display:grid}
 .diary .cosmo-sketch path.ink{stroke:var(--ink);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .diary .cosmo-sketch path.fine{stroke:var(--red);stroke-width:2.5;fill:none;stroke-dasharray:6,4}
 .diary .cosmo-sketch circle.ink{stroke:var(--ink);stroke-width:3;fill:none} .diary .cosmo-sketch circle.dot{fill:var(--red)}
-.dict-link{display:inline-block;margin-top:.4em;padding:9px 14px;border:2px solid var(--ink);border-radius:3px;color:var(--ink);font:700 14px var(--font-ui);text-decoration:none}
-.dict-link:hover{background:rgba(27,38,64,.07)}
 
 /* ───────────── 자료(복사물) ───────────── */
 .xerox{background:#fbfbf8;border:1px solid rgba(27,38,64,.16);border-radius:2px;padding:12px 14px;box-shadow:2px 3px 0 rgba(27,38,64,.07)}
@@ -407,7 +405,6 @@ body.sheet-open #say{opacity:0!important}                                       
 .stamp-btn{min-height:var(--tap);padding:0 34px;border:2px solid #7a5716;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,#f4d36a,#d9a92e);color:#2b1c05;font:900 17px var(--font-ui);letter-spacing:.2em;box-shadow:0 5px 0 #7a5716}
 .stamp-btn:hover{filter:brightness(1.05)} .stamp-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #7a5716} .stamp-btn:disabled{opacity:.5;transform:none;box-shadow:0 2px 0 #7a5716}
 .fold{margin-top:12px} .fold>summary{font-size:14px}
-@keyframes sparepulse{50%{box-shadow:0 5px 0 #5a3a18,0 0 0 6px rgba(239,196,60,.9)}}
 @media(max-height:460px){
   .stamp-paper{padding:14px 10px 12px;margin-bottom:6px} .stamp-msg{font-size:13px;margin:3px 0}
   .wheel .w-d{height:46px} .wheel button{min-height:30px}
@@ -429,8 +426,10 @@ body.sheet-open #say{opacity:0!important}                                       
 /* ───────────── 5~8장 연필 도구 ───────────── */
 .mc .mnote{width:100%;height:100%;min-height:34px;border:0;background:transparent;text-align:center;font:800 22px var(--font-mono);color:#1f4a8a;text-transform:uppercase;caret-color:var(--red);outline:none}
 .mc .mnote:focus{background:rgba(255,246,190,.55)} .mc.blank{color:inherit}
-.mc.hi{outline:3px solid var(--pencil);outline-offset:-3px;background-color:#fff3b8} .mc.hi-start{outline-color:#2a8a4a} .mc.hi-end{outline-color:var(--red);animation:sparepulse 1s ease-in-out 2}
-.maproutes .trace{margin-left:8px;min-height:26px;padding:0 10px;border:1px solid var(--ink);border-radius:3px;background:transparent;font:700 12px var(--font-ui);color:var(--ink)} .maproutes .trace:hover{background:rgba(27,38,64,.08)}
+.mc.pen{outline:3px solid var(--pencil);outline-offset:-3px;background-color:#fff3b8}
+.mapbar{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.mapbar .btn.on{background:var(--pencil);border-color:#7a5716;color:#2b1c05}
+.mapwrap.marking .mc{cursor:crosshair}.mapwrap.marking .mnote{pointer-events:none}
 .mapmsg{margin:8px 0 0;min-height:1.6em;font:600 14px/1.5 var(--font-ui);color:var(--red-2)}
 .cipherbox{margin-top:12px;padding:12px;border:1px solid rgba(27,38,64,.2);border-radius:4px;background:#fff}
 .cipherbox h4{margin:0 0 4px;font:800 14px var(--font-ui);color:var(--ink)}
@@ -440,12 +439,9 @@ body.sheet-open #say{opacity:0!important}                                       
 .cfield{width:100%;min-height:40px;padding:0 12px;border:2px solid var(--ink);border-radius:4px;font:700 16px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;background:#fffdf6}
 .cout{margin:8px 0 0;font:600 14px var(--font-ui);color:var(--ink-2)} .cout b{font:800 18px var(--font-mono);letter-spacing:.14em;color:var(--red-2)}
 .wordlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:5px}
-.wordlist li{display:grid;grid-template-columns:24px minmax(92px,1fr) minmax(0,1.3fr) 26px;align-items:center;gap:8px;padding:2px 0;font-size:14px}
+.wordlist li{display:grid;grid-template-columns:24px minmax(92px,1fr) minmax(0,1.3fr);align-items:center;gap:8px;padding:2px 0;font-size:14px}
 .wordlist .no{color:var(--ink-2);font:700 12px var(--font-mono);font-style:normal} .wordlist .kr{font-weight:700;color:var(--red-2)}
 .wnote{min-height:34px;padding:0 10px;border:1px solid rgba(27,38,64,.35);border-radius:3px;font:600 14px var(--font-ui);background:#fffdf6}
-.wordlist .ini{font:800 18px var(--font-mono);color:var(--ink);text-align:center}
-.wstrip{margin:10px 0 0;font:600 14px var(--font-ui);color:var(--ink-2)} .wstrip b{display:block;margin-top:2px;font:800 17px var(--font-mono);letter-spacing:.12em;color:var(--red-2);word-break:break-all}
-.dict-link{display:inline-block;margin:6px 0 2px}
 .keychart{margin-top:12px} .kc{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .kc .k{display:grid;place-items:center;padding:4px 0;border:1px solid rgba(27,38,64,.25);border-radius:3px;background:#fff;line-height:1.25}
 .kc .k b{font:800 15px var(--font-mono);color:var(--ink)} .kc .k i{font:700 12px var(--font-mono);font-style:normal;color:var(--red-2)} .kc .k.dot{grid-column:span 2;background:#fff4ef}
@@ -520,3 +516,24 @@ body.sheet-open #say{opacity:0!important}                                       
 .fb-tape{position:absolute;left:50%;top:-11px;width:92px;height:22px;transform:translateX(-50%) rotate(2deg);background:rgba(244,228,160,.74);box-shadow:0 1px 2px rgba(0,0,0,.2)}
 .fb-chunk{display:block;font:900 clamp(44px,12vw,80px)/1 var(--font-read);letter-spacing:.14em;text-indent:.14em;color:#1b2640}
 @media(max-height:520px){.fb-back{max-width:340px}.fb-chunk{font-size:44px}.fb-note{padding:14px 20px 10px}}
+
+/* ───────────── 7장: 교탁 위 한영사전 ───────────── */
+.dict-sheet .dsearch{width:100%;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:6px;font:600 16px var(--font-ui);background:#fffdf6}
+.dlist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px;max-height:min(56vh,520px);overflow:auto;overscroll-behavior:contain}
+.dlist li{display:grid;grid-template-columns:minmax(110px,150px) 22px minmax(0,1fr);gap:4px 10px;align-items:baseline;padding:8px 12px;border-radius:5px;background:#f6f2e3;box-shadow:inset 0 0 0 1px rgba(27,38,64,.14)}
+.dlist li[hidden]{display:none}
+.dlist .dko{font:800 16px var(--font-read);color:var(--ink)}
+.dlist .dpos{font:600 12px var(--font-ui);color:var(--ink-2);font-style:normal}
+.dlist .dmean{display:flex;flex-wrap:wrap;gap:2px 14px;font:600 15px var(--font-mono);color:var(--ink)}
+.dlist .dmean em{margin-right:5px;font:700 11px var(--font-ui);font-style:normal;color:var(--red-2)}
+.dnone{text-align:center;color:var(--ink-2)}
+@media(max-width:560px){.dlist li{grid-template-columns:minmax(0,1fr) 22px}.dlist .dmean{grid-column:1 / -1}}
+@media(max-height:460px){.dlist{max-height:44vh}.dlist li{padding:6px 10px}}
+
+/* ───────────── 엔딩: 내 기록(장별 걸린 시간·도움) ───────────── */
+.record .rec{width:100%;border-collapse:collapse;font-size:14px}
+.record .rec th,.record .rec td{padding:5px 8px;text-align:left;border-bottom:1px solid rgba(27,38,64,.14)}
+.record .rec thead th{font:700 12px var(--font-ui);color:var(--ink-2)}
+.record .rec tbody th{font:700 13px var(--font-mono);color:var(--ink-2)}
+.record .rec td:nth-child(3),.record .rec td:nth-child(4){text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.record .rec tfoot th,.record .rec tfoot td{border-top:2px solid var(--ink);border-bottom:0;font-weight:800}

@@ -59,6 +59,7 @@
       if (id.indexOf("diaryP:") === 0) { SC.showDiary(+id.split(":")[1]); return; }
       if (id.indexOf("refP:") === 0) { SC.showRefs(id.split(":")[1]); return; }
       if (id === "tower") { TW.show(); return; }
+      if (id === "dict") { SC.showDict(); return; }
       if (id === "sheet") { SC.showSheet(); return; }
       if (id === "roster") { ST.showRoster(); return; }
       if (id === "tv") {

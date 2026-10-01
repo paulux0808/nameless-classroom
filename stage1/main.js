@@ -228,13 +228,14 @@
   var last = 0, frame = 0, ema = 0.016, sinceAdjust = 0;
   function loop(ts) {
     requestAnimationFrame(loop);
-    var now = ts / 1000, dt = last ? Math.min(now - last, 0.1) : 0; last = now;
+    var now = ts / 1000, raw = last ? now - last : 0, dt = Math.min(raw, 0.1); last = now;
     if (doc.hidden) return;
     frame++;
     if (UI.flags.intro) { Ctl.yaw = OPEN.yaw + Math.sin(now * 0.11) * 0.06; Ctl.pitch = OPEN.pitch + Math.sin(now * 0.08) * 0.012; }
     Ctl.update(dt, now);
     World.update(dt, now, camera.position);
     Dir.tick(dt, UI.blocked());
+    if (!UI.flags.intro && !UI.flags.loading) M.tick(Math.min(raw, 2));                    /* 장별 걸린 시간(느린 화면에서도 실제 시간으로) */
     if (K.outline && K.outline.mat) K.outline.tick(now);
     var wideSheet = UI.sheetOpen() && (doc.getElementById("sheet").classList.contains("wide") || doc.getElementById("sheet").classList.contains("center"));
     if (UI.flags.ending) return;                                    /* 엔딩이 화면을 덮는 동안 3D 는 쉰다 */

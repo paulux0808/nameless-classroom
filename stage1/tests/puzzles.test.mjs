@@ -11,6 +11,7 @@ const St = require("../storage.js");
 const Model = require("../model.js");
 const Ln = require("../lines.js");
 const Puz = require("../puzzles.js");
+const Dict = require("../dict.js");
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), "utf8");
 function loadData() {
@@ -181,6 +182,36 @@ test("4장: 사람이 적는 부호 표기는 관찰자와 같은 규칙(점·�
 
 test("4장: 점 크기는 끝에서 처음으로 갈수록 작아진다(한 점으로 모인다)", () => {
   assert.ok(Puz.tapePointSize(0) > Puz.tapePointSize(1) && Puz.tapePointSize(1) > 0);
+});
+
+/* ── 7장 방 안 사전 ── */
+const redWords = () => [...D.DIARY_HTML.diary7.matchAll(/<span class="red">(.*?)<\/span>/g)].map((m) => m[1]);
+test("7장: 쪽지의 붉은 낱말 열다섯 개가 사전에 한 번씩 실려 있다(모양 그대로)", () => {
+  const reds = redWords();
+  assert.equal(reds.length, 15);
+  reds.forEach((w) => { assert.ok(Dict.find(w), "사전에 없는 낱말: " + w); assert.equal(Dict.entries().filter((e) => e.ko.replace(/\s+/g, "") === w.replace(/\s+/g, "")).length, 1, w + " 은 한 번만"); });
+  assert.ok(Dict.count >= 30 && Dict.count - 15 >= 15, "상관없는 낱말이 충분히 섞여 있다: " + Dict.count);
+  const ks = Dict.entries().map((e) => e.ko); assert.deepEqual([...ks], [...ks].sort(), "가나다순");
+});
+
+test("7장: 쪽지 순서대로 첫 뜻의 머리글자를 이으면 정답이고, 다른 뜻을 고르면 정답이 아니다", () => {
+  const reds = redWords(), inis = (k) => reds.map((w) => (Dict.find(w).en[k] || "?")[0]).join("").toLowerCase();
+  assert.equal(inis(0), answerOf(7));
+  assert.equal(answerOf(7).length, 15);
+  assert.notEqual(inis(1), answerOf(7)); assert.notEqual(inis(2), answerOf(7));
+  /* 뜻을 통째로 바꾸면 틀리고, 낱말마다 뜻이 둘 이상 실려 있어 ‘첫 번째’를 가려야 한다 */
+  reds.forEach((w) => assert.ok(Dict.find(w).en.length >= 2, w));
+  /* 상관없는 낱말의 첫 뜻이 쪽지 낱말과 겹치지 않는다 */
+  const redSet = new Set(reds.map((w) => w.replace(/\s+/g, "")));
+  Dict.entries().filter((e) => !redSet.has(e.ko.replace(/\s+/g, ""))).forEach((e) => assert.ok(e.en.length >= 2));
+});
+
+test("7장: 사전의 영어 뜻은 저장소에 평문으로 없고, 정답 낱말도 평문으로 없다", () => {
+  const src = read("../dict.js").toLowerCase();
+  Dict.entries().forEach((e) => e.en.forEach((m) => assert.ok(!src.includes(m.toLowerCase()), "평문으로 보인다: " + m)));
+  assert.ok(!src.includes(answerOf(7)));
+  const tools = read("../tools.js") + read("../screens.js");
+  assert.ok(!/naver|dict\.naver/i.test(tools), "밖의 사전 링크가 없다");
 });
 
 test("기억 복원: 지워진 낱말은 일기의 검은 칸 수와 맞고, 정답과 같은 뜻의 한글이다", () => {
