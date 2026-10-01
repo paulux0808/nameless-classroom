@@ -1,5 +1,5 @@
 /* ============================================================================
-   N1Screens — 화면 내용: 일기, 자료, 단말기, 기억 조립, 뒷문, 엔딩, 메뉴.
+   N1Screens — 화면 내용: 일기, 자료, 단말기, 이름 말하기, 한영사전, 뒷문, 엔딩, 메뉴.
    ui.js 의 종이 패널 위에 올라간다. 규칙은 모델(M)에 묻고, 결과만 보여 준다.
    ========================================================================== */
 (function (root) {
@@ -24,10 +24,6 @@
     }
     function diaryArticle(key, n) {
       var a = el("article", "diary", D.DIARY_HTML[key]); restore(a, n);
-      if (n === 7) {
-        var link = el("a", "dict-link", "네이버 영어사전에서 단어 찾기 ↗");
-        link.href = "https://en.dict.naver.com/#/main"; link.target = "_blank"; link.rel = "noopener noreferrer"; a.appendChild(link);
-      }
       return a;
     }
     SC.showDiary = function (n, opt) {
@@ -43,7 +39,7 @@
       var d = el("details", "item"); d.innerHTML = "<summary>" + title + "</summary>"; d.appendChild(el("div", "in", html)); list.appendChild(d);
     }
     function sciHTML(s) {
-      return "<dl><dt>생몰</dt><dd>" + s.born + " ~ " + s.died + "</dd><dt>핵심</dt><dd>" + s.key + "</dd></dl><p>" + s.body + "</p>" +
+      return "<dl><dt>생몰</dt><dd>" + s.born + " ~ " + s.died + "</dd></dl><p>" + s.body + "</p>" +
         (s.fix ? '<p class="fixnote">※ ' + s.fix + "</p>" : "");
     }
     function sportHTML(s) {
@@ -58,17 +54,20 @@
       }
       mw.appendChild(mg); return mw;
     }
+    /* 종이 한 장: 기호 다섯 개가 순서대로 적혀 있다(위에서 아래로). 각 기호의 주인을 찾아 그 액자의 뒷면을 이 순서로 읽는다 */
     function symbolSheet() {
-      var g = el("div", "sgrid");
-      g.innerHTML = D.SHEET.map(function (t) {
-        function cell(x) { return '<div class="scell"><span style="transform:rotate(' + x[1] + 'deg)"><i class="mk"></i>' + D.SYMBOL_SVG[x[0]] + "</span></div>"; }
-        return '<div class="stile ' + t.dir + '">' + cell(t.a) + cell(t.b) + "</div>";
-      }).join("");
-      return g;
+      var wrap = el("div", "sheetnote"), list = el("ol", "symlist");
+      root.N1Puz.sheetOrder(D).forEach(function (sym) {
+        var li = el("li"); li.setAttribute("aria-label", D.SYM_KO[sym]);
+        li.appendChild(el("span", "sym", D.SYMBOL_SVG[sym])); li.appendChild(el("span", "blank")); list.appendChild(li);
+      });
+      wrap.appendChild(el("p", "hand", "기호 다섯 개. 주인을 찾아서, 그 뒤를 보세요. 순서대로요 ;)"));
+      wrap.appendChild(list);
+      return wrap;
     }
     /* kind: sci | sport | map | video | keyb | frames — 터미널 옆 탭과 자료 패널이 같은 함수를 쓴다 */
     function renderResource(kind, host) {
-      if (TL[kind]) { TL[kind](host); return; }                      /* 5~8장 연필 도구(tools.js) */
+      if (TL[kind] && kind !== "padView") { TL[kind](host); return; }   /* 4~8장 도구·자료(tools.js) */
       var list = el("div", "list");
       if (kind === "frames") { host.appendChild(symbolSheet()); return; }
       if (kind === "sci") { D.SCI.forEach(function (s) { detail(list, enLabel(s.name, s.en), sciHTML(s)); }); host.appendChild(list); return; }
@@ -84,9 +83,30 @@
       if (kind === "keyb") { detail(list, "근섬유 전기신호키보드 사용법", D.KEYB_HTML); host.appendChild(list); return; }
       host.appendChild(el("p", "mini", "이 장에는 별도의 인쇄 자료가 없습니다. 일기를 다시 읽어 보세요."));
     }
+    var REF_LOCAL = { morseChart: "모스 부호 해독표" };                    /* data.js 에 없는 새 자료의 이름 */
     SC.showRefs = function (kind) {
       var p = kind || D.PUZZLE_REF[M.chapter().puzzle];
-      UI.openSheet({ title: D.REF_TITLE[p] || "자료", sub: "교실에 비치된 인쇄물", build: function (b) { renderResource(p, b); } });
+      UI.openSheet({ title: REF_LOCAL[p] || D.REF_TITLE[p] || "자료", sub: "교실에 비치된 인쇄물", build: function (b) { renderResource(p, b); } });
+    };
+    /* 교탁 위의 한영사전: 낱말을 찾아 영어 뜻을 읽는다(맨 앞의 뜻이 대표 뜻). 찾는 것도 고르는 것도 스스로 한다 */
+    SC.showDict = function () {
+      UI.openSheet({ title: "한영사전", sub: "교탁 위에 놓인 낡은 사전 · 가나다순", mode: "center", cls: "dict-sheet", build: function (b, foot, api) {
+        var q = el("input", "dsearch"); q.type = "search"; q.placeholder = "낱말 찾기 (예: 평화)"; q.autocomplete = "off"; q.spellcheck = false; q.setAttribute("aria-label", "사전에서 낱말 찾기");
+        var list = el("ol", "dlist"), none = el("p", "mini dnone", "이 사전에 없는 낱말이다."); none.hidden = true;
+        root.N1Dict.entries().forEach(function (e) {
+          var li = el("li"); li.dataset.k = e.ko.replace(/\s+/g, "");
+          li.appendChild(el("b", "dko", e.ko)); li.appendChild(el("i", "dpos", e.pos));
+          var m = el("span", "dmean"); e.en.forEach(function (t, i) { m.appendChild(el("span", null, "<em>" + (i + 1) + "</em>" + t)); }); li.appendChild(m); list.appendChild(li);
+        });
+        q.oninput = function () {
+          var k = q.value.replace(/\s+/g, ""), n = 0;
+          [].forEach.call(list.children, function (li) { var show = !k || li.dataset.k.indexOf(k) >= 0; li.hidden = !show; if (show) n++; });
+          none.hidden = n > 0; api.refresh();
+        };
+        b.appendChild(q); b.appendChild(el("p", "mini", "뜻은 많이 쓰이는 순서대로 적혀 있다. 맨 앞의 뜻이 그 낱말의 대표 뜻이다. 쪽지에 적힌 모양 그대로 실려 있다.")); b.appendChild(list); b.appendChild(none);
+        setTimeout(function () { try { q.focus({ preventScroll: true }); } catch (x) {} }, 80);
+        api.refresh();
+      } });
     };
     SC.showSheet = function () { UI.openSheet({ title: "종이 한 장", sub: "기호가 그려진 종이", build: function (b) { renderResource("frames", b); } }); };
     SC.showSciNote = function (sc) {
@@ -149,7 +169,7 @@
       return crt;
     }
 
-    /* 정답 입력 단말: 교탁의 컴퓨터와 퍼즐 자리(명단·테이프)가 같은 것을 쓴다.
+    /* 정답 입력 단말: 교탁의 컴퓨터가 쓴다(현장 패널에는 정답 키패드가 없다).
        right: 통과하면 이 칸이 '암호 해제' 패널로 바뀐다. sheetApi: 패널 정리용 */
     function answerCRT(c, right, sheetApi) {
       var crt = makeCRT({ label: "SCHOLARSHIP TERMINAL — CHAPTER " + c.n, rule: "숫자 또는 영어 · 대소문자 무관 · 띄어쓰기 없음", mode: (c.n === 1 || c.n === 8) ? "number" : "alpha",
@@ -171,12 +191,12 @@
         } });
       return crt;
     }
-    /* 단말기 옆 탭의 자료: 2장은 옛 기호 종이 대신 과학자 자료를 보여 준다(퍼즐은 액자 앞에서 푼다) */
-    var AID = { 2: { kind: "sci", title: "수학자·과학자 자료" }, 7: { kind: "words", title: "쪽지 메모" } };
+    /* 단말기 옆 탭의 자료. 2장: 설명판·종이 한 장 / 4장: 적어 둔 신호 / 7장: 쪽지 메모. 나머지는 data.js 의 TERMINAL_AID */
+    var AID = { 2: [{ kind: "sci", title: "수학자·과학자 자료" }, { kind: "frames", title: "종이 한 장" }], 4: { kind: "morseLog", title: "신호 기록" }, 7: { kind: "words", title: "쪽지 메모" } };
     SC.showComputer = function () {
       if (S.done) { SC.showEnding(); return; }
       if (S.ch > 8) { SC.showName(); return; }
-      var c = M.chapter(), spec = AID[c.n] || D.TERMINAL_AID[c.n] || { kind: null };
+      var c = M.chapter(), specs = [].concat(AID[c.n] || D.TERMINAL_AID[c.n] || []).filter(function (x) { return x && x.kind; });
       var head = { title: "장학금 단말기", sub: "CHAPTER " + c.n + " · " + c.title };
       if (S.phase === "search") {
         UI.openSheet({ title: head.title, sub: head.sub, build: function (b) { b.appendChild(acceptedPanel(c)); } });
@@ -192,7 +212,7 @@
           tabs.appendChild(t); return t;
         }
         addTab("일기", function (p) { p.appendChild(diaryArticle("diary" + c.n, c.n)); });
-        if (spec.kind) addTab(spec.title || "자료", function (p) { renderResource(spec.kind, p); });
+        specs.forEach(function (spec) { addTab(spec.title || "자료", function (p) { renderResource(spec.kind, p); }); });
         panes.forEach(function (p, i) { p.hidden = i !== 0; tabs.children[i].setAttribute("aria-selected", i === 0 ? "true" : "false"); });
         if (panes.length > 1) left.appendChild(tabs); else panes[0].style.borderTop = "0";
         panes.forEach(function (p) { left.appendChild(p); });
@@ -239,10 +259,22 @@
         crt.el.style.marginTop = "12px"; b.appendChild(crt.el); crt.attach(api);
       } });
     };
+    /* 내 기록: 장별 걸린 시간과 받은 힌트(조용히 보여 주는 자료) */
+    function fmtSec(s) { var m = Math.floor(s / 60); return m ? m + "분 " + (s % 60) + "초" : s + "초"; }
+    function recordTable() {
+      var rec = M.record(), d = el("details", "item fold record"), rows = rec.rows.map(function (r) {
+        return "<tr><th>" + (r.n > 8 ? "마지막" : r.n + "장") + "</th><td>" + r.title + "</td><td>" + fmtSec(r.sec) + "</td><td>" + (r.hints ? r.hints + "번" : "—") + "</td></tr>";
+      }).join("");
+      d.innerHTML = "<summary>내 기록 보기</summary><div class=\"in\"><table class=\"rec\"><thead><tr><th></th><th>이야기</th><th>걸린 시간</th><th>도움</th></tr></thead><tbody>" + rows +
+        "</tbody><tfoot><tr><th colspan=\"2\">모두</th><td>" + fmtSec(rec.total.sec) + "</td><td>" + (rec.total.hints ? rec.total.hints + "번" : "—") + "</td></tr></tfoot></table>" +
+        "<p class=\"mini\">‘도움’은 감독교사에게 힌트를 청한 횟수다. 정답 입력이 틀린 횟수는 세지 않는다.</p></div>";
+      return d;
+    }
     SC.showClear = function () {
       UI.openSheet({ title: "스테이지 완료", sub: "STEPHEN HAWKING · CLEAR", build: function (b, foot) {
         b.innerHTML = '<div class="clear-copy"><div class="stamp">STAGE CLEAR</div><h3>스티븐 호킹</h3><p>이 교실의 모든 기록을 확인하고 마지막 문까지 열었습니다.<br>영상을 다시 보거나 다음 스테이지로 이동할 수 있습니다.</p></div>' +
           '<p class="mini" style="text-align:center">스테이지 2 · 챕터 1로 이동합니다.</p>';
+        b.appendChild(recordTable());
         var stay = el("button", "btn", "교실에 남기"), rep = el("button", "btn", "영상 다시보기"), next = el("button", "btn primary", "다음 스테이지");
         [stay, rep, next].forEach(function (x) { x.type = "button"; foot.appendChild(x); });
         stay.onclick = function () { UI.closeSheet(); };
@@ -259,12 +291,14 @@
     };
     SC.showEnding = function () {
       SC.closeEnding(); UI.closeSheet(true); UI.flags.ending = true;
+      var rec = M.record();
       var x = el("section"); x.id = "ending"; x.setAttribute("role", "dialog"); x.setAttribute("aria-label", "엔딩");
       x.innerHTML = '<div class="ending-credits"><div class="ending-inner">' +
         '<div class="ending-kicker">STEPHEN HAWKING · FINAL MEMORY</div><h2 class="ending-name">스티븐 호킹</h2><div class="ending-years">1942 — 2018</div>' +
         '<section class="ending-sec"><div class="ending-label">ABOUT HIM</div><p>이론물리학자이자 우주론자. 블랙홀과 우주의 기원, 시간과 공간에 관한 질문을 끝까지 붙들었고, 어려운 과학을 더 많은 사람에게 전하려 했습니다.</p></section>' +
         '<section class="ending-sec"><div class="ending-label">WHY THIS ROOM EXISTS</div><p>이 방탈출은 정답 하나를 맞히는 것보다, 한 사람의 삶을 따라가며 흩어진 기록과 과학의 단서를 직접 연결해 보도록 만들었습니다. 호기심이 또 다른 질문으로 이어지는 경험이 되길 바랐습니다.</p></section>' +
         '<section class="ending-sec"><div class="ending-label">TO THE PLAYER</div><p>여기까지 모든 기억의 조각을 찾아낸 것을 축하합니다.<br>스티븐 호킹의 교실을 끝까지 완주했습니다.</p></section>' +
+        '<section class="ending-sec ending-rec"><div class="ending-label">YOUR RECORD</div><p>이 교실에서 보낸 시간은 ' + fmtSec(rec.total.sec) + '입니다. ' + (rec.total.hints ? "감독교사에게 도움을 청한 것은 " + rec.total.hints + "번입니다." : "감독교사에게 도움을 청한 적은 한 번도 없습니다.") + '<br><span style="color:#93a598;font-size:14px">장별 기록은 스테이지 완료 화면에서 볼 수 있습니다.</span></p></section>' +
         '<section class="ending-sec ending-exit"><strong>ONE LAST EXIT</strong><p style="font:400 16px/1.8 ' + FONT + ';color:#dbe5d8">교실을 나가기 위한 마지막 절차가 남았습니다.<br><b>다시 한 번 [시작]을 누르고 코드 0808을 입력하세요.</b></p><span class="ending-code">0808</span></section>' +
         '<div style="padding:8px 0 40px;font:400 14px/1.9 ' + FONT + ';color:#93a598;text-align:center">1942년 1월 8일 — 갈릴레이가 세상을 떠난 지 300년 되는 날에 태어나<br>2018년 3월 14일 — 아인슈타인이 태어난 날에 눈을 감다.</div>' +
         '</div></div><div class="ending-film"><video controls autoplay playsinline src="' + A.videoFinale + '"></video></div>' +
@@ -327,7 +361,7 @@
     SC.showIntro = function () { UI.flags.intro = true; doc.getElementById("intro").classList.remove("hidden"); SC.bindIntro(); UI.showHud(false); };
     SC.hideIntro = function () { UI.flags.intro = false; doc.getElementById("intro").classList.add("hidden"); };
 
-    SC.kit = { makeCRT: makeCRT, answerCRT: answerCRT, acceptedPanel: acceptedPanel, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
+    SC.kit = { padView: TL.padView, makeCRT: makeCRT, answerCRT: answerCRT, acceptedPanel: acceptedPanel, diaryArticle: diaryArticle, renderResource: renderResource, sciHTML: sciHTML, sportHTML: sportHTML, FONT: FONT };
     return SC;
   }
   root.N1Screens = { create: create };

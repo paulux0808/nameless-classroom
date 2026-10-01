@@ -32,8 +32,8 @@ function newGame(store = memStore()) {
 
 test("퍼즐 내용(data.js)은 잠겨 있다 — 실수로 고치면 여기서 실패한다", () => {
   const sha = crypto.createHash("sha256").update(JSON.stringify(D)).digest("hex");
-  assert.equal(sha, "1223c07d50ecc6d3aa90e2c59f34194e15b08d0cef14bdd3ab908e8572c67052",
-    "일부러 내용을 고쳤다면 이 해시를 새 값으로 바꾼다");
+  assert.equal(sha, "295544cf663c5d2d4e3513a48177588fde8dd96105e4a912b0ce925784d9100f",
+    "일부러 내용을 고쳤다면 이 해시를 새 값으로 바꾼다(2장: 뉴턴 설명판에 사과 일화 한 문장을 더했다)");
   assert.equal(D.CH.length, 8);
   assert.equal(Object.keys(D.DIARY_HTML).length, 9);
 });
@@ -119,4 +119,27 @@ test("저장하고 다시 열면 이어서 할 수 있다", () => {
 test("저장본이 없으면 이어하기는 실패한다", () => {
   const M = Model.create({ data: D, logic: Lg, storage: St, store: memStore() });
   assert.equal(M.hasSave(), false); assert.equal(M.continueSaved(), false);
+});
+
+test("기록: 장별 걸린 시간을 초 단위로 세고(쉬는 동안은 세지 않고), 저장·복원되며, 힌트 횟수와 함께 보여 준다", () => {
+  const store = memStore(), { M } = newGame(store);
+  M.tick(0.4); assert.deepEqual({ ...M.S.log.t }, {}, "1초 단위로 모아서 센다(작은 틱은 모은다)");
+  for (let i = 0; i < 12; i++) M.tick(0.5); assert.equal(M.S.log.t[1], 6, "1장 6초(0.4 + 6.0 = 6.4초)");
+  M.S.ch = 3; M.tick(2.4); M.tick(0.7); assert.equal(M.S.log.t[3], 3);
+  M.S.ch = 9; M.tick(4); assert.equal(M.S.log.t.f, 4, "탑·이름 단계는 f");
+  M.S.hints = { c1: 2, s1: 1, c3: 3, asm: 1, name: 2 };
+  const rec = M.record();
+  assert.equal(rec.rows.length, 9); assert.deepEqual(rec.rows[0], { n: 1, title: D.CH[0].title, sec: 6, hints: 3 });
+  assert.deepEqual(rec.rows[8], { n: 9, title: "기억의 탑과 이름", sec: 4, hints: 3 });
+  assert.equal(rec.total.sec, 6 + 3 + 4); assert.equal(rec.total.hints, 3 + 3 + 3);
+  M.S.exitReady = true; const before = M.S.log.t.f; M.tick(10); assert.equal(M.S.log.t.f, before, "이름을 맞힌 뒤에는 세지 않는다");
+  M.S.exitReady = false; M.S.done = true; M.tick(10); assert.equal(M.S.log.t.f, before, "끝난 뒤에는 세지 않는다");
+  M.S.done = false; M.save();
+  const { M: M2 } = (() => { const m = Model.create({ data: D, logic: Lg, storage: St, store }); assert.ok(m.continueSaved()); return { M: m }; })();
+  assert.equal(M2.S.log.t[1], 6); assert.equal(M2.S.log.t.f, 4);
+  M2.S.log = { t: { 1: "x", 2: -3, 9: 5, f: 7.9, 4: Infinity } };
+  const fixed = St.normalizeState(JSON.parse(JSON.stringify({ ...M2.S, log: { t: { 1: "x", 2: -3, 9: 5, f: 7.9, 4: null } } })));
+  assert.deepEqual({ ...fixed.log.t }, { f: 7 }, "모양이 틀린 값은 버린다");
+  const old = St.normalizeState({ started: true, ch: 2, phase: "read", pieces: [1], rot: {}, stack: null, revealed: 0, tookD1: true, exitReady: false, done: false });
+  assert.deepEqual({ ...old.log.t }, {}, "옛 저장에는 기록이 없다");
 });

@@ -41,8 +41,7 @@
     onVoice: function (text, mood) { var t = Lay && Lay.obj && Lay.obj.teacher; if (!t) return; if (text == null) t.userData.hush(); else t.userData.say(text, mood); },
     onAnswered: function (n) { Dir.solved(n, D.CH[n - 1].cue); },
     onWrong: function (n) { Dir.wrong(n); },
-    onMiss: function (n) { Dir.miss(n); },                                      /* 표식이 안 붙는 정도의 작은 실수: 세 번째마다만 말한다 */
-    onSticker: function (id, sym) { if (World) World.setFrameSticker(id, D.SYMBOL_SVG[sym], true); },
+    onFrameLift: function (id, on) { if (World) World.frameLift(id, on); },        /* 액자를 눌러 뒷면을 볼 때 벽에서 살짝 들린다 */
     /* 기억의 탑: 열 때·옮길 때·완성할 때·틀릴 때. 3D 탑은 모델의 배열을 따라 다시 쌓인다 */
     onTowerOpen: function (n) { Dir.towerOpen(n); },
     onTowerChange: function () { Dir.progress(); if (World) World.refreshTower(M.S, true); },
@@ -107,7 +106,7 @@
   var TW = N1Tower.create({ ui: UI, model: M, data: D, screens: SC, hooks: hooks });
   UI.checkOrient(); UI.setLoading(0.04, "교실을 여는 중…");
   $("#t-menu").onclick = function () { SC.showMenu(); };
-  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); if (kind === "change" && World && World.syncDevices(M.S, true) && Ctl) Ctl.hover = null; });   /* 컴퓨터·TV 는 필요할 때 켜지고 꺼진다 */
+  M.on(function (kind) { if (kind === "change" || kind === "hint") UI.renderHUD(); if (kind === "change" && World) { var dv = World.syncDevices(M.S, true), pr = World.syncProps(M.S, true); if ((dv || pr) && Ctl) Ctl.hover = null; } });   /* 컴퓨터·TV 는 필요할 때 켜지고 꺼지고, 4장에는 해독표가 붙는다 */
 
   /* ── 해상도·화각 ── */
   function fovFor(aspect) {
@@ -170,7 +169,7 @@
     UI.setLoading(0.8, "마무리");
     await tick();
     /* 움직이거나 눌러 볼 것은 그대로 두고, 나머지(책걸상·사물함·벽 물건…)는 재질별로 합친다 */
-    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board, ob.tower]
+    var ob = Lay.obj, dyn = [ob.calendar, ob.doll, ob.postit, ob.teacher, ob.extinguisher, ob.clock, ob.math, ob.diary1, ob.globe, ob.crt, ob.door, ob.bin, ob.plant, ob.umbrella, ob.stacked, ob.cleaning, ob.board, ob.tower, ob.morseCard]
       .concat(Lay.curtains, Lay.frameOrder.map(function (id) { return Lay.frames[id]; }), Object.keys(Lay.mem).map(function (n) { return Lay.mem[n]; }));
     /* 카툰: 잉크 윤곽선. 합치기 전에 ① 히트박스와 물체의 짝을 정하고 ② 붙박이 소품의 껍질을 만든다(합쳐진 뒤엔 메시가 커서 나눌 수 없다) */
     var hullInfo = null;
@@ -188,6 +187,7 @@
       [ob.teacher, ob.clock].forEach(function (d) { if (d) K.outline.attach(d, { mode: "parent" }); });
       [ob.door].concat(Lay.frameOrder.map(function (id) { return Lay.frames[id]; })).forEach(function (d) { if (d) K.outline.attach(d); });
       Object.keys(Lay.mem).forEach(function (n) { K.outline.attach(Lay.mem[n], { mode: "rigid" }); });
+      if (ob.morseCard) K.outline.attach(ob.morseCard, { mode: "rigid" });
       if (ob.tower) K.outline.attach(ob.tower, { mode: "rigid" });                 /* 받침대. 블록은 쌓일 때 각자 붙인다(props/tower.js) */
       mark("outline");
     }
@@ -228,13 +228,14 @@
   var last = 0, frame = 0, ema = 0.016, sinceAdjust = 0;
   function loop(ts) {
     requestAnimationFrame(loop);
-    var now = ts / 1000, dt = last ? Math.min(now - last, 0.1) : 0; last = now;
+    var now = ts / 1000, raw = last ? now - last : 0, dt = Math.min(raw, 0.1); last = now;
     if (doc.hidden) return;
     frame++;
     if (UI.flags.intro) { Ctl.yaw = OPEN.yaw + Math.sin(now * 0.11) * 0.06; Ctl.pitch = OPEN.pitch + Math.sin(now * 0.08) * 0.012; }
     Ctl.update(dt, now);
     World.update(dt, now, camera.position);
     Dir.tick(dt, UI.blocked());
+    if (!UI.flags.intro && !UI.flags.loading) M.tick(Math.min(raw, 2));                    /* 장별 걸린 시간(느린 화면에서도 실제 시간으로) */
     if (K.outline && K.outline.mat) K.outline.tick(now);
     var wideSheet = UI.sheetOpen() && (doc.getElementById("sheet").classList.contains("wide") || doc.getElementById("sheet").classList.contains("center"));
     if (UI.flags.ending) return;                                    /* 엔딩이 화면을 덮는 동안 3D 는 쉰다 */

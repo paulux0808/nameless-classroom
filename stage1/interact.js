@@ -59,7 +59,8 @@
       if (id.indexOf("diaryP:") === 0) { SC.showDiary(+id.split(":")[1]); return; }
       if (id.indexOf("refP:") === 0) { SC.showRefs(id.split(":")[1]); return; }
       if (id === "tower") { TW.show(); return; }
-      if (id === "sheet") { ST.showStickers(); return; }
+      if (id === "dict") { SC.showDict(); return; }
+      if (id === "sheet") { SC.showSheet(); return; }
       if (id === "roster") { ST.showRoster(); return; }
       if (id === "tv") {
         if (S.ch === 4) { ST.showTape(); return; }
@@ -77,11 +78,7 @@
         if (!sc) { toast("자료를 찾을 수 없습니다.", "bad"); return; }
         SC.showSciNote(sc); return;
       }
-      if (id.indexOf("frame:") === 0) {
-        var sci = id.split(":")[1], rot = M.rotateFrame(sci);
-        W.setFrameRot(sci, rot);
-        toast("액자 — " + (rot * 90) + "°"); return;
-      }
+      if (id.indexOf("frame:") === 0) { ST.showFrameBack(id.split(":")[1]); return; }
       /* 교탁 컴퓨터는 답을 넣을 때에만 켜져 있다(규칙은 puzzles.js computerState) */
       if (id === "computer") {
         var cs = Puz.computerState(S, { stackSolved: M.stackSolved() });

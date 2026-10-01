@@ -1,5 +1,5 @@
 /* N1P — 퍼즐 자리 소품: AV 카트(TV+VCR+테이프), 명단 클립보드, 노, 페넌트
-   3장(스포츠 코너)과 4장(되감기 테이프)의 무대. 정답을 알려 주는 글자는 넣지 않는다. */
+   3장(스포츠 코너)과 4장(신호 테이프·해독표)의 무대. 정답을 알려 주는 글자는 넣지 않는다. */
 (function (root) {
   "use strict";
   var T = root.THREE, K = root.N1K, G = K.geo, P = root.N1P, PI = Math.PI;
@@ -31,6 +31,31 @@
     off();
     return { canvas: cv, tex: tex, draw: draw, off: off };
   }
+
+  /* ── 해독표: 4장 카트 위 벽에 핀으로 꽂힌 코팅 카드. 글자와 모스 부호(점·선)가 두 줄로 나란하다. 앞면 +Z ── */
+  P.morseCard = function () {
+    var W = 0.3, H = 0.42, Pz = root.N1Puz, letters = Object.keys(Pz.MORSE);
+    var cv = P.canvas(384, 538, function (g, w, h) {
+      g.fillStyle = "#f2eedb"; g.fillRect(0, 0, w, h);
+      g.fillStyle = "#1b2640"; g.fillRect(0, 0, w, 66);
+      g.fillStyle = "#f2efe0"; g.font = "800 34px 'Noto Sans KR','Malgun Gothic',sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("해독표", w / 2, 36);
+      g.fillStyle = "#c2382b"; g.fillRect(0, 66, w, 5);
+      var cols = 2, rows = 13, cw = (w - 36) / cols, top = 92, rh = (h - top - 30) / rows;
+      letters.forEach(function (L, i) {
+        var col = (i / rows) | 0, row = i % rows, x = 24 + col * cw, y = top + row * rh + rh / 2;
+        g.fillStyle = "#1b2640"; g.font = "800 21px ui-monospace,Consolas,'Courier New',monospace"; g.textAlign = "left"; g.textBaseline = "middle"; g.fillText(L, x, y);
+        var cx = x + 40;
+        Pz.MORSE[L].split("").forEach(function (m) { if (m === "-") { g.fillRect(cx, y - 3.5, 22, 7); cx += 30; } else { g.beginPath(); g.arc(cx + 4, y, 4.2, 0, 6.2832); g.fill(); cx += 15; } });
+      });
+      g.strokeStyle = "rgba(27,38,64,.2)"; g.lineWidth = 2; g.strokeRect(6, 6, w - 12, h - 12);
+    });
+    var g = new T.Group();
+    var face = new T.Mesh(new T.PlaneGeometry(W, H), P.canvasMat(cv, { rough: 0.55 })); face.castShadow = true; g.add(face);
+    var pb = K.builder(); [[-0.11, H / 2 - 0.02], [0.11, H / 2 - 0.02]].forEach(function (q) { pb.sphere(0.008, K.mat("pin.red", function () { return K.std(0xb32a22, 0.35, 0.2); }), { p: [q[0], q[1], 0.008], ws: 10, hs: 8 }); });
+    g.add(pb.build({ name: "pins" }));
+    g.userData.size = [W, H, 0.02];
+    return g;
+  };
 
   /* ── AV 카트: 학교 시청각실의 바퀴 달린 카트. 위에 TV, 아래에 VCR. 앞면 +Z ── */
   P.avCart = function () {

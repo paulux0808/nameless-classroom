@@ -4,7 +4,7 @@
 
 ## Play
 
-- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만들고, 카툰 렌더링이 기본이다. 메뉴에서 사실적 화면으로 바꿀 수 있다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md). 2026-09-30 재설계 — 이야기는 그대로, 현장 퍼즐·감독교사 대사와 힌트·기억 소품을 더했다, [docs/STAGE1_REDESIGN.md](docs/STAGE1_REDESIGN.md))
+- Stage 1: `stage1/index.html` (2026-09-29 재제작 — 외부 3D 에셋 없이 코드로 방을 만들고, 카툰 렌더링이 기본이다. 메뉴에서 사실적 화면으로 바꿀 수 있다, [docs/STAGE1_REBUILD.md](docs/STAGE1_REBUILD.md). 2026-09-30 재설계 — 이야기는 그대로, 현장 퍼즐·감독교사 대사와 힌트·기억 소품을 더했다. 2026-10-01 리뉴얼 — 기억의 탑·모스 신호·액자 뒷면·방 안 사전, [docs/STAGE1_REDESIGN.md](docs/STAGE1_REDESIGN.md))
 - Stage 2: `stage2/index.html` (챕터 선택)
 - Stage selector: `index.html`
 
@@ -21,7 +21,7 @@ npm test        # stage1/stage2 로직·프론트엔드 테스트 + 스포일러
 ```
 
 스테이지 1 종단 검증(진짜 브라우저로 8챕터~엔딩~뒷문~이어하기): `npm run e2e:stage1`
-재설계로 생긴 조작(날짜 도장·액자 표식·명단·VHS·연필 도구·대사/힌트·기억 소품·모바일 가로 화면): `npm run e2e:stage1:puzzles`
+재설계·리뉴얼로 생긴 조작(날짜 도장·액자 뒷면·명단·모스 신호 VHS·연필 도구·방 안 사전·기억의 탑·대사/힌트·기억 소품·모바일 가로 화면): `npm run e2e:stage1:puzzles`
 (Chromium 필요. WebGL 이 없으면 SwiftShader 로 돌아 느리다.)
 
 ## Structure

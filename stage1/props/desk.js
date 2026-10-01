@@ -196,6 +196,22 @@
     return b.build({ name: "book" });
   };
 
+  /* 교탁 위 한영사전: 7장의 쪽지 낱말을 방 안에서 찾는다. 책이 누운 모양(두께는 y), 윗면에 금박 제목 */
+  P.dictionary = function () {
+    var g = new T.Group(), W = 0.23, H = 0.05, Dd = 0.165;
+    var b = K.builder(); P.addBook(b, W, H, Dd, 0x24405f, {});
+    g.add(b.build({ name: "dictBook" }));
+    var lab = P.canvas(256, 184, function (x, w, h) {
+      x.fillStyle = "#24405f"; x.fillRect(0, 0, w, h);
+      x.strokeStyle = "#d9b45a"; x.lineWidth = 5; x.strokeRect(14, 14, w - 28, h - 28);
+      x.fillStyle = "#e8cb7a"; x.font = "800 50px 'Noto Sans KR','Malgun Gothic',sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("한영사전", w / 2, h / 2 - 8);
+      x.font = "700 20px ui-monospace,Consolas,monospace"; x.fillText("KOR \u2013 ENG", w / 2, h / 2 + 40);
+    });
+    var m = new T.Mesh(new T.PlaneGeometry(W * 0.88, Dd * 0.88), P.canvasMat(lab, { rough: 0.6 })); m.rotation.x = -PI / 2; m.position.set(0, H / 2 + 0.0012, 0); m.userData.noHull = true; g.add(m);
+    g.userData.size = [W, H, Dd];
+    return g;
+  };
+
   /* ── 종이류: 일기 종이, 포스트잇, 편지 ───────────────────────────────── */
   P.diaryPaper = function () {
     var c = P.canvas(300, 280, function (g, w, h) {

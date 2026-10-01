@@ -54,7 +54,8 @@
     hot("decoy:globe", "지구본", 0.3, 0.4, 0.3, -0.62, TOP + 0.2, deskZ - 0.02);
     var cal = P.deskCalendar(); place(cal, 0.62, TOP, deskZ - 0.06, -0.15); L.obj.calendar = cal;
     var pcup = P.pencilCup(); place(pcup, 0.42, TOP, deskZ + 0.13); L.obj.pencilCup = pcup;
-    var deskBook = P.plainBook(0x6a2b2b, 0.22, 0.03, 0.16); place(deskBook, -0.2, TOP + 0.015, deskZ + 0.12, 0.3); L.obj.deskBook = deskBook;
+    var dict = P.dictionary(); place(dict, -0.2, TOP + 0.025, deskZ + 0.12, 0.3); L.obj.dict = dict;
+    hot("dict", "한영사전", 0.28, 0.1, 0.22, -0.2, TOP + 0.05, deskZ + 0.12, 0.3);
     var stamp = P.dateStamp(); place(stamp, -0.4, TOP, deskZ + 0.17, 0.4); L.obj.stamp = stamp;
     hot("stamp", "날짜 도장", 0.13, 0.13, 0.11, -0.4, TOP + 0.05, deskZ + 0.17);
     L.stampSpot = [-0.4, TOP + 0.2, deskZ + 0.17];                           /* 안내 화살표가 서는 곳 */
@@ -190,6 +191,9 @@
     var spk = P.speaker(); place(spk, D.W / 2 - 0.0, 2.62, -3.3, -PI / 2); hot("decoy:speaker", "방송 스피커", 0.3, 0.25, 0.12, D.W / 2 - 0.06, 2.62, -3.3, -PI / 2);
     var th = P.thermometer(); place(th, D.W / 2 - 0.0, 1.55, 3.2, -PI / 2); hot("decoy:thermo", "온습도계", 0.16, 0.22, 0.06, D.W / 2 - 0.04, 1.55, 3.2, -PI / 2);
     var ns = P.noticeSheet(); place(ns, -D.W / 2 + 0.012, 1.7, -1.825, PI / 2); hot("decoy:notice", "안내문", 0.32, 0.44, 0.06, -D.W / 2 + 0.05, 1.7, -1.825, PI / 2);
+    /* 4장 해독표: 카트 옆 창 아래 벽(커튼에 가리지 않는 곳). 4장이 시작될 때 붙는다(처음엔 숨겨 둔다) */
+    var mcard = P.morseCard(); place(mcard, -D.W / 2 + 0.012, 0.76, -2.95, PI / 2); mcard.visible = false; L.obj.morseCard = mcard;
+    L.hotMorse = hot("refP:morseChart", "해독표", 0.32, 0.44, 0.06, -D.W / 2 + 0.05, 0.76, -2.95, PI / 2);
 
     /* ── 창(4) + 커튼(4) + 라디에이터 ── */
     R.WINDOWS.forEach(function (w, i) {

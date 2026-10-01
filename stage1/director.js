@@ -25,9 +25,6 @@
       if (wrongN[n] % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true, mood: "puzzled" }); UI.nudgeHint(true); }
       else speak([one(Ln.SAY.wrong, "wrong")], { replace: true, mood: "puzzled" });
     };
-    /* 정답을 낸 건 아니지만 헛짚은 정도의 실수: 세 번째마다 한 마디 */
-    var missN = {};
-    D.miss = function (n) { missN[n] = (missN[n] || 0) + 1; if (missN[n] % 3 === 0) { speak(Ln.SAY.wrongMany, { replace: true, mood: "puzzled" }); UI.nudgeHint(true); } };
     D.solved = function (n, cue) {
       wrongN[n] = 0; idle = 0; UI.nudgeHint(false);
       speak([].concat(Ln.SAY.solved[n] || [], Ln.fmt(Ln.SAY.cue, { cue: cue })), { replace: true, mood: "glad" });

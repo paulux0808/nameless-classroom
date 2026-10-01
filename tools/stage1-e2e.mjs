@@ -86,9 +86,9 @@ try {
   for (let n = 1; n <= 8; n++) {
     const [spot, x, z, yaw, pitch, crouch] = STAND[n - 1];
     await ev(() => { __n1.C.crouch = false; __n1.C.eye = 1.6; __n1.C.setView(0.3, -1.6, Math.PI, -0.2); }); await page.waitForTimeout(250);
-    const numeric = n === 1 || n === 8, ans = answerOf(n), atPC = n >= 5;
+    const numeric = n === 1 || n === 8, ans = answerOf(n), atPC = n >= 2;
     if (atPC) {
-      /* 5~8장: 답을 컴퓨터에 넣는다. 이때만 컴퓨터가 켜져 있다 */
+      /* 2~8장: 답을 컴퓨터에 넣는다. 이때만 컴퓨터가 켜져 있다 */
       check((await ev(() => __n1.W.computerMode())) === "input" && !(await ev(() => __n1.L.hotById.computer.userData.dormant)), `챕터 ${n}: 답을 넣는 장이라 컴퓨터가 켜져 있다`);
       await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(500);
       /* 틀린 답 먼저, 그다음 정답 — 둘 다 물리 키보드로 */
@@ -97,7 +97,7 @@ try {
       for (const ch of ans) await page.keyboard.press((/\d/.test(ch) ? "Digit" : "Key") + ch.toUpperCase());
       await page.keyboard.press("Enter"); await page.waitForTimeout(400);
     } else {
-      /* 1~4장: 현장 퍼즐(도장·표식·명단·테이프)으로 푼다. 컴퓨터는 꺼져 있고 눌러도 열리지 않는다.
+      /* 1장: 날짜 도장(찍는 것이 곧 제출)으로 푼다. 컴퓨터는 꺼져 있고 눌러도 열리지 않는다.
          현장 조작 자체는 tools/stage1-e2e-puzzles.mjs 가 짚으니 여기서는 모델에 정규화된 답을 낸다 */
       check((await ev(() => __n1.W.computerMode())) === "off" && (await ev(() => __n1.L.hotById.computer.userData.dormant)), `챕터 ${n}: 현장 퍼즐 장이라 컴퓨터는 꺼져 있다`);
       await ev(() => __n1.I.interact("computer")); await page.waitForTimeout(400);
@@ -182,6 +182,7 @@ try {
   check(await ev(() => __n1.M.S.exitReady), "이름을 맞히면 뒷문이 열릴 준비가 된다");
   check((await ev(() => __n1.W.computerMode())) === "done", "이름을 맞힌 뒤 컴퓨터는 ‘마침’ 화면(엔딩 다시 보기)이 된다");
   check(await page.$("#ending") !== null, "엔딩 화면");
+  check(await page.$eval(".ending-rec", (e) => /보낸 시간은 .*초입니다/.test(e.textContent)), "엔딩 크레딧에 걸린 시간과 도움 횟수가 조용히 나온다");
   await shot("10-ending");
   await page.click(".ending-close"); await page.waitForTimeout(500);
 
@@ -195,6 +196,7 @@ try {
   /* 탈출 연출(문이 열리고 빛이 밀려든다)이 끝나면 완료 패널이 뜬다. 연출 시간은 프레임에 비례하므로 조건을 기다린다. */
   const cleared = await page.waitForSelector(".stamp", { timeout: 240000 }).then(() => true, () => false);
   check(cleared, "탈출 연출 뒤 스테이지 완료 패널");
+  check(await page.$$eval(".record .rec tbody tr", (r) => r.length) === 9 || (await page.click(".record > summary").then(() => page.$$eval(".record .rec tbody tr", (r) => r.length === 9), () => false)), "스테이지 완료 화면의 ‘내 기록’에 장별 기록 아홉 줄이 있다");
   await shot("11-clear");
 
   /* 5) 저장 이어하기 */
