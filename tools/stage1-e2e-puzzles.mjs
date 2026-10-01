@@ -400,6 +400,7 @@ try {
   check(over.length === 0, "모바일: 해독표의 부호가 칸 밖으로 넘치지 않는다" + (over.length ? " (넘침: " + over.join(",") + ")" : ""));
   await closeAll();
   await mp.evaluate(() => { __n1.M.S.ch = 9; __n1.M.S.pieces = [1, 2, 3, 4, 5, 6, 7, 8]; __n1.M.S.tower = []; __n1.I.interact("tower"); }); await mp.waitForTimeout(900);
+  await mh.until(() => { const c = document.querySelector(".sheet-card"), t = c && getComputedStyle(c).transform; return !t || t === "none" || t === "matrix(1, 0, 0, 1, 0, 0)"; }, null, 30000);   /* 열리는 동안에는 카드가 옆으로 밀려 있어 재지 않는다 */
   const twBox = await mp.evaluate(() => { const n = document.querySelector(".tw-note").getBoundingClientRect(), c = document.querySelector(".tw-col").getBoundingClientRect(), t = document.querySelector(".tw-block .tw-title"); return { sideBySide: n.right <= c.left + 1 && n.width > 120, inW: c.right <= innerWidth + 1 && n.left >= -1, titleLines: t ? Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight || 14)) : 0 }; });
   check(twBox.sideBySide && twBox.inW, "모바일: 탑 패널에서 일기(왼쪽)와 블록(오른쪽)이 나란히 보인다");
   await mh.shot("03-tower-side");
