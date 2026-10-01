@@ -291,12 +291,14 @@
     };
     SC.showEnding = function () {
       SC.closeEnding(); UI.closeSheet(true); UI.flags.ending = true;
+      var rec = M.record();
       var x = el("section"); x.id = "ending"; x.setAttribute("role", "dialog"); x.setAttribute("aria-label", "엔딩");
       x.innerHTML = '<div class="ending-credits"><div class="ending-inner">' +
         '<div class="ending-kicker">STEPHEN HAWKING · FINAL MEMORY</div><h2 class="ending-name">스티븐 호킹</h2><div class="ending-years">1942 — 2018</div>' +
         '<section class="ending-sec"><div class="ending-label">ABOUT HIM</div><p>이론물리학자이자 우주론자. 블랙홀과 우주의 기원, 시간과 공간에 관한 질문을 끝까지 붙들었고, 어려운 과학을 더 많은 사람에게 전하려 했습니다.</p></section>' +
         '<section class="ending-sec"><div class="ending-label">WHY THIS ROOM EXISTS</div><p>이 방탈출은 정답 하나를 맞히는 것보다, 한 사람의 삶을 따라가며 흩어진 기록과 과학의 단서를 직접 연결해 보도록 만들었습니다. 호기심이 또 다른 질문으로 이어지는 경험이 되길 바랐습니다.</p></section>' +
         '<section class="ending-sec"><div class="ending-label">TO THE PLAYER</div><p>여기까지 모든 기억의 조각을 찾아낸 것을 축하합니다.<br>스티븐 호킹의 교실을 끝까지 완주했습니다.</p></section>' +
+        '<section class="ending-sec ending-rec"><div class="ending-label">YOUR RECORD</div><p>이 교실에서 보낸 시간은 ' + fmtSec(rec.total.sec) + '입니다. ' + (rec.total.hints ? "감독교사에게 도움을 청한 것은 " + rec.total.hints + "번입니다." : "감독교사에게 도움을 청한 적은 한 번도 없습니다.") + '<br><span style="color:#93a598;font-size:14px">장별 기록은 스테이지 완료 화면에서 볼 수 있습니다.</span></p></section>' +
         '<section class="ending-sec ending-exit"><strong>ONE LAST EXIT</strong><p style="font:400 16px/1.8 ' + FONT + ';color:#dbe5d8">교실을 나가기 위한 마지막 절차가 남았습니다.<br><b>다시 한 번 [시작]을 누르고 코드 0808을 입력하세요.</b></p><span class="ending-code">0808</span></section>' +
         '<div style="padding:8px 0 40px;font:400 14px/1.9 ' + FONT + ';color:#93a598;text-align:center">1942년 1월 8일 — 갈릴레이가 세상을 떠난 지 300년 되는 날에 태어나<br>2018년 3월 14일 — 아인슈타인이 태어난 날에 눈을 감다.</div>' +
         '</div></div><div class="ending-film"><video controls autoplay playsinline src="' + A.videoFinale + '"></video></div>' +
