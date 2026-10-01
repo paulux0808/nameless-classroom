@@ -246,12 +246,12 @@
 
         var bp = beeper(), mute = loadMute();
         function paintSound() { bSnd.textContent = mute ? "소리 끔" : "소리 켬"; bSnd.classList.toggle("on", !mute); bSnd.setAttribute("aria-pressed", mute ? "false" : "true"); }
-        bSnd.onclick = function () { mute = !mute; saveMute(mute); if (!mute) bp.ensure(); else bp.set(false); paintSound(); };
+        bSnd.onclick = function () { mute = !mute; saveMute(mute); if (!mute) bp.ensure(); else { sndOn = false; bp.set(false); } paintSound(); };
         function setMode(m) { mode = mode === m ? "stop" : m; if (mode !== "stop" && !mute) bp.ensure(); paintBtns(); }
         function paintBtns() { bRew.classList.toggle("on", mode === "rew"); bPlay.classList.toggle("on", mode === "play"); bStop.classList.toggle("on", mode === "stop"); bSpd.textContent = "속도 ×" + (rate === 0.5 ? "½" : rate); }
         bRew.onclick = function () { setMode("rew"); }; bPlay.onclick = function () { setMode("play"); }; bStop.onclick = function () { mode = "stop"; paintBtns(); };
         bSpd.onclick = function () { rate = rate === 1 ? 0.5 : rate === 0.5 ? 2 : 1; paintBtns(); };
-        var runs = [], dist = 0, pulses = [], glow = 0, lamp = false;
+        var runs = [], dist = 0, pulses = [], glow = 0, lamp = false, sndOn = false;
         jog.oninput = function () { e = clamp01(jog.value / 1000); mode = "stop"; runs = []; paintBtns(); };
         function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
         function savePad() { M.pzSet("c4", { e: e, pad: pad.join("") }); }
@@ -275,7 +275,7 @@
           lamp = lampNow;
           glow += ((lamp ? 1 : 0) - glow) * Math.min(1, dt * 22);
           for (var i = pulses.length - 1; i >= 0; i--) { pulses[i] += dt; if (pulses[i] > 0.9) pulses.splice(i, 1); }
-          bp.set(lamp && mode !== "stop" && !mute);
+          var want = lamp && mode !== "stop" && !mute; if (want !== sndOn) { sndOn = want; bp.set(want); }       /* 바뀔 때만 소리를 켜고 끈다 */
           if (!solved && M.isSolved(4)) solved = true;
           drawTape(g, { e: e, mode: mode, tick: tick, glow: glow, pulses: pulses, runs: runs, dist: dist });
         }
