@@ -221,7 +221,7 @@ try {
   /* 별빛: 깜빡임이 켜진 위치에서는 한 점이 환해지고, 꺼진 위치에서는 어둡다 */
   await page.click('.vb:has-text("정지")'); await page.waitForTimeout(200);
   const spotOn = await ev(() => { const sg = N1Puz.tapeSignal(), x = sg.segs[0]; return Math.round(((x.a + x.b) / 2 / sg.len) * 1000); });
-  const bright = async (v) => { await page.$eval(".jog", (e, v) => { e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }, v); await page.waitForTimeout(700); return page.evaluate(() => { const c = document.querySelector(".tv canvas"), d = c.getContext("2d").getImageData(318, 142, 4, 4).data; return (d[0] + d[1] + d[2]) / 3; }); };
+  const bright = async (v) => { await page.$eval(".jog", (e, v) => { e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }, v); await page.waitForTimeout(700); return page.evaluate(() => { const c = document.querySelector(".tv canvas"), d = c.getContext("2d").getImageData(306, 142, 4, 4).data; return (d[0] + d[1] + d[2]) / 3; }); };
   const bOn = await bright(spotOn), bOff = await bright(0);
   check(bOn > 200 && bOff < 170 && bOn > bOff + 40, `G. 별빛은 깜빡임이 켜진 위치(${spotOn})에서 환하고 꺼진 위치에서 어둡다 (${bOn.toFixed(0)} / ${bOff.toFixed(0)})`);
   await shot("08-tape");
