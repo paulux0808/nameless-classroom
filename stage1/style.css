@@ -483,6 +483,15 @@ body.sheet-open #say{opacity:0!important}                                       
 @media(max-width:700px){.tw-layout{grid-template-columns:minmax(0,1fr)}.tw-note{max-height:34vh}}
 @media(max-height:520px){.tw-slot.empty,.tw-block{height:34px}.tw-label{height:26px;gap:6px;padding:0 8px 0 5px}.tw-label canvas{width:20px!important;height:20px!important}.tw-title{font-size:12.5px}.tw-year{font-size:13px}.tw-mv button{width:26px;height:26px}.tw-stack{gap:3px;padding:6px}.tw-layout{gap:12px}}
 @media(hover:none){.tw-block:not(.sel) .tw-mv{opacity:.5}}
+@media(max-height:520px) and (min-width:480px){
+  .tw-layout{grid-template-columns:minmax(0,1fr) minmax(236px,282px);gap:10px}
+  .tw-note{max-height:calc(100dvh - 128px)}
+  .tw-block{height:38px}.tw-slot.empty{height:38px}
+  .tw-label{height:30px;padding:0 7px 0 5px}
+  .tw-title{font-size:11.5px;line-height:1.12;white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+  .tw-year{font-size:12.5px}
+  .tw-mv button{width:24px;height:28px}
+}
 
 /* ───────────── 4장: 신호 기록장·해독표 ───────────── */
 .morse-right{display:flex;flex-direction:column;gap:12px;min-width:0}
@@ -504,6 +513,13 @@ body.sheet-open #say{opacity:0!important}                                       
 .vb.ghost{background:linear-gradient(180deg,#6a7075,#4a4f54);color:#e8e8e2;box-shadow:0 3px 0 #1d1f21}
 .vb.ghost.on{background:linear-gradient(180deg,#f4d36a,#d9a92e);color:#1b1c1e;box-shadow:0 1px 0 #7a5716;transform:translateY(2px)}
 @media(max-height:460px){.pad-out{min-height:56px;max-height:30vh}.pad-keys .key{min-height:38px}.morse-pad{padding:9px}}
+@media(max-width:700px),(max-height:460px){
+  .morse-chart{grid-template-columns:repeat(auto-fill,minmax(142px,1fr));gap:6px 8px}
+  .mc-cell{padding:6px 9px;gap:8px}
+  .mc-cell b{font-size:17px}
+  .mc-code{gap:3px}
+  .mc-code .mz{height:8px}.mc-code .mz.dot{width:8px}.mc-code .mz.dash{width:22px}
+}
 
 /* ───────────── 2장: 액자 뒷면 ───────────── */
 .fb-back{position:relative;margin:6px auto 6px;max-width:520px;aspect-ratio:4/3.1;border-radius:6px;overflow:hidden;

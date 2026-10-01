@@ -392,6 +392,17 @@ try {
     check(ok.has && ok.inW && ok.scrollX && ok.visible, `모바일: ${name} 패널이 화면 폭 안에서 열리고 핵심 조작(${sel})이 있다`);
     await mh.shot("02-" + name);
   }
+  /* 작은 화면에서도 해독표의 부호는 칸 안에 들어가고, 탑은 일기와 블록이 나란히 보여 블록을 옮기는 동안 일기를 계속 볼 수 있다 */
+  const closeAll = async () => { await mp.evaluate(() => { __n1.UI.sayClear(); if (__n1.UI.sheetOpen()) __n1.UI.closeSheet && __n1.UI.closeSheet(true); }); await mp.waitForTimeout(400); };
+  await closeAll();
+  await mp.evaluate(() => { __n1.M.S.ch = 4; __n1.I.interact("refP:morseChart"); }); await mp.waitForTimeout(900);
+  const over = await mp.evaluate(() => [...document.querySelectorAll(".mc-cell")].filter((c) => c.querySelector(".mc-code").getBoundingClientRect().right > c.getBoundingClientRect().right - 1).map((c) => c.firstChild.textContent));
+  check(over.length === 0, "모바일: 해독표의 부호가 칸 밖으로 넘치지 않는다" + (over.length ? " (넘침: " + over.join(",") + ")" : ""));
+  await closeAll();
+  await mp.evaluate(() => { __n1.M.S.ch = 9; __n1.M.S.pieces = [1, 2, 3, 4, 5, 6, 7, 8]; __n1.M.S.tower = []; __n1.I.interact("tower"); }); await mp.waitForTimeout(900);
+  const twBox = await mp.evaluate(() => { const n = document.querySelector(".tw-note").getBoundingClientRect(), c = document.querySelector(".tw-col").getBoundingClientRect(), t = document.querySelector(".tw-block .tw-title"); return { sideBySide: n.right <= c.left + 1 && n.width > 120, inW: c.right <= innerWidth + 1 && n.left >= -1, titleLines: t ? Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight || 14)) : 0 }; });
+  check(twBox.sideBySide && twBox.inW, "모바일: 탑 패널에서 일기(왼쪽)와 블록(오른쪽)이 나란히 보인다");
+  await mh.shot("03-tower-side");
   check(errors.length === 0, "모바일 포함 화면 오류 없음 " + errors.join(" | "));
 } catch (e) {
   failures++; console.log("FAIL 예외: " + (e && e.stack || e));
